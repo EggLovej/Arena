@@ -1,17 +1,26 @@
 // Reading the published data at build time. Every page is static, so these run
 // only while `next build` generates the site.
 
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
 import type { GameData, GameSummary, Leaderboard, MatchRow } from "./types.ts";
 
 const DATA = path.join(process.cwd(), "public", "data");
 
+// Each file is parsed once, not once per page; a file that changes (during
+// `next dev`) is read again. Pages must not change what they get.
+const parsed = new Map<string, { modified: number; value: unknown }>();
+
 function read<T>(...parts: string[]): T | null {
   const file = path.join(DATA, ...parts);
-  if (!existsSync(file)) return null;
-  return JSON.parse(readFileSync(file, "utf8")) as T;
+  const modified = statSync(file, { throwIfNoEntry: false })?.mtimeMs;
+  if (modified === undefined) return null;
+  const cached = parsed.get(file);
+  if (cached?.modified === modified) return cached.value as T;
+  const value = JSON.parse(readFileSync(file, "utf8")) as T;
+  parsed.set(file, { modified, value });
+  return value;
 }
 
 export function listGames(): GameSummary[] {

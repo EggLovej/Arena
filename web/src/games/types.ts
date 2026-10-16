@@ -25,4 +25,6 @@ export type GameView = {
   /** One number per seat for the chart under a replay: how well each side is doing. */
   strength: (board: unknown, snapshot: Snapshot) => Record<string, number>;
   strengthLabel: string;
+  /** The map drawn on the game's card on the home page (the first map if not given). */
+  cardMap?: string;
 };

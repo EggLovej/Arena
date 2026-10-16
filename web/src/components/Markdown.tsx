@@ -1,7 +1,8 @@
-// Just enough Markdown for a game's rules: headings, paragraphs, lists,
-// **bold**, *italics* and `code`. Rules files are ours, so nothing fancier is needed.
+// Draws a game's rules: blocks from lib/markdown.ts, with **bold**, *italics* and `code`.
 
 import type { ReactNode } from "react";
+
+import { parseMarkdown } from "@/lib/markdown.ts";
 
 function inline(text: string): ReactNode[] {
   const parts: ReactNode[] = [];
@@ -21,42 +22,16 @@ function inline(text: string): ReactNode[] {
 }
 
 export function Markdown({ source }: { source: string }) {
-  const blocks: ReactNode[] = [];
-  const lines = source.replace(/\r\n/g, "\n").split("\n");
-  let index = 0;
-  while (index < lines.length) {
-    const line = lines[index];
-    if (!line.trim()) {
-      index++;
-      continue;
+  const blocks = parseMarkdown(source).map((block, index) => {
+    if (block.kind === "heading") {
+      const Tag = `h${Math.min(4, block.level + 1)}` as "h2" | "h3" | "h4";
+      return <Tag key={index}>{inline(block.text)}</Tag>;
     }
-    const heading = /^(#{1,4})\s+(.*)$/.exec(line);
-    if (heading) {
-      const level = Math.min(4, heading[1].length + 1);
-      const Tag = `h${level}` as "h2" | "h3" | "h4";
-      blocks.push(<Tag key={index}>{inline(heading[2])}</Tag>);
-      index++;
-      continue;
+    if (block.kind === "list") {
+      const children = block.items.map((item, number) => <li key={number}>{inline(item)}</li>);
+      return block.ordered ? <ol key={index}>{children}</ol> : <ul key={index}>{children}</ul>;
     }
-    const ordered = /^\d+\.\s+/.test(line);
-    if (ordered || /^[-*]\s+/.test(line)) {
-      const items: string[] = [];
-      while (index < lines.length && (ordered ? /^\d+\.\s+/ : /^[-*]\s+/).test(lines[index])) {
-        let item = lines[index].replace(ordered ? /^\d+\.\s+/ : /^[-*]\s+/, "");
-        index++;
-        while (index < lines.length && /^\s{2,}\S/.test(lines[index])) item += " " + lines[index++].trim();
-        items.push(item);
-      }
-      const children = items.map((item, number) => <li key={number}>{inline(item)}</li>);
-      blocks.push(ordered ? <ol key={index}>{children}</ol> : <ul key={index}>{children}</ul>);
-      continue;
-    }
-    const paragraph: string[] = [];
-    while (index < lines.length && lines[index].trim() && !/^(#{1,4}\s|[-*]\s|\d+\.\s)/.test(lines[index])) {
-      paragraph.push(lines[index].trim());
-      index++;
-    }
-    blocks.push(<p key={index}>{inline(paragraph.join(" "))}</p>);
-  }
+    return <p key={index}>{inline(block.text)}</p>;
+  });
   return <div className="prose">{blocks}</div>;
 }

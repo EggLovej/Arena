@@ -14,6 +14,9 @@ const lineup = { red: "strategic_ai", blue: "careful_ai", green: "aggressive_ai"
 test("times", () => {
   assert.equal(formatClock(125.3), "2:05.3");
   assert.equal(formatClock(4), "0:04.0");
+  assert.equal(formatClock(59.96), "1:00.0");
+  assert.equal(formatClock(119.97), "2:00.0");
+  assert.equal(formatClock(59.94), "0:59.9");
   assert.equal(formatDuration(48.4), "48 s");
   assert.equal(formatDuration(125), "2 min 05 s");
   assert.equal(listNames(["a", "b", "c"]), "a, b and c");

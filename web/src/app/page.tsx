@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { MapPreview } from "@/components/MapPreview.tsx";
+import { gameView } from "@/games/index.ts";
 import { getGame, getLeaderboard, listGames } from "@/lib/data.ts";
 
 export default function Home() {
@@ -17,7 +18,7 @@ export default function Home() {
           const game = getGame(summary.id);
           const leaderboard = getLeaderboard(summary.id);
           const leader = leaderboard ? Object.values(leaderboard.tables)[0]?.entries[0] : undefined;
-          const map = game.maps.find((entry) => entry.id === "crossroads") ?? game.maps[0];
+          const map = game.maps.find((entry) => entry.id === gameView(game.id).cardMap) ?? game.maps[0];
           return (
             <Link key={game.id} href={`/games/${game.id}`} className="card game-card">
               <div className="game-card-art">{map && <MapPreview game={game} map={map} />}</div>

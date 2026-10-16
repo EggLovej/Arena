@@ -22,6 +22,7 @@ function totals(snapshot: Snapshot): Record<string, { units: number; bases: numb
 
 export const graphite: GameView = {
   Board: GraphiteBoard,
+  cardMap: "crossroads",
   stats(_board, snapshot) {
     const result: Record<string, SeatStat[]> = {};
     for (const [seat, { units, bases }] of Object.entries(totals(snapshot))) {

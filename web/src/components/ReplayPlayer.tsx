@@ -82,11 +82,13 @@ export function ReplayPlayer({ gameId, replayUrl, seats, botNames, theme }: Prop
     if (playing && replay && position >= last) setPlaying(false);
   }, [playing, replay, position, last]);
 
-  const seek = useCallback((tick: number) => setPosition(Math.max(0, Math.min(last, tick))), [last]);
+  // These change the position from whatever it is by then, so they stay the same while it plays.
+  const move = useCallback((to: (current: number) => number) => setPosition((current) => Math.max(0, Math.min(last, to(current)))), [last]);
+  const seek = useCallback((tick: number) => move(() => tick), [move]);
   const toggle = useCallback(() => {
-    if (!playing && position >= last) setPosition(0);
+    if (!playing) move((current) => (current >= last ? 0 : current));
     setPlaying(!playing);
-  }, [playing, position, last]);
+  }, [playing, move, last]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -95,14 +97,18 @@ export function ReplayPlayer({ gameId, replayUrl, seats, botNames, theme }: Prop
       if (event.key === " ") {
         event.preventDefault();
         toggle();
-      } else if (event.key === "ArrowRight") seek(position + (event.shiftKey ? 10 : 1) * second);
-      else if (event.key === "ArrowLeft") seek(position - (event.shiftKey ? 10 : 1) * second);
-      else if (event.key === ".") seek(Math.floor(position) + 1);
-      else if (event.key === ",") seek(Math.ceil(position) - 1);
+      } else if (event.key === "ArrowRight") move((current) => current + (event.shiftKey ? 10 : 1) * second);
+      else if (event.key === "ArrowLeft") move((current) => current - (event.shiftKey ? 10 : 1) * second);
+      else if (event.key === ".") move((current) => Math.floor(current) + 1);
+      else if (event.key === ",") move((current) => Math.ceil(current) - 1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [toggle, seek, position, tickSeconds]);
+  }, [toggle, move, tickSeconds]);
+
+  // The chart redraws only when these change, not on every frame.
+  const seatIds = useMemo(() => replay?.seats.map(({ seat }) => seat) ?? [], [replay]);
+  const colors = useMemo(() => Object.fromEntries(seats.map((seat) => [seat.id, seat.color])), [seats]);
 
   if (error) return <p className="notice">{error}</p>;
   if (!replay) return <div className="replay-loading">Loading the replay…</div>;
@@ -185,8 +191,8 @@ export function ReplayPlayer({ gameId, replayUrl, seats, botNames, theme }: Prop
       <StrengthChart
         snapshots={snapshots}
         board={replay.board}
-        seats={replay.seats.map(({ seat }) => seat)}
-        colors={Object.fromEntries(seats.map((seat) => [seat.id, seat.color]))}
+        seats={seatIds}
+        colors={colors}
         strength={view.strength}
         label={view.strengthLabel}
         position={position}

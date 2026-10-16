@@ -40,11 +40,13 @@ cd web && npm install && npm run dev                    # the site, at http://lo
 
 A tournament plays every group of bots on every map in every seating, keeps
 one replay of each group on each map, and checks that every kept replay plays
-back exactly. It does nothing if the bots, maps, rules and shared match code
-are unchanged since the published one (`--force` plays it anyway). A full
-Graphite tournament is about 700 matches; most take under a second, but the
-search bots take up to a few minutes a match, so it runs for an hour or two
-on four cores.
+back exactly. It does nothing if the bots, maps, rules, shared match code and
+pinned packages are unchanged since the published one (`--force` plays it
+anyway). CI plays the published replays back too; one recorded before a change
+to the game's rules or maps may no longer match, which is only noted, since
+the next tournament replaces it. A full Graphite tournament is about 700
+matches; most take under a second, but the search bots take up to a few
+minutes a match, so it runs for an hour or two on four cores.
 
 Graphite itself still runs on its own, with its Pygame client and training
 code: see [games/graphite/README.md](games/graphite/README.md).
@@ -63,11 +65,12 @@ See `platform/arena/ratings.py`.
 ## The Tournament workflow
 
 `.github/workflows/tournament.yml` runs on every push to `main` that touches
-`games/` or `platform/arena/`, every Monday, and on demand (Actions >
-Tournament > Run workflow, with "force" to replay unchanged games). It plays
-each game's tournament, refreshes the tables, and commits `web/public/data`
-to `main`, which Vercel then deploys. It needs to push to `main`: if `main`
-gets branch protection, allow GitHub Actions to bypass it.
+`games/`, `platform/arena/`, `pyproject.toml` or the workflow itself, every
+Monday, and on demand (Actions > Tournament > Run workflow, with "force" to
+replay unchanged games); a run waits for one already playing. It plays each
+game's tournament, refreshes the tables, and commits `web/public/data` to
+`main`, which Vercel then deploys. It needs to push to `main`: if `main` gets
+branch protection, allow GitHub Actions to bypass it.
 
 ## Deploying
 
@@ -79,10 +82,13 @@ page is static, built from `web/public/data`.
 
 Add `games/graphite/ais/<name>.py` with a `choose_action(state)` function (see
 `ais/careful_ai.py`), or a `create_bot()` returning an object with
-`reset(context)` and `act(state)`. Its docstring's first paragraph describes it
-on the site unless `BLURBS` in `arena_game.py` has a line for it. A neural bot
-also commits the one checkpoint it plays to `checkpoints/`. Open a pull
-request; once merged, the Tournament workflow rates it.
+`reset(context)` and `act(state)`. Its docstring's first paragraph describes
+it on the site unless `BLURBS` in `arena_game.py` has a line for it. A bot may
+think for up to two minutes on a move and half an hour over a match
+(`move_time_limit` and `match_time_limit` in the game's `GameInfo`); one that
+runs out of time, or fails to load, forfeits the match. A neural bot also
+commits the one checkpoint it plays to `checkpoints/`. Open a pull request;
+once merged, the Tournament workflow rates it.
 
 ## Adding a game
 
@@ -91,7 +97,8 @@ request; once merged, the Tournament workflow rates it.
    `platform/tests/fixtures/games/race/arena_game.py` is a complete small example,
    and `games/graphite/arena_game.py` a real one.
 3. Add a board for it to the website: `web/src/games/<id>/` with a component that
-   draws one snapshot, registered in `web/src/games/index.ts`. The replay player,
-   match lists, leaderboards and bot pages are shared.
+   draws one snapshot, registered in `web/src/games/index.ts` (see
+   `web/src/games/types.ts`). The replay player, match lists, leaderboards and
+   bot pages are shared.
 4. Run `python -m arena tournament <id>` and commit `web/public/data`, or let the
    Tournament workflow do it after merging.

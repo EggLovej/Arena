@@ -4,9 +4,9 @@ import type { Seat } from "./types.ts";
 
 /** Game time as m:ss.s, for example 2:05.3. */
 export function formatClock(seconds: number): string {
-  const minutes = Math.floor(seconds / 60);
-  const rest = seconds - minutes * 60;
-  return `${minutes}:${rest.toFixed(1).padStart(4, "0")}`;
+  const tenths = Math.round(seconds * 10); // rounded first, so 59.96 s shows as 1:00.0
+  const minutes = Math.floor(tenths / 600);
+  return `${minutes}:${((tenths - minutes * 600) / 10).toFixed(1).padStart(4, "0")}`;
 }
 
 /** Game time as words: "2 min 05 s" or "48 s". */
