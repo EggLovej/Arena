@@ -1,0 +1,4 @@
+# The game itself only needs pygame; ml/requirements.txt adds what ml/ and the
+# learned AIs (Neural, Beast, Atlas) need.
+pygame==2.6.1
+-r ml/requirements.txt

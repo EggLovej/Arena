@@ -1,0 +1,23 @@
+{
+  "name": "classic",
+  "width": 1000,
+  "height": 800,
+  "bases": [
+    {"id": "west_home", "owner": -1, "units": 20, "production_rate": 1.15, "x": 100, "y": 400},
+    {"id": "north", "owner": 0, "units": 20, "production_rate": 1.0, "x": 500, "y": 133},
+    {"id": "center", "owner": 0, "units": 25, "production_rate": 1.45, "x": 500, "y": 400},
+    {"id": "south", "owner": 0, "units": 4, "production_rate": 0.2, "x": 500, "y": 666},
+    {"id": "east_home", "owner": 1, "units": 20, "production_rate": 1.15, "x": 900, "y": 400}
+  ],
+  "edges": [
+    {"a": "west_home", "b": "north", "travel_time": 5},
+    {"a": "west_home", "b": "center", "travel_time": 5},
+    {"a": "west_home", "b": "south", "travel_time": 5},
+    {"a": "east_home", "b": "north", "travel_time": 5},
+    {"a": "east_home", "b": "center", "travel_time": 5},
+    {"a": "east_home", "b": "south", "travel_time": 5},
+    {"a": "north", "b": "center", "travel_time": 3},
+    {"a": "center", "b": "south", "travel_time": 4}
+  ]
+}
+

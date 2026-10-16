@@ -1,0 +1,43 @@
+{
+  "name": "triangle",
+  "width": 1000,
+  "height": 800,
+  "bases": [
+    {"id": "red_peak", "owner": -1, "units": 24, "production_rate": 1.2, "x": 500, "y": 110},
+    {"id": "northwest", "owner": 0, "units": 8, "production_rate": 0.8, "x": 300, "y": 215},
+    {"id": "high_pass", "owner": 0, "units": 14, "production_rate": 1.3, "x": 500, "y": 235},
+    {"id": "northeast", "owner": 0, "units": 7, "production_rate": 0.75, "x": 705, "y": 225},
+    {"id": "west_gate", "owner": 0, "units": 10, "production_rate": 1.0, "x": 155, "y": 400},
+    {"id": "central_keep", "owner": 0, "units": 26, "production_rate": 2.1, "x": 500, "y": 385},
+    {"id": "east_gate", "owner": 0, "units": 11, "production_rate": 1.05, "x": 850, "y": 395},
+    {"id": "inner_west", "owner": 0, "units": 9, "production_rate": 0.95, "x": 335, "y": 535},
+    {"id": "inner_east", "owner": 0, "units": 8, "production_rate": 0.9, "x": 670, "y": 520},
+    {"id": "south_crossing", "owner": 0, "units": 18, "production_rate": 1.5, "x": 505, "y": 660},
+    {"id": "blue_harbor", "owner": 1, "units": 24, "production_rate": 1.2, "x": 90, "y": 680},
+    {"id": "green_harbor", "owner": 2, "units": 24, "production_rate": 1.2, "x": 910, "y": 680}
+  ],
+  "edges": [
+    {"a": "red_peak", "b": "northwest", "travel_time": 3.0},
+    {"a": "red_peak", "b": "northeast", "travel_time": 3.1},
+    {"a": "northwest", "b": "high_pass", "travel_time": 2.5},
+    {"a": "northwest", "b": "west_gate", "travel_time": 3.0},
+    {"a": "northwest", "b": "central_keep", "travel_time": 3.2},
+    {"a": "high_pass", "b": "central_keep", "travel_time": 2.4},
+    {"a": "high_pass", "b": "northeast", "travel_time": 2.6},
+    {"a": "northeast", "b": "central_keep", "travel_time": 3.0},
+    {"a": "northeast", "b": "east_gate", "travel_time": 2.8},
+    {"a": "west_gate", "b": "inner_west", "travel_time": 2.8},
+    {"a": "west_gate", "b": "blue_harbor", "travel_time": 3.5},
+    {"a": "central_keep", "b": "inner_west", "travel_time": 2.5},
+    {"a": "central_keep", "b": "inner_east", "travel_time": 2.5},
+    {"a": "central_keep", "b": "south_crossing", "travel_time": 3.2},
+    {"a": "east_gate", "b": "inner_east", "travel_time": 2.8},
+    {"a": "east_gate", "b": "green_harbor", "travel_time": 3.5},
+    {"a": "inner_west", "b": "blue_harbor", "travel_time": 3.0},
+    {"a": "inner_west", "b": "south_crossing", "travel_time": 2.6},
+    {"a": "inner_east", "b": "south_crossing", "travel_time": 2.5},
+    {"a": "inner_east", "b": "green_harbor", "travel_time": 2.9},
+    {"a": "south_crossing", "b": "blue_harbor", "travel_time": 4.0},
+    {"a": "south_crossing", "b": "green_harbor", "travel_time": 4.0}
+  ]
+}

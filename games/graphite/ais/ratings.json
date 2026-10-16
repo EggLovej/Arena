@@ -1,0 +1,246 @@
+{
+  "made": "2026-10-13",
+  "scale": "strategic_ai = 1000; 100 points more scores about 64%, 200 about 76%, 400 about 91%",
+  "ratings": {
+    "strategic_ai": 1000,
+    "aggressive_ai": 683,
+    "careful_ai": 790,
+    "neural_ai": 1423,
+    "beast_ai": 1474,
+    "atlas_ai": 1241,
+    "atlas_clean_ai": 1133
+  },
+  "games": {
+    "strategic_ai": 632,
+    "aggressive_ai": 572,
+    "careful_ai": 572,
+    "neural_ai": 500,
+    "beast_ai": 700,
+    "atlas_ai": 208,
+    "atlas_clean_ai": 200
+  },
+  "rated as": {
+    "neural_ai": "ml/runs/deep_from_imitation/round_0500.pt at temperature 0.2",
+    "beast_ai": "network:ml/runs/free2_gap0/round_0050.pt?temperature=0.2"
+  },
+  "others": {
+    "free_gap0 round 50 at temperature 0.2 (Beast 2026-10-12 to 2026-10-13)": 1426,
+    "look-ahead judged by the network (deep_from_imitation round 500)": 1380,
+    "move scoring (deep_scratch round 500)": 1278,
+    "neural_ai drawing by chance": 1325,
+    "overnight network (64x3, round 500)": 1138,
+    "the look-ahead Beast (deep_from_imitation round 500, judge1; Beast until 2026-10-12)": 1403
+  },
+  "results": [
+    [
+      "strategic_ai",
+      "aggressive_ai",
+      85.5,
+      100
+    ],
+    [
+      "strategic_ai",
+      "careful_ai",
+      84.0,
+      100
+    ],
+    [
+      "strategic_ai",
+      "neural_ai",
+      5.0,
+      100
+    ],
+    [
+      "strategic_ai",
+      "beast_ai",
+      6.5,
+      100
+    ],
+    [
+      "strategic_ai",
+      "neural_ai drawing by chance",
+      8.5,
+      100
+    ],
+    [
+      "aggressive_ai",
+      "careful_ai",
+      27.0,
+      100
+    ],
+    [
+      "aggressive_ai",
+      "neural_ai",
+      3.5,
+      100
+    ],
+    [
+      "aggressive_ai",
+      "beast_ai",
+      3.0,
+      100
+    ],
+    [
+      "aggressive_ai",
+      "neural_ai drawing by chance",
+      4.0,
+      100
+    ],
+    [
+      "careful_ai",
+      "neural_ai",
+      3.5,
+      100
+    ],
+    [
+      "careful_ai",
+      "beast_ai",
+      1.5,
+      100
+    ],
+    [
+      "careful_ai",
+      "neural_ai drawing by chance",
+      5.0,
+      100
+    ],
+    [
+      "neural_ai",
+      "beast_ai",
+      39.5,
+      100
+    ],
+    [
+      "neural_ai",
+      "neural_ai drawing by chance",
+      67.5,
+      100
+    ],
+    [
+      "beast_ai",
+      "neural_ai drawing by chance",
+      61.5,
+      100
+    ],
+    [
+      "beast_ai",
+      "free_gap0 round 50 at temperature 0.2 (Beast 2026-10-12 to 2026-10-13)",
+      121.5,
+      200
+    ],
+    [
+      "free_gap0 round 50 at temperature 0.2 (Beast 2026-10-12 to 2026-10-13)",
+      "the look-ahead Beast (deep_from_imitation round 500, judge1; Beast until 2026-10-12)",
+      222.0,
+      400
+    ],
+    [
+      "the look-ahead Beast (deep_from_imitation round 500, judge1; Beast until 2026-10-12)",
+      "atlas_ai",
+      49.5,
+      60
+    ],
+    [
+      "the look-ahead Beast (deep_from_imitation round 500, judge1; Beast until 2026-10-12)",
+      "neural_ai drawing by chance",
+      39.0,
+      60
+    ],
+    [
+      "look-ahead judged by the network (deep_from_imitation round 500)",
+      "strategic_ai",
+      54.0,
+      60
+    ],
+    [
+      "look-ahead judged by the network (deep_from_imitation round 500)",
+      "atlas_ai",
+      40.0,
+      60
+    ],
+    [
+      "look-ahead judged by the network (deep_from_imitation round 500)",
+      "neural_ai drawing by chance",
+      36.5,
+      60
+    ],
+    [
+      "move scoring (deep_scratch round 500)",
+      "careful_ai",
+      39.0,
+      40
+    ],
+    [
+      "move scoring (deep_scratch round 500)",
+      "aggressive_ai",
+      38.5,
+      40
+    ],
+    [
+      "move scoring (deep_scratch round 500)",
+      "strategic_ai",
+      31.0,
+      40
+    ],
+    [
+      "move scoring (deep_scratch round 500)",
+      "overnight network (64x3, round 500)",
+      30.0,
+      40
+    ],
+    [
+      "move scoring (deep_scratch round 500)",
+      "atlas_ai",
+      24.5,
+      40
+    ],
+    [
+      "move scoring (deep_scratch round 500)",
+      "atlas_clean_ai",
+      24.5,
+      40
+    ],
+    [
+      "atlas_ai",
+      "overnight network (64x3, round 500)",
+      12.0,
+      16
+    ],
+    [
+      "atlas_clean_ai",
+      "careful_ai",
+      30.0,
+      32
+    ],
+    [
+      "atlas_clean_ai",
+      "aggressive_ai",
+      29.0,
+      32
+    ],
+    [
+      "atlas_clean_ai",
+      "strategic_ai",
+      23.5,
+      32
+    ],
+    [
+      "atlas_clean_ai",
+      "overnight network (64x3, round 500)",
+      15.0,
+      32
+    ],
+    [
+      "atlas_clean_ai",
+      "atlas_ai",
+      5.5,
+      32
+    ],
+    [
+      "neural_ai drawing by chance",
+      "overnight network (64x3, round 500)",
+      71.5,
+      100
+    ]
+  ]
+}
