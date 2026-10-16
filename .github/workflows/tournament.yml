@@ -1,0 +1,66 @@
+# Plays every game's tournament and commits the results to web/public/data,
+# which Vercel then deploys. A game whose bots, maps, rules and shared match
+# code are unchanged since its last tournament is skipped, so this mostly runs
+# when something changed; the weekly run catches anything missed.
+
+name: Tournament
+
+on:
+  schedule:
+    - cron: "17 3 * * 1" # Mondays, 03:17 UTC
+  push:
+    branches: [main]
+    paths:
+      - "games/**"
+      - "platform/arena/**"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Play again even if nothing changed
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tournament
+  cancel-in-progress: true
+
+jobs:
+  tournament:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install
+        run: |
+          pip install torch==2.14.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[neural]"
+      - name: Play
+        env:
+          FORCE: ${{ inputs.force }}
+        run: |
+          args=(--workers "$(nproc)")
+          if [ "$FORCE" = "true" ]; then args+=(--force); fi
+          for game in $(python -m arena games --ids); do
+            python -m arena tournament "$game" "${args[@]}"
+            python -m arena publish "$game"
+          done
+      - name: Commit the results
+        run: |
+          git add web/public/data
+          if git diff --cached --quiet; then
+            echo "Nothing new to publish."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Publish tournament results"
+          git pull --rebase origin main
+          git push origin HEAD:main
