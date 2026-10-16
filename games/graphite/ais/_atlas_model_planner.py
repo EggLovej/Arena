@@ -62,6 +62,7 @@ def configure_checkpoint(path=None):
     import os, hashlib
     root=Path(__file__).resolve().parent.parent
     default=root/'ml/runs/latest.pt'
+    if not default.exists():default=root/'checkpoints/neural_ai.pt'
     if not default.exists():default=root/'atlas_model/opponent.pt'
     selected=Path(path or os.environ.get('ATLAS_OPPONENT_CHECKPOINT',os.environ.get('NEURAL_AI_CHECKPOINT',str(default))))
     data=selected.read_bytes()

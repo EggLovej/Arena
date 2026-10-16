@@ -1,0 +1,325 @@
+"""Graphite as the Arena platform sees it: the adapter between this folder and ``platform/arena``.
+
+Everything the platform needs from Graphite goes through ``GAME``: its maps and
+bots, new matches, what to draw for each tick, and actions as JSON. The rules
+themselves stay in ``game.py`` and the bots in ``ais/``, unchanged.
+
+Graphite's modules import each other by their plain names (``from game import
+Game``) and read files relative to this folder, so loading this adapter puts
+this folder first on ``sys.path`` and makes it the working directory. That is
+also why one process plays one game's matches.
+"""
+
+from __future__ import annotations
+
+import ast
+import hashlib
+import importlib
+import json
+import os
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+os.chdir(ROOT)
+
+# Leaderboard matches play the networks committed in checkpoints/, not whatever a
+# local training run last wrote to ml/runs/. Setting these beforehand plays others.
+os.environ.setdefault("NEURAL_AI_CHECKPOINT", str(ROOT / "checkpoints" / "neural_ai.pt"))
+os.environ.setdefault("BEAST_AI_FILE", str(ROOT / "checkpoints" / "beast.json"))
+
+from game import Game as Engine  # noqa: E402
+from game_types import BLUE, GREEN, NEUTRAL, PLAYERS, RED, SendAction  # noqa: E402
+from loading import available_ais, available_maps, load_map  # noqa: E402
+
+from arena.contract import BotInfo, GameInfo, MapInfo, Outcome, SeatInfo, bot_from_module  # noqa: E402
+
+
+SEAT_OF = {RED: "red", BLUE: "blue", GREEN: "green"}
+PLAYER_OF = {seat: player for player, seat in SEAT_OF.items()}
+THEME_FILE = ROOT / "themes" / "paper_atlas.json"
+THEME = json.loads(THEME_FILE.read_text())
+
+# Bots that use a neural network (Atlas uses one to forecast its opponents).
+NEURAL = {"neural_ai", "beast_ai", "atlas_ai"}
+# Atlas thinks for minutes per match against the networks on large maps, so it
+# plays only the two-player maps; on three-player maps every match would include it.
+TWO_PLAYER_ONLY = {"atlas_ai"}
+# What the website says about each bot. A bot not listed here is described by the
+# first paragraph of its module's docstring.
+BLURBS = {
+    "aggressive_ai": "Attacks often, with whatever it has to hand.",
+    "careful_ai": "Builds up and waits until an attack should succeed.",
+    "strategic_ai": "Plans attacks, defence and reinforcement routes on any map. "
+    "The leaderboard's fixed point: it is rated 1000.",
+    "neural_ai": "A neural network trained on Graphite games. It picks each move from what it learned, "
+    "without looking ahead.",
+    "beast_ai": "Our strongest player so far, crowned by beating the previous one. Today that is a network "
+    "that beat the last Beast in 61% of 200 games.",
+    "atlas_ai": "Searches ahead with an exact copy of the game, forecasting each opponent with an exact "
+    "copy of it (the scripted AIs' own code, or Neural AI's network). It thinks far longer than the others.",
+    "atlas_clean_ai": "Atlas's look-ahead search without copies of its opponents: it forecasts each one "
+    "with whichever of its own ten styles best explains the fleets it has seen.",
+}
+# What a replay depends on: the rules and the maps. Bots don't matter, since a
+# replay keeps every action they took.
+RULE_FILES = ("game.py", "game_types.py", "loading.py")
+
+INFO = GameInfo(
+    id="graphite",
+    name="Graphite",
+    tagline="Real-time strategy on a graph: grow your bases, send fleets, take the map.",
+    seats=tuple(
+        SeatInfo(seat, seat.title(), THEME["players"][seat]["fill"]) for seat in ("red", "blue", "green")
+    ),
+    tick_seconds=0.1,
+    max_ticks=1800,  # three minutes of game time, as in the game's own evaluator
+    rating_anchor=("strategic_ai", 1000.0),  # the scale of ais/ratings.json
+)
+
+
+class GraphiteMatch:
+    """One match: Graphite's own ``Game`` plus what the platform needs on top."""
+
+    def __init__(self, map_id: str, engine: Engine):
+        self.map_id = map_id
+        self.engine = engine
+        self.seats = tuple(SEAT_OF[player] for player in engine.players)
+        self.eliminated: dict[str, int] = {}  # seat -> tick it lost its last base and fleet
+        # id() of an engine fleet -> (the fleet, its id in snapshots). Holding the fleet
+        # keeps Python from reusing its id() for a new fleet while it is tracked.
+        self._fleets: dict[int, tuple[object, str]] = {}
+        self._fleet_departures: dict[str, int] = {}
+        self._next_fleet = 0
+
+    @property
+    def tick(self) -> int:
+        return self.engine.tick
+
+    def acting(self) -> tuple[str, ...]:
+        return self.seats
+
+    def observe(self, seat: str):
+        return self.engine.view_for(PLAYER_OF[seat])
+
+    def step(self, actions: dict[str, object]) -> dict[str, str]:
+        tick = self.engine.tick
+        refused = self.engine.step({PLAYER_OF[seat]: action for seat, action in actions.items()})
+        for fleet in self.engine.fleets:
+            if id(fleet) not in self._fleets:
+                fleet_id = str(self._next_fleet)
+                self._next_fleet += 1
+                self._fleets[id(fleet)] = (fleet, fleet_id)
+                self._fleet_departures[fleet_id] = tick
+        alive = {id(fleet) for fleet in self.engine.fleets}
+        for key in [key for key in self._fleets if key not in alive]:
+            self._fleet_departures.pop(self._fleets.pop(key)[1])
+        living = set(self.engine.living_players())
+        for seat in self.seats:
+            if PLAYER_OF[seat] not in living and seat not in self.eliminated:
+                self.eliminated[seat] = self.engine.tick
+        return {SEAT_OF[player]: reason for player, reason in refused.items()}
+
+    def finished(self) -> bool:
+        return self.engine.is_finished()
+
+    def outcome(self) -> Outcome:
+        """Survivors first (sharing first place if time ran out), then the rest, last to fall first."""
+
+        survivors = tuple(seat for seat in self.seats if seat not in self.eliminated)
+        ranking = [survivors] if survivors else []
+        for tick in sorted(set(self.eliminated.values()), reverse=True):
+            ranking.append(tuple(seat for seat in self.seats if self.eliminated.get(seat) == tick))
+        reason = "elimination" if self.finished() else "time"
+        return Outcome(tuple(ranking), reason, self.engine.tick)
+
+    def board(self) -> dict:
+        definition = self.engine.map_definition
+        return {
+            "name": definition.name,
+            "width": definition.width,
+            "height": definition.height,
+            "bases": [
+                {"id": base.id, "x": base.x, "y": base.y, "production": base.production_rate}
+                for base in definition.bases
+            ],
+            "edges": [{"a": edge.a, "b": edge.b, "time": edge.travel_time} for edge in definition.edges],
+        }
+
+    def snapshot(self) -> dict:
+        """Each base's owner and whole units; each fleet as [owner, units, from, to, departure tick, travel time].
+
+        A fleet's entry never changes while it travels: the website works out where
+        it is from the tick, so a replay stores it once.
+        """
+
+        return {
+            "bases": {base.id: [_seat(base.owner), int(base.units)] for base in self.engine.bases.values()},
+            "fleets": {
+                self._fleet_id(fleet): [
+                    SEAT_OF[fleet.owner],
+                    fleet.units,
+                    fleet.source_id,
+                    fleet.target_id,
+                    self._fleet_departures[self._fleet_id(fleet)],
+                    fleet.total_time,
+                ]
+                for fleet in self.engine.fleets
+            },
+        }
+
+    def _fleet_id(self, fleet) -> str:
+        return self._fleets[id(fleet)][1]
+
+    def save_state(self) -> dict:
+        return {
+            "tick": self.engine.tick,
+            "bases": {base.id: [base.owner, base.units] for base in self.engine.bases.values()},
+            "fleets": [
+                [
+                    self._fleet_id(fleet),
+                    self._fleet_departures[self._fleet_id(fleet)],
+                    fleet.owner,
+                    fleet.units,
+                    fleet.source_id,
+                    fleet.target_id,
+                    fleet.remaining_time,
+                    fleet.total_time,
+                ]
+                for fleet in self.engine.fleets
+            ],
+            "eliminated": dict(sorted(self.eliminated.items())),
+            "next_fleet": self._next_fleet,
+        }
+
+
+class GraphiteGame:
+    info = INFO
+
+    def maps(self) -> tuple[MapInfo, ...]:
+        maps = []
+        for map_id in available_maps():
+            definition = load_map(map_id)
+            owners = {base.owner for base in definition.bases}
+            seats = tuple(SEAT_OF[player] for player in PLAYERS if player in owners)
+            description = f"{len(definition.bases)} bases, {len(definition.edges)} routes"
+            maps.append(MapInfo(map_id, _title(definition.name), seats, description))
+        return tuple(maps)
+
+    def bots(self) -> tuple[BotInfo, ...]:
+        return tuple(
+            BotInfo(
+                id=name,
+                name=_label(name),
+                description=BLURBS.get(name) or _summary(ROOT / "ais" / f"{name}.py"),
+                kind="neural" if name in NEURAL else "scripted",
+                seat_counts=(2,) if name in TWO_PLAYER_ONLY else None,
+            )
+            for name in available_ais()
+        )
+
+    def load_bot(self, bot_id: str):
+        if bot_id not in available_ais():
+            raise ValueError(f"Graphite has no bot named {bot_id!r}")
+        return bot_from_module(importlib.import_module(f"ais.{bot_id}"))
+
+    def new_match(self, map_id: str, seed: int) -> GraphiteMatch:
+        # Graphite's rules have no chance in them, so the seed only matters to bots.
+        return GraphiteMatch(map_id, Engine(load_map(map_id), seconds_per_tick=INFO.tick_seconds))
+
+    def restore_match(self, map_id: str, state: dict) -> GraphiteMatch:
+        from game import Fleet
+
+        match = self.new_match(map_id, 0)
+        engine = match.engine
+        engine.tick = state["tick"]
+        engine.time_seconds = engine.tick * engine.seconds_per_tick
+        for base_id, (owner, units) in state["bases"].items():
+            engine.bases[base_id].owner = owner
+            engine.bases[base_id].units = units
+        engine.fleets = []
+        for fleet_id, departed, owner, units, source, target, remaining, total in state["fleets"]:
+            fleet = Fleet(owner, units, source, target, remaining, total)
+            engine.fleets.append(fleet)
+            match._fleets[id(fleet)] = (fleet, fleet_id)
+            match._fleet_departures[fleet_id] = departed
+        match.eliminated = dict(state["eliminated"])
+        match._next_fleet = state["next_fleet"]
+        return match
+
+    def action_to_json(self, action) -> list:
+        if not isinstance(action, SendAction):
+            raise TypeError(f"expected SendAction or None, got {type(action).__name__}")
+        if not isinstance(action.units, (int, float)) or isinstance(action.units, bool):
+            raise TypeError(f"units must be a number, got {type(action.units).__name__}")
+        return [str(action.source_id), str(action.target_id), action.units]
+
+    def action_from_json(self, data: list) -> SendAction:
+        source, target, units = data
+        return SendAction(source, target, units)
+
+    def observation_to_json(self, view) -> dict:
+        return {
+            "seat": SEAT_OF[view.player_id],
+            "tick": view.tick,
+            "time": view.time_seconds,
+            "tick_seconds": view.seconds_per_tick,
+            "bases": [
+                {"id": b.id, "owner": _seat(b.owner), "units": b.units, "production": b.production_rate, "x": b.x, "y": b.y}
+                for b in view.bases
+            ],
+            "edges": [{"a": e.a, "b": e.b, "time": e.travel_time} for e in view.edges],
+            "fleets": [
+                {
+                    "owner": SEAT_OF[f.owner],
+                    "units": f.units,
+                    "from": f.source_id,
+                    "to": f.target_id,
+                    "remaining": f.remaining_time,
+                    "total": f.total_time,
+                }
+                for f in view.fleets
+            ],
+        }
+
+    def rules(self) -> str:
+        return (ROOT / "RULES.md").read_text()
+
+    def theme(self) -> dict:
+        return THEME
+
+    def fingerprint(self) -> str:
+        digest = hashlib.sha256()
+        for path in [ROOT / name for name in RULE_FILES] + sorted((ROOT / "maps").glob("*.json")):
+            digest.update(path.name.encode() + b"\0" + path.read_bytes())
+        return digest.hexdigest()[:16]
+
+
+def _seat(owner: int) -> str:
+    return "" if owner == NEUTRAL else SEAT_OF[owner]
+
+
+def _label(name: str) -> str:
+    """``strategic_ai`` -> ``Strategic AI``, as in the game's own window."""
+
+    return name.removesuffix("_ai").replace("_", " ").title() + " AI"
+
+
+def _title(name: str) -> str:
+    """"salt_and_pepper" -> "Salt and Pepper"."""
+
+    small = {"and", "of", "the", "on", "in"}
+    words = name.replace("_", " ").split()
+    return " ".join(word if number and word in small else word.capitalize() for number, word in enumerate(words))
+
+
+def _summary(path: Path) -> str:
+    """The first paragraph of a module's docstring, read without importing it (and so without PyTorch)."""
+
+    docstring = ast.get_docstring(ast.parse(path.read_text())) or ""
+    return " ".join(docstring.split("\n\n")[0].split())
+
+
+GAME = GraphiteGame()

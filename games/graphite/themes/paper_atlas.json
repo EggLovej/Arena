@@ -1,0 +1,32 @@
+{
+  "id": "paper_atlas",
+  "name": "Paper Atlas",
+  "description": "Warm field-notes paper, ink lines and brush-stroke factions.",
+  "colors": {
+    "ink": "#2a2825",
+    "paper": "#efe7d6",
+    "paper_light": "#f9f3e6",
+    "paper_dark": "#dacdb5",
+    "muted": "#696053",
+    "disabled": "#9d9485",
+    "highlight": "#d3a42f",
+    "white": "#fffaf0"
+  },
+  "players": {
+    "red": {
+      "fill": "#bb3933",
+      "dark": "#842724"
+    },
+    "blue": {
+      "fill": "#2c5ba6",
+      "dark": "#1f3d6f"
+    },
+    "green": {
+      "fill": "#36845b",
+      "dark": "#235b3e"
+    }
+  },
+  "neutral": {
+    "fill": "#dacdb5"
+  }
+}

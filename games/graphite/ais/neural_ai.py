@@ -1,8 +1,9 @@
 """The learned agent from ml/, playable like any other AI.
 
 It plays the checkpoint named by the NEURAL_AI_CHECKPOINT environment
-variable, or ml/runs/latest.pt if that is not set. With no checkpoint at all
-it plays an untrained network, which moves legally but at random.
+variable, or ml/runs/latest.pt if that is not set, or, in a checkout without
+training runs, the network committed in checkpoints/neural_ai.pt. With no
+checkpoint at all it plays an untrained network, which moves legally but at random.
 
     NEURAL_AI_CHECKPOINT=ml/runs/demo/random.pt .venv/bin/python main.py --red-ai neural_ai
 
@@ -24,6 +25,7 @@ from pathlib import Path
 
 
 DEFAULT_CHECKPOINT = Path(__file__).resolve().parent.parent / "ml" / "runs" / "latest.pt"
+COMMITTED_CHECKPOINT = Path(__file__).resolve().parent.parent / "checkpoints" / "neural_ai.pt"
 # 0.2 (the user's choice, 2026-10-10): it plays its favourite route about 72% of the time,
 # against 28% drawing by the network's own odds (1.0), which shuffled units back and forth far
 # more and lost 33.5% to 66.5% to always playing the favourite. 0.8 changed too little (33%).
@@ -37,7 +39,8 @@ _loaded_version = None
 def choose_action(state):
     global _agent, _loaded_version
     if _agent is None or state.tick == 0:
-        path = Path(os.environ.get("NEURAL_AI_CHECKPOINT", DEFAULT_CHECKPOINT))
+        default = DEFAULT_CHECKPOINT if DEFAULT_CHECKPOINT.exists() else COMMITTED_CHECKPOINT
+        path = Path(os.environ.get("NEURAL_AI_CHECKPOINT", default))
         version = (path, path.stat().st_mtime) if path.exists() else (path, None)
         if _agent is None or version != _loaded_version:
             _agent = _load_agent(path)
