@@ -35,7 +35,7 @@ export function LeaderboardTable({ table, gameId, limit }: { table: Table; gameI
                 <Link href={`/games/${gameId}/bots#${entry.bot}`} className="bot-cell">
                   <BotAvatar id={entry.bot} kind={entry.kind} size={28} />
                   <span>{entry.name}</span>
-                  {entry.kind === "neural" && <span className="tag">neural</span>}
+                  {entry.kind === "neural" && !limit && <span className="tag">neural</span>}
                 </Link>
               </td>
               <td className="numeric">
@@ -48,9 +48,7 @@ export function LeaderboardTable({ table, gameId, limit }: { table: Table; gameI
                   {entry.wins} · {entry.draws} · {entry.losses}
                 </td>
               )}
-              <td className="numeric">
-                <ScoreBar value={entry.score} />
-              </td>
+              <td className="numeric">{limit ? percent(entry.score) : <ScoreBar value={entry.score} />}</td>
               {!limit && <td className="numeric">{formatThink(entry.think_ms_mean)}</td>}
               {!limit && <td className="numeric">{entry.errors + entry.refused}</td>}
             </tr>
