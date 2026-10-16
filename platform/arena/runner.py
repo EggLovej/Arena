@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import hashlib
 import random
+import signal
+import threading
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 
 from arena.contract import BotContext, Game, Outcome, state_hash
@@ -90,14 +93,19 @@ def play_match(
         raise ValueError(f"Map {map_id} has seats {match.seats}, but the lineup names {tuple(lineup)}")
 
     reports = {seat: SeatReport(lineup[seat]) for seat in match.seats}
-    bots = {}
+    bots = {}  # seat -> bot, or None once it has forfeited the match
     for seat in match.seats:
-        bot = game.load_bot(lineup[seat])
         context = BotContext(info.id, map_id, seat, match.seats, seat_seed(seed, seat), info.tick_seconds, info.max_ticks)
-        try:
-            bot.reset(context)
-        except Exception as error:  # a broken bot loses its moves, not the whole tournament
-            _note_error(reports[seat], f"reset: {error!r}")
+        bot = None
+        try:  # a broken bot loses its moves, not the whole tournament
+            with time_limit(info.move_time_limit):
+                bot = game.load_bot(lineup[seat])
+                bot.reset(context)
+        except OutOfTime:
+            _note_error(reports[seat], f"{'load' if bot is None else 'reset'}: took longer than {info.move_time_limit:g}s")
+            bot = None
+        except Exception as error:  # a bot that fails to reset still plays; one that fails to load cannot
+            _note_error(reports[seat], f"{'load' if bot is None else 'reset'}: {error!r}")
         bots[seat] = bot
 
     frames = FrameRecorder(keyframe_every) if record_replay else None
@@ -117,20 +125,32 @@ def play_match(
         actions = {}
         for seat in match.acting():
             report = reports[seat]
-            observation = match.observe(seat)
-            before = time.perf_counter()
-            try:
-                action = bots[seat].act(observation)
-            except Exception as error:
-                action = None
-                _note_error(report, repr(error))
-            spent = time.perf_counter() - before
             report.moves += 1
-            report.think_seconds += spent
-            report.slowest_seconds = max(report.slowest_seconds, spent)
+            action = None
+            if bots[seat] is not None:
+                observation = match.observe(seat)
+                limit = min(info.move_time_limit, info.match_time_limit - report.think_seconds)
+                before = time.perf_counter()
+                try:
+                    with time_limit(limit):
+                        action = bots[seat].act(observation)
+                except OutOfTime:
+                    bots[seat] = None
+                    if limit < info.move_time_limit:
+                        _note_error(report, f"out of time: used up its {info.match_time_limit:g}s for the match")
+                    else:
+                        _note_error(report, f"out of time: thought for more than {limit:g}s on one move")
+                except Exception as error:
+                    _note_error(report, repr(error))
+                spent = time.perf_counter() - before
+                report.think_seconds += spent
+                report.slowest_seconds = max(report.slowest_seconds, spent)
             if action is not None:
                 try:
                     encoded = game.action_to_json(action)
+                    # The match plays the action as the replay records it, so a replay always
+                    # plays back the same, whatever odd types a bot returned.
+                    action = game.action_from_json(encoded)
                 except (TypeError, ValueError) as error:
                     action = None
                     _note_error(report, f"not an action: {error}")
@@ -172,3 +192,31 @@ def _note_error(report: SeatReport, text: str) -> None:
     report.errors += 1
     if not report.first_error:
         report.first_error = text[:ERROR_TEXT_LIMIT]
+
+
+class OutOfTime(BaseException):
+    """A bot thought for too long. Not an ``Exception``, so a bot's own ``except Exception`` lets it through."""
+
+
+@contextmanager
+def time_limit(seconds: float):
+    """Interrupt the code inside with ``OutOfTime`` after ``seconds``. This needs Unix signals and
+    the main thread, which plays every match of the CLI and of the tournament's workers; anywhere
+    else only a limit already used up (``seconds`` <= 0) applies."""
+
+    if seconds <= 0:
+        raise OutOfTime
+    if not hasattr(signal, "setitimer") or threading.current_thread() is not threading.main_thread():
+        yield
+        return
+
+    def on_alarm(signum, frame):
+        raise OutOfTime
+
+    previous = signal.signal(signal.SIGALRM, on_alarm)
+    signal.setitimer(signal.ITIMER_REAL, seconds)
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous)

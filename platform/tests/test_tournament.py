@@ -60,3 +60,15 @@ def test_standings_make_one_table_per_match_size(race):
         for b, cell in head[a].items():
             assert cell["games"] == head[b][a]["games"]
             assert cell["points"] + head[b][a]["points"] == pytest.approx(cell["games"])
+
+
+def test_bots_with_equal_ratings_are_listed_by_id(race):
+    def row(winner, loser):
+        seats = {seat: {"bot": bot, "moves": 1, "errors": 0, "refused": 0, "think_ms_mean": 0.0, "think_ms_max": 0.0}
+                 for seat, bot in (("red", winner), ("blue", loser))}
+        return {"map": "short", "lineup": {"red": winner, "blue": loser}, "seats": seats,
+                "outcome": {"ranking": [["red"], ["blue"]], "reason": "finish", "ticks": 5}}
+
+    for names in (["amy", "zed"], ["zed", "amy"], ["kim", "bob"]):
+        rows = [row(names[0], names[1]), row(names[1], names[0])]
+        assert [entry["bot"] for entry in standings(race, rows)["2"]["entries"]] == sorted(names)

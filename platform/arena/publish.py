@@ -19,6 +19,7 @@ import json
 import os
 import shutil
 import subprocess
+import tomllib
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -162,11 +163,14 @@ _IGNORED_FILES = {
 
 def inputs_fingerprint(game: Game, settings: dict) -> str:
     """A hash of everything a tournament's results depend on: the shared code, the game's files
-    (rules, maps, bots, checkpoints) and the tournament settings. Unchanged inputs mean that
-    playing the tournament again only reshuffles the luck of the neural bots."""
+    (rules, maps, bots, checkpoints), the packages it pins (such as torch) and the tournament
+    settings. Unchanged inputs mean that playing the tournament again only reshuffles the luck
+    of the neural bots."""
 
     root = repo_root()
     digest = hashlib.sha256(json.dumps(settings, sort_keys=True).encode())
+    digest.update(_dependencies(root))
+    hashed = 0
     for path in _input_files(root, [Path("platform") / "arena", Path("games") / game.info.id]):
         relative = path.relative_to(root)
         if (
@@ -176,7 +180,20 @@ def inputs_fingerprint(game: Game, settings: dict) -> str:
         ):
             continue
         digest.update(relative.as_posix().encode() + b"\0" + path.read_bytes())
+        hashed += 1
+    if not hashed:
+        raise RuntimeError(f"Found no files of {game.info.id} under {root}: is ARENA_ROOT right?")
     return digest.hexdigest()[:16]
+
+
+def _dependencies(root: Path) -> bytes:
+    """The packages pyproject.toml asks for, with their versions (other settings there don't count)."""
+
+    path = root / "pyproject.toml"
+    if not path.is_file():
+        return b""
+    project = tomllib.loads(path.read_text()).get("project", {})
+    return json.dumps({key: project.get(key) for key in ("dependencies", "optional-dependencies")}, sort_keys=True).encode()
 
 
 def _input_files(root: Path, folders: list[Path]) -> list[Path]:

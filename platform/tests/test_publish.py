@@ -1,7 +1,11 @@
 import json
 
+import pytest
+
 from arena import publish
+from arena.registry import repo_root
 from arena.tournament import run, schedule
+from conftest import FIXTURES
 
 
 def test_published_files_and_rederived_tables(race, tmp_path):
@@ -13,7 +17,7 @@ def test_published_files_and_rederived_tables(race, tmp_path):
     publish.publish_results(race, tmp_path, rows, replays, "abc123", {"bots": None}, 1.5)
 
     games = json.loads((tmp_path / "games.json").read_text())
-    assert games == [{"id": "race", "name": "Race", "tagline": "Run to the goal.", "seats": ["red", "blue", "green"], "maps": 2, "bots": 6}]
+    assert games == [{"id": "race", "name": "Race", "tagline": "Run to the goal.", "seats": ["red", "blue", "green"], "maps": 2, "bots": 8}]
     game = json.loads((tmp_path / "race" / "game.json").read_text())
     assert [entry["id"] for entry in game["maps"]] == ["short", "long"]
     assert game["maps"][0]["start"] == {"runners": {"red": [0], "blue": [0]}}
@@ -58,3 +62,26 @@ def test_inputs_change_with_code_but_not_with_notes(race, tmp_path, monkeypatch)
     assert publish.inputs_fingerprint(race, {"bots": ["steady"]}) != original
     (root / "games" / "race" / "arena_game.py").write_text("x = 2\n")
     assert publish.inputs_fingerprint(race, settings) != original
+
+    before = publish.inputs_fingerprint(race, settings)
+    (root / "pyproject.toml").write_text('[project]\nname = "arena"\n[project.optional-dependencies]\nneural = ["torch==1"]\n')
+    pinned = publish.inputs_fingerprint(race, settings)
+    assert pinned != before
+    (root / "pyproject.toml").write_text('[project]\nname = "arena"\n[project.optional-dependencies]\nneural = ["torch==2"]\n')
+    assert publish.inputs_fingerprint(race, settings) != pinned
+    (root / "pyproject.toml").write_text('[project]\nname = "arena"\nversion = "9"\n[project.optional-dependencies]\nneural = ["torch==1"]\n')
+    assert publish.inputs_fingerprint(race, settings) == pinned
+
+
+def test_inputs_need_the_game_files(race, tmp_path, monkeypatch):
+    monkeypatch.setenv("ARENA_ROOT", str(tmp_path))
+    with pytest.raises(RuntimeError, match="is ARENA_ROOT right"):
+        publish.inputs_fingerprint(race, {})
+
+
+def test_a_relative_arena_root_stays_where_it_started(race, monkeypatch):
+    monkeypatch.chdir(FIXTURES.parent)
+    monkeypatch.setenv("ARENA_ROOT", FIXTURES.name)
+    assert repo_root() == FIXTURES
+    monkeypatch.chdir(FIXTURES / "games" / "race")  # as loading a game can
+    assert repo_root() == FIXTURES

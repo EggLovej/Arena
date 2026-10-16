@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import hashlib
 import random
+import time
+from dataclasses import dataclass
 
 from arena.contract import BotContext, BotInfo, GameInfo, MapInfo, Outcome, SeatInfo
 
@@ -22,9 +24,17 @@ INFO = GameInfo(
     max_ticks=40,
     rating_anchor=("steady", 1000.0),
 )
+
+
+@dataclass(frozen=True)
+class Track:
+    info: MapInfo
+    goal: int
+
+
 MAPS = {
-    "short": (MapInfo("short", "Short track", ("red", "blue"), "Ten steps."), 10),
-    "long": (MapInfo("long", "Long track", ("red", "blue", "green"), "Twenty steps."), 20),
+    "short": Track(MapInfo("short", "Short track", ("red", "blue"), "Ten steps."), 10),
+    "long": Track(MapInfo("long", "Long track", ("red", "blue", "green"), "Twenty steps."), 20),
 }
 
 
@@ -64,6 +74,15 @@ class Garbage(Steady):
         return object()
 
 
+class Sleeper(Steady):
+    def act(self, observation):
+        try:
+            time.sleep(0.1)
+        except Exception:  # running out of time is not an Exception, so this does not stop it
+            pass
+        return 2
+
+
 BOTS = {
     "steady": (BotInfo("steady", "Steady", "Always two steps."), Steady),
     "sprinter": (BotInfo("sprinter", "Sprinter", "Always three steps."), Sprinter),
@@ -71,12 +90,15 @@ BOTS = {
     "broken": (BotInfo("broken", "Broken", leaderboard=False), Broken),
     "cheater": (BotInfo("cheater", "Cheater", leaderboard=False), Cheater),
     "garbage": (BotInfo("garbage", "Garbage", leaderboard=False), Garbage),
+    "sleeper": (BotInfo("sleeper", "Sleeper", leaderboard=False), Sleeper),
+    "missing": (BotInfo("missing", "Missing", leaderboard=False), None),  # its code fails to load
 }
 
 
 class RaceMatch:
     def __init__(self, map_id: str, seed: int, positions: dict[str, int] | None = None, tick: int = 0):
-        info, self.goal = MAPS[map_id]
+        track = MAPS[map_id]
+        info, self.goal = track.info, track.goal
         self.map_id = map_id
         self.seed = seed
         self.seats = info.seats
@@ -97,7 +119,7 @@ class RaceMatch:
         refused = {}
         held = self._gust()
         for seat in self.seats:
-            action = actions.get(seat)
+            action = actions[seat]  # the runner names every acting seat
             if action is None:
                 continue
             if action not in (1, 2, 3):
@@ -129,13 +151,16 @@ class RaceGame:
     info = INFO
 
     def maps(self):
-        return tuple(info for info, _ in MAPS.values())
+        return tuple(track.info for track in MAPS.values())
 
     def bots(self):
         return tuple(info for info, _ in BOTS.values())
 
     def load_bot(self, bot_id):
-        return BOTS[bot_id][1]()
+        bot_class = BOTS[bot_id][1]
+        if bot_class is None:
+            raise ModuleNotFoundError("No module named 'missing_package'")
+        return bot_class()
 
     def new_match(self, map_id, seed):
         return RaceMatch(map_id, seed)

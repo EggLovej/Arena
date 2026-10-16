@@ -11,6 +11,8 @@ A replay (written by ``arena.runner.play_match``) holds:
 
 The rules are deterministic, so replaying the actions on a new match must
 reproduce every hash, keyframe and the result. ``verify`` checks exactly that.
+A replay recorded before the game's rules or maps changed (``is_current``) may
+no longer play back, and the next tournament replaces it.
 """
 
 from __future__ import annotations
@@ -46,14 +48,18 @@ def read_replay(path: Path) -> dict:
     return replay
 
 
+def is_current(game: Game, replay: dict) -> bool:
+    """Whether the replay was recorded with the game's rules and maps as they are now."""
+
+    return replay.get("fingerprint") in (None, game.fingerprint())
+
+
 def verify(game: Game, replay: dict) -> list[str]:
     """Play the recorded actions again; returns what differs (an empty list if nothing)."""
 
     problems = []
     if replay["game"] != game.info.id:
         return [f"replay is for {replay['game']}, not {game.info.id}"]
-    if replay.get("fingerprint") not in (None, game.fingerprint()):
-        problems.append("the game's rules, maps or bots changed since this replay was recorded")
 
     actions_by_tick: dict[int, dict[str, object]] = defaultdict(dict)
     for tick, seat, action in replay["actions"]:
@@ -76,7 +82,8 @@ def verify(game: Game, replay: dict) -> list[str]:
 
     check(0)
     while match.tick < final_tick:
-        match.step(actions_by_tick.get(match.tick, {}))
+        # As in a live match: every acting seat, with None where its bot did nothing.
+        match.step({seat: None for seat in match.acting()} | actions_by_tick.get(match.tick, {}))
         check(match.tick)
 
     if replay["hashes"].get("final") != state_hash(match.save_state()):

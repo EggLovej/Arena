@@ -54,7 +54,7 @@ def standings(game: Game, results: Iterable[dict]) -> dict:
                 head_to_head[b][a][1] += 1
 
         entries = []
-        for bot in sorted(bots_here, key=lambda name: -ratings[name].rating):
+        for bot in sorted(bots_here, key=lambda name: (-ratings[name].rating, name)):
             info = names.get(bot)
             entries.append(
                 {

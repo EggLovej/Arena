@@ -62,3 +62,13 @@ def test_the_neural_bots_play_their_committed_networks(graphite, bot):
     record = play_match(graphite, "classic", {"red": bot, "blue": "strategic_ai"}, seed=2)
     assert record.seats["red"].errors == 0
     assert sum(seat == "red" for _, seat, _ in record.replay["actions"]) > 10
+
+
+def test_an_action_naming_bases_by_anything_but_their_id_is_refused(graphite):
+    from game_types import SendAction
+
+    assert graphite.action_to_json(SendAction("north", "center", 3)) == ["north", "center", 3]
+    with pytest.raises(TypeError, match="source_id must be a base id"):
+        graphite.action_to_json(SendAction(["north"], "center", 3))
+    with pytest.raises(TypeError, match="target_id must be a base id"):
+        graphite.action_to_json(SendAction("north", 7, 3))

@@ -1,7 +1,8 @@
 # Plays every game's tournament and commits the results to web/public/data,
-# which Vercel then deploys. A game whose bots, maps, rules and shared match
-# code are unchanged since its last tournament is skipped, so this mostly runs
-# when something changed; the weekly run catches anything missed.
+# which Vercel then deploys. A game whose bots, maps, rules, shared match code
+# and pinned packages are unchanged since its last tournament is skipped, so
+# this mostly runs when something changed; the weekly run catches anything
+# missed.
 
 name: Tournament
 
@@ -13,6 +14,8 @@ on:
     paths:
       - "games/**"
       - "platform/arena/**"
+      - "pyproject.toml"
+      - ".github/workflows/tournament.yml"
   workflow_dispatch:
     inputs:
       force:
@@ -23,9 +26,10 @@ on:
 permissions:
   contents: write
 
+# A new run waits for the one playing to finish, which may take an hour or two.
 concurrency:
   group: tournament
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   tournament:
@@ -39,6 +43,7 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
       - name: Install
+        # The CPU build of the torch version pyproject.toml pins; keep the two in step.
         run: |
           pip install torch==2.14.0 --index-url https://download.pytorch.org/whl/cpu
           pip install -e ".[neural]"

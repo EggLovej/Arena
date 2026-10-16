@@ -137,21 +137,40 @@ def _tournament(args) -> int:
     publish.publish_results(game, output, results, replays, inputs, settings, time.perf_counter() - started)
     errors = sum(seat["errors"] for row in results for seat in row["seats"].values())
     print(f"Published {len(results)} matches and {len(replays)} replays to {output} ({errors} bot errors)")
+    failing = {}
+    for row in results:
+        for seat in row["seats"].values():
+            if seat["errors"]:
+                failing.setdefault(seat["bot"], seat["first_error"])
+    for bot, error in sorted(failing.items()):
+        print(f"  {bot} had errors, the first: {error}")
     return 0
 
 
 def _verify(args) -> int:
     from arena.registry import load_game
-    from arena.replay import read_replay, verify
+    from arena.replay import is_current, read_replay, verify
 
-    failed = 0
+    failed = stale = 0
     for path in args.replays:
         replay = read_replay(path)
-        problems = verify(load_game(replay["game"]), replay)
-        if problems:
+        game = load_game(replay["game"])
+        try:
+            problems = verify(game, replay)
+        except Exception as error:
+            problems = [f"could not be played back: {error!r}"]
+        if not problems:
+            continue
+        if is_current(game, replay):
             failed += 1
             print(f"{path.name}: {'; '.join(problems)}")
-    print(f"{len(args.replays) - failed} of {len(args.replays)} replays play back exactly")
+        else:
+            stale += 1
+    exact = len(args.replays) - failed - stale
+    print(f"{exact} of {len(args.replays)} replays play back exactly")
+    if stale:
+        # A rules or map change may change how old matches play; that is not an error.
+        print(f"{stale} recorded before the game's rules or maps changed no longer do; the next tournament replaces them")
     return 1 if failed else 0
 
 

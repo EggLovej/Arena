@@ -95,7 +95,7 @@ def run(
     # use one thread each, which is faster than several per match when all cores are busy.
     os.environ.setdefault("OMP_NUM_THREADS", "1")
     os.environ.setdefault("MKL_NUM_THREADS", "1")
-    os.environ.setdefault("ARENA_ROOT", str(repo_root()))
+    os.environ["ARENA_ROOT"] = str(repo_root())  # absolute: workers start in the game's folder
     context = multiprocessing.get_context("spawn")
     with ProcessPoolExecutor(workers, mp_context=context, initializer=_start_worker, initargs=(game_id,)) as pool:
         waiting = {}

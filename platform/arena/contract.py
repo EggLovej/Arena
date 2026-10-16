@@ -41,6 +41,10 @@ class GameInfo:
     # A bot whose rating is pinned, for example ("strategic_ai", 1000). Without one the
     # average bot sits at 1500.
     rating_anchor: tuple[str, float] | None = None
+    # How long a bot may think, in seconds: on one move (or loading and resetting), and in all
+    # over one match. A bot that runs out of time forfeits the rest of the match.
+    move_time_limit: float = 120.0
+    match_time_limit: float = 1800.0
 
 
 @dataclass(frozen=True)
@@ -125,7 +129,8 @@ class Match(Protocol):
     def observe(self, seat: str) -> Observation: ...
 
     def step(self, actions: dict[str, Action | None]) -> dict[str, str]:
-        """Advance one tick. Returns why any action was refused, by seat; refused actions do nothing."""
+        """Advance one tick. ``actions`` has every seat in ``acting()``, with None for a seat that
+        does nothing. Returns why any action was refused, by seat; refused actions do nothing."""
 
     def finished(self) -> bool: ...
 
@@ -156,7 +161,8 @@ class Game(Protocol):
     def restore_match(self, map_id: str, state: JSON) -> Match: ...
 
     def action_to_json(self, action: Action) -> JSON:
-        """Raise ``TypeError`` or ``ValueError`` for something that is not an action."""
+        """Raise ``TypeError`` or ``ValueError`` for something that is not an action. The match
+        is given ``action_from_json`` of the result, so it plays exactly what the replay records."""
 
     def action_from_json(self, data: JSON) -> Action: ...
 
