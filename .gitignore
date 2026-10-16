@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Training output stays local: only each neural bot's playing checkpoint is committed
+# (games/<game>/checkpoints/). Copy a network there to make a bot play it.
+games/*/ml/runs/
+games/*/benchmark_results.json
+# Colab notebooks are built from the code by `python -m ml colab build`, packed code and all.
+games/*/ml/colab/
+
+# Editors and systems
+.DS_Store
+.idea/
+.vscode/
+*.swp
