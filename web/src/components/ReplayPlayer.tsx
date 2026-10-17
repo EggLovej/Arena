@@ -11,6 +11,8 @@ import { decodeFrames } from "@/lib/frames.ts";
 import { describeOutcome, formatClock } from "@/lib/format.ts";
 import type { Replay, Seat, Snapshot } from "@/lib/types.ts";
 
+import { BotName } from "./BotName.tsx";
+
 const SPEEDS = [0.5, 1, 2, 4, 8, 16];
 
 type Props = {
@@ -129,7 +131,9 @@ export function ReplayPlayer({ gameId, replayUrl, seats, botNames, theme }: Prop
           const out = finished && place > 0;
           return (
             <div key={seat} className={`scoreboard-seat${out ? " is-out" : ""}`} style={{ "--seat": seatInfo[seat]?.color } as CSSProperties}>
-              <span className="scoreboard-name">{botNames[bot] ?? bot}</span>
+              <span className="scoreboard-name">
+                <BotName name={botNames[bot] ?? bot} />
+              </span>
               <span className="scoreboard-color">{seatInfo[seat]?.name ?? seat}</span>
               <span className="scoreboard-stats">
                 {stats[seat]

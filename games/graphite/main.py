@@ -3,6 +3,7 @@
 import argparse
 import sys
 
+from bot_names import bot_name
 from game import Game
 from game_types import BLUE, GREEN, RED
 from loading import available_ais, available_maps, load_ai, load_map
@@ -56,7 +57,7 @@ def play_visual(
     green_controller=None,
     player_names: dict[int, str] | None = None,
 ) -> tuple[int | None, bool]:
-    """``player_names`` labels the players in the window, for example {RED: "Strategic AI"}."""
+    """``player_names`` labels the players in the window, for example {RED: "Strategic"}."""
 
     import pygame
 
@@ -131,9 +132,9 @@ def play_visual(
 
 
 def controller_label(name: str) -> str:
-    """How an AI file is shown to people: ``strategic_ai`` -> ``Strategic AI``."""
+    """How an AI file is shown to people: ``strategic_ai`` -> ``Strategic``."""
 
-    return name.removesuffix(".py").removesuffix("_ai").replace("_", " ").title() + " AI"
+    return bot_name(name)
 
 
 def player_name(player_id: int | None) -> str:

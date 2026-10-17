@@ -6,6 +6,7 @@ import { percent } from "@/lib/format.ts";
 import type { Table } from "@/lib/types.ts";
 
 import { BotAvatar } from "./BotAvatar.tsx";
+import { BotName } from "./BotName.tsx";
 
 export function LeaderboardTable({ table, gameId, limit }: { table: Table; gameId: string; limit?: number }) {
   const entries = limit ? table.entries.slice(0, limit) : table.entries;
@@ -34,7 +35,7 @@ export function LeaderboardTable({ table, gameId, limit }: { table: Table; gameI
               <td>
                 <Link href={`/games/${gameId}/bots#${entry.bot}`} className="bot-cell">
                   <BotAvatar id={entry.bot} kind={entry.kind} size={28} />
-                  <span>{entry.name}</span>
+                  <BotName name={entry.name} />
                   {entry.kind === "neural" && !limit && <span className="tag">neural</span>}
                 </Link>
               </td>

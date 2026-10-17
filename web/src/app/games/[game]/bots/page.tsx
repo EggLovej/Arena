@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { BotAvatar } from "@/components/BotAvatar.tsx";
+import { BotName } from "@/components/BotName.tsx";
 import { ScoreBar } from "@/components/LeaderboardTable.tsx";
 import { getGame, getLeaderboard } from "@/lib/data.ts";
 
@@ -31,7 +32,9 @@ export default async function Bots({ params }: Params) {
             <div className="bot-card-head">
               <BotAvatar id={bot.id} kind={bot.kind} size={48} />
               <div>
-                <h2>{bot.name}</h2>
+                <h2>
+                  <BotName name={bot.name} />
+                </h2>
                 <span className="tag">{bot.kind}</span> <code>{bot.id}</code>
               </div>
             </div>

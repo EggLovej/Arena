@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { BotName } from "@/components/BotName.tsx";
 import { MapPreview } from "@/components/MapPreview.tsx";
 import { gameView } from "@/games/index.ts";
 import { getGame, getLeaderboard, listGames } from "@/lib/data.ts";
@@ -38,7 +39,9 @@ export default function Home() {
                   </li>
                   {leader && (
                     <li>
-                      Leader: <strong>{leader.name}</strong>
+                      Leader: <strong>
+                        <BotName name={leader.name} />
+                      </strong>
                     </li>
                   )}
                 </ul>
