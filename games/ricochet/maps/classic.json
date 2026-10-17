@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "classic",
+  "name": "Classic",
+  "width": 960,
+  "height": 640,
+  "spawns": [
+    {"player_id": 0, "position": {"x": 120, "y": 320}, "aim": {"x": 1, "y": 0}},
+    {"player_id": 1, "position": {"x": 840, "y": 320}, "aim": {"x": -1, "y": 0}}
+  ],
+  "walls": [
+    {"id": "center", "x": 400, "y": 230, "width": 160, "height": 180}
+  ]
+}
+

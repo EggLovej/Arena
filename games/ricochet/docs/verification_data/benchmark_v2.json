@@ -1,0 +1,22 @@
+{
+  "engine_verification_True": {
+    "steps": 10000,
+    "seconds": 0.5321622919873334,
+    "steps_per_second": 18791.26001704386
+  },
+  "engine_verification_False": {
+    "steps": 10000,
+    "seconds": 0.20024437498068437,
+    "steps_per_second": 49938.98081264256
+  },
+  "gym": {
+    "steps": 10000,
+    "seconds": 0.8414764999761246,
+    "steps_per_second": 11883.87316851241
+  },
+  "scripted_match": {
+    "ticks": 424,
+    "seconds": 0.026271709008142352,
+    "steps_per_second": 16139.033812706677
+  }
+}

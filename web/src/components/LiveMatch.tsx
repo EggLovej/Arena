@@ -106,7 +106,15 @@ export function LiveMatch({ gameId, gameName, replayUrl, map, lineup, seats, bot
         {order.slice(half).map((seat) => panel(seat, true))}
       </div>
       <div className="stage-board">
-        <Board board={board} snapshot={snapshot} tick={replay ? position : 0} tickSeconds={tickSeconds} theme={theme} seats={seats} />
+        <Board
+          board={board}
+          snapshot={snapshot}
+          next={replay ? snapshots[tick + 1] : undefined}
+          tick={replay ? position : 0}
+          tickSeconds={tickSeconds}
+          theme={theme}
+          seats={seats}
+        />
         {finished && replay && (
           <div className="replay-result">
             <p>{describeOutcome(replay.outcome, lineup, botNames, seatInfo, tickSeconds)}</p>

@@ -1,0 +1,3906 @@
+{
+  "suite": "test",
+  "quick": false,
+  "games": 66,
+  "valid_games": 66,
+  "score": 0.3333333333333333,
+  "wins": 0,
+  "draws": 44,
+  "losses": 22,
+  "matches": [
+    {
+      "map_id": "channels",
+      "seed": 0,
+      "controllers": [
+        "checkpoint",
+        "close_range_ai"
+      ],
+      "winner": 1,
+      "draw": false,
+      "ticks": 209,
+      "seconds": 6.966666666666667,
+      "health": [
+        0,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.1340145259119713,
+        0.019806215782431465
+      ],
+      "max_action_ms": [
+        5.5538329761475325,
+        0.35904202377423644
+      ],
+      "final_state_hash": "c8915a40eb5e8e4526623b2ad9bf289d3deb22caa8b4802b2a3ec2f46bf39d19",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        4
+      ],
+      "blocks": [
+        1,
+        0
+      ],
+      "shield_activations": [
+        3,
+        0
+      ],
+      "damage_taken": [
+        3,
+        0
+      ],
+      "energy_spent": [
+        176.52155246072581,
+        180.7999999999998
+      ],
+      "jitter": false,
+      "wall_seconds": 0.0437112909858115,
+      "learner_seat": 0,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 0,
+      "controllers": [
+        "close_range_ai",
+        "checkpoint"
+      ],
+      "winner": 0,
+      "draw": false,
+      "ticks": 214,
+      "seconds": 7.133333333333333,
+      "health": [
+        3,
+        0
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.019241215239026558,
+        0.10317363357389016
+      ],
+      "max_action_ms": [
+        0.36579195875674486,
+        0.16649998724460602
+      ],
+      "final_state_hash": "a08efd303fc1359e2deb4b2c03514ab4e4773f183662176eea3881c0f91a9b1e",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        4,
+        0
+      ],
+      "blocks": [
+        0,
+        1
+      ],
+      "shield_activations": [
+        0,
+        2
+      ],
+      "damage_taken": [
+        0,
+        3
+      ],
+      "energy_spent": [
+        182.3999999999998,
+        166.43039735580638
+      ],
+      "jitter": false,
+      "wall_seconds": 0.034990709042176604,
+      "learner_seat": 1,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10000,
+      "controllers": [
+        "checkpoint",
+        "close_range_ai"
+      ],
+      "winner": 1,
+      "draw": false,
+      "ticks": 145,
+      "seconds": 4.833333333333333,
+      "health": [
+        0,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10696321019324763,
+        0.02395170379494285
+      ],
+      "max_action_ms": [
+        0.278332969173789,
+        0.37154200254008174
+      ],
+      "final_state_hash": "840508f80067b7da908bb10f66467e177df50b368bb43204aaea22e127bbd0d3",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        2,
+        3
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        3,
+        0
+      ],
+      "damage_taken": [
+        3,
+        0
+      ],
+      "energy_spent": [
+        142.95462650334866,
+        155.1999999999998
+      ],
+      "jitter": true,
+      "wall_seconds": 0.028331125038675964,
+      "learner_seat": 0,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10000,
+      "controllers": [
+        "close_range_ai",
+        "checkpoint"
+      ],
+      "winner": 0,
+      "draw": false,
+      "ticks": 144,
+      "seconds": 4.8,
+      "health": [
+        3,
+        0
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.028674488324516762,
+        0.1041001135793825
+      ],
+      "max_action_ms": [
+        0.8894169586710632,
+        0.12512499233707786
+      ],
+      "final_state_hash": "e9c582a17e8b3b5bff915b14c632a9466a207e7333bae7662967425b222698ff",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        0,
+        1
+      ],
+      "damage_taken": [
+        0,
+        3
+      ],
+      "energy_spent": [
+        154.13333333333313,
+        140.1803162975599
+      ],
+      "jitter": true,
+      "wall_seconds": 0.026017250027507544,
+      "learner_seat": 1,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10001,
+      "controllers": [
+        "checkpoint",
+        "close_range_ai"
+      ],
+      "winner": 1,
+      "draw": false,
+      "ticks": 208,
+      "seconds": 6.933333333333334,
+      "health": [
+        0,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10489301068726212,
+        0.020501773038771577
+      ],
+      "max_action_ms": [
+        0.12220896314829588,
+        0.3357499954290688
+      ],
+      "final_state_hash": "5db49ead224359e3cc1f3ce65a7579005841add6ccedc192efebc1341227c480",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        4
+      ],
+      "blocks": [
+        1,
+        0
+      ],
+      "shield_activations": [
+        3,
+        0
+      ],
+      "damage_taken": [
+        3,
+        0
+      ],
+      "energy_spent": [
+        176.79246593098208,
+        180.7999999999998
+      ],
+      "jitter": true,
+      "wall_seconds": 0.038766957994084805,
+      "learner_seat": 0,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10001,
+      "controllers": [
+        "close_range_ai",
+        "checkpoint"
+      ],
+      "winner": 0,
+      "draw": false,
+      "ticks": 137,
+      "seconds": 4.566666666666666,
+      "health": [
+        3,
+        0
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.029378670886376478,
+        0.10374297955528881
+      ],
+      "max_action_ms": [
+        0.8454159833490849,
+        0.12224999954923987
+      ],
+      "final_state_hash": "ead702c5dc7f0df429bcaa372dfad94aac53e7ec92ce2d0001ca0e12a8932548",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        0,
+        1
+      ],
+      "damage_taken": [
+        0,
+        3
+      ],
+      "energy_spent": [
+        151.9999999999998,
+        139.8635625201579
+      ],
+      "jitter": true,
+      "wall_seconds": 0.024786958005279303,
+      "learner_seat": 1,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10002,
+      "controllers": [
+        "checkpoint",
+        "close_range_ai"
+      ],
+      "winner": 1,
+      "draw": false,
+      "ticks": 227,
+      "seconds": 7.566666666666666,
+      "health": [
+        0,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10569146188131907,
+        0.02071711912726581
+      ],
+      "max_action_ms": [
+        0.12016703840345144,
+        0.3672500024549663
+      ],
+      "final_state_hash": "2bf57652a8624a9e173c6d0dddb9a750a643499ada003d5dbdb1c4f37dc66ef4",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        4,
+        4
+      ],
+      "blocks": [
+        1,
+        0
+      ],
+      "shield_activations": [
+        2,
+        0
+      ],
+      "damage_taken": [
+        3,
+        0
+      ],
+      "energy_spent": [
+        181.36434626154264,
+        188.26666666666645
+      ],
+      "jitter": true,
+      "wall_seconds": 0.04363745800219476,
+      "learner_seat": 0,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10002,
+      "controllers": [
+        "close_range_ai",
+        "checkpoint"
+      ],
+      "winner": 0,
+      "draw": false,
+      "ticks": 240,
+      "seconds": 8.0,
+      "health": [
+        3,
+        0
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.02183712009961406,
+        0.10334197577321902
+      ],
+      "max_action_ms": [
+        0.6632920121774077,
+        0.122375029604882
+      ],
+      "final_state_hash": "9942103e14d6181f3c54fe7fdc8dec26f2066cd497e3796217e912c9d9984444",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        4,
+        0
+      ],
+      "blocks": [
+        0,
+        1
+      ],
+      "shield_activations": [
+        0,
+        3
+      ],
+      "damage_taken": [
+        0,
+        3
+      ],
+      "energy_spent": [
+        193.06666666666644,
+        192.69765852545822
+      ],
+      "jitter": true,
+      "wall_seconds": 0.04081933299312368,
+      "learner_seat": 1,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10003,
+      "controllers": [
+        "checkpoint",
+        "close_range_ai"
+      ],
+      "winner": 1,
+      "draw": false,
+      "ticks": 144,
+      "seconds": 4.8,
+      "health": [
+        0,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.1046313429671702,
+        0.02444761008114761
+      ],
+      "max_action_ms": [
+        0.12120901374146342,
+        0.37700001848861575
+      ],
+      "final_state_hash": "56a334d3a4832300af7de09d7a4d2e5007b07094e9149f901a05baf0f8be1242",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        2,
+        3
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        3,
+        0
+      ],
+      "damage_taken": [
+        3,
+        0
+      ],
+      "energy_spent": [
+        141.74733488908737,
+        154.66666666666646
+      ],
+      "jitter": true,
+      "wall_seconds": 0.027563750045374036,
+      "learner_seat": 0,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10003,
+      "controllers": [
+        "close_range_ai",
+        "checkpoint"
+      ],
+      "winner": 0,
+      "draw": false,
+      "ticks": 152,
+      "seconds": 5.066666666666666,
+      "health": [
+        3,
+        0
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.03572998416769367,
+        0.10396297684086389
+      ],
+      "max_action_ms": [
+        1.16004201117903,
+        0.126624945551157
+      ],
+      "final_state_hash": "6ef0c791f25ca27e3d17afebf67fca6d80c4e3f050e0de949312fd873b6f14fc",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        0,
+        1
+      ],
+      "damage_taken": [
+        0,
+        3
+      ],
+      "energy_spent": [
+        157.33333333333312,
+        140.1859292413325
+      ],
+      "jitter": true,
+      "wall_seconds": 0.028381959011312574,
+      "learner_seat": 1,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10004,
+      "controllers": [
+        "checkpoint",
+        "close_range_ai"
+      ],
+      "winner": 1,
+      "draw": false,
+      "ticks": 121,
+      "seconds": 4.033333333333333,
+      "health": [
+        0,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10615049414952432,
+        0.023424234298973782
+      ],
+      "max_action_ms": [
+        0.1212499919347465,
+        0.31812500674277544
+      ],
+      "final_state_hash": "d1314a3090144aee89a2bd99b581fd9f8c4003c8d5227e79435f2861e76bcb2e",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        2,
+        3
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        2,
+        0
+      ],
+      "damage_taken": [
+        3,
+        0
+      ],
+      "energy_spent": [
+        124.962614160201,
+        145.59999999999982
+      ],
+      "jitter": true,
+      "wall_seconds": 0.025053041987121105,
+      "learner_seat": 0,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10004,
+      "controllers": [
+        "close_range_ai",
+        "checkpoint"
+      ],
+      "winner": 0,
+      "draw": false,
+      "ticks": 205,
+      "seconds": 6.833333333333333,
+      "health": [
+        3,
+        0
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.022086799258320796,
+        0.10311318044664293
+      ],
+      "max_action_ms": [
+        0.7379580056294799,
+        0.11929101310670376
+      ],
+      "final_state_hash": "b4be66edf900b84eaf8f7d5a4073d9b947bc89635edcd91fa78177a253eb0dee",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        4,
+        0
+      ],
+      "blocks": [
+        0,
+        1
+      ],
+      "shield_activations": [
+        0,
+        2
+      ],
+      "damage_taken": [
+        0,
+        3
+      ],
+      "energy_spent": [
+        179.19999999999982,
+        166.02166694210842
+      ],
+      "jitter": true,
+      "wall_seconds": 0.035097917017992586,
+      "learner_seat": 1,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10005,
+      "controllers": [
+        "checkpoint",
+        "close_range_ai"
+      ],
+      "winner": 1,
+      "draw": false,
+      "ticks": 218,
+      "seconds": 7.266666666666667,
+      "health": [
+        0,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10513187356190672,
+        0.021773713551154105
+      ],
+      "max_action_ms": [
+        0.11916697258129716,
+        0.34737499663606286
+      ],
+      "final_state_hash": "023cf8c13d003c739cdbc3b0610c9ad76c6dff4c2cf6ff131f3643e3a436999e",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        4
+      ],
+      "blocks": [
+        1,
+        0
+      ],
+      "shield_activations": [
+        3,
+        0
+      ],
+      "damage_taken": [
+        3,
+        0
+      ],
+      "energy_spent": [
+        178.0507960542821,
+        183.46666666666647
+      ],
+      "jitter": true,
+      "wall_seconds": 0.042166666011326015,
+      "learner_seat": 0,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10005,
+      "controllers": [
+        "close_range_ai",
+        "checkpoint"
+      ],
+      "winner": 0,
+      "draw": false,
+      "ticks": 144,
+      "seconds": 4.8,
+      "health": [
+        3,
+        0
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.03348530541794995,
+        0.10339842871568787
+      ],
+      "max_action_ms": [
+        0.850207987241447,
+        0.11929101310670376
+      ],
+      "final_state_hash": "d138f8dbc2d53aaf4bab073506d36b41a9b8e639c1bf694edea492ef6f2cebba",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        0,
+        1
+      ],
+      "damage_taken": [
+        0,
+        3
+      ],
+      "energy_spent": [
+        153.5999999999998,
+        140.12868461466059
+      ],
+      "jitter": true,
+      "wall_seconds": 0.02675741701386869,
+      "learner_seat": 1,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10006,
+      "controllers": [
+        "checkpoint",
+        "close_range_ai"
+      ],
+      "winner": 1,
+      "draw": false,
+      "ticks": 134,
+      "seconds": 4.466666666666667,
+      "health": [
+        0,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.1051473429551654,
+        0.02400276821051071
+      ],
+      "max_action_ms": [
+        0.118332973215729,
+        0.33845799043774605
+      ],
+      "final_state_hash": "965e6d6fe3ef2ed270f43503bd242405c6153187e6ed164d41eef3f9e2e09b93",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        1,
+        3
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        4,
+        0
+      ],
+      "damage_taken": [
+        3,
+        0
+      ],
+      "energy_spent": [
+        138.89470027168053,
+        149.86666666666648
+      ],
+      "jitter": true,
+      "wall_seconds": 0.0256307499948889,
+      "learner_seat": 0,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10006,
+      "controllers": [
+        "close_range_ai",
+        "checkpoint"
+      ],
+      "winner": 0,
+      "draw": false,
+      "ticks": 139,
+      "seconds": 4.633333333333333,
+      "health": [
+        3,
+        0
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.0325428697166683,
+        0.1034807897903186
+      ],
+      "max_action_ms": [
+        0.831458019092679,
+        0.11779199121519923
+      ],
+      "final_state_hash": "ea3755b1cdb627019f92e1b655356ac267073cd09f2019a48a8794a195db0868",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        0,
+        1
+      ],
+      "damage_taken": [
+        0,
+        3
+      ],
+      "energy_spent": [
+        151.46666666666647,
+        140.04367953796043
+      ],
+      "jitter": true,
+      "wall_seconds": 0.025794249959290028,
+      "learner_seat": 1,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10007,
+      "controllers": [
+        "checkpoint",
+        "close_range_ai"
+      ],
+      "winner": 1,
+      "draw": false,
+      "ticks": 217,
+      "seconds": 7.233333333333333,
+      "health": [
+        0,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10541534992278241,
+        0.020381737841627976
+      ],
+      "max_action_ms": [
+        0.1181670231744647,
+        0.3250839654356241
+      ],
+      "final_state_hash": "8721ddc684505814045ae2a9029520fbccadfb5de4c9d932a5f3209bd549befe",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        4
+      ],
+      "blocks": [
+        1,
+        0
+      ],
+      "shield_activations": [
+        3,
+        0
+      ],
+      "damage_taken": [
+        3,
+        0
+      ],
+      "energy_spent": [
+        177.51898856809507,
+        183.9999999999998
+      ],
+      "jitter": true,
+      "wall_seconds": 0.04147962498245761,
+      "learner_seat": 0,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10007,
+      "controllers": [
+        "close_range_ai",
+        "checkpoint"
+      ],
+      "winner": 0,
+      "draw": false,
+      "ticks": 214,
+      "seconds": 7.133333333333333,
+      "health": [
+        3,
+        0
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.02464019937144819,
+        0.10294312171672829
+      ],
+      "max_action_ms": [
+        0.5287080421112478,
+        0.11954095680266619
+      ],
+      "final_state_hash": "fe1d7408ac1d5739457ecbf18058612d6a370f219d60fda10cdcf18fc4d7bc70",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        4,
+        0
+      ],
+      "blocks": [
+        0,
+        1
+      ],
+      "shield_activations": [
+        0,
+        2
+      ],
+      "damage_taken": [
+        0,
+        3
+      ],
+      "energy_spent": [
+        182.3999999999998,
+        166.51648956777512
+      ],
+      "jitter": true,
+      "wall_seconds": 0.037138333020266145,
+      "learner_seat": 1,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10008,
+      "controllers": [
+        "checkpoint",
+        "close_range_ai"
+      ],
+      "winner": 1,
+      "draw": false,
+      "ticks": 237,
+      "seconds": 7.8999999999999995,
+      "health": [
+        0,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10748773902646788,
+        0.02157275898004823
+      ],
+      "max_action_ms": [
+        0.36795902997255325,
+        0.35987497540190816
+      ],
+      "final_state_hash": "2ea50b328aeb72efedbf26be340a9bcd2044b18dee06c57c9f29033d7f0c6204",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        4
+      ],
+      "blocks": [
+        1,
+        0
+      ],
+      "shield_activations": [
+        3,
+        0
+      ],
+      "damage_taken": [
+        3,
+        0
+      ],
+      "energy_spent": [
+        180.53350490518483,
+        191.99999999999977
+      ],
+      "jitter": true,
+      "wall_seconds": 0.044930500036571175,
+      "learner_seat": 0,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10008,
+      "controllers": [
+        "close_range_ai",
+        "checkpoint"
+      ],
+      "winner": 0,
+      "draw": false,
+      "ticks": 155,
+      "seconds": 5.166666666666667,
+      "health": [
+        3,
+        0
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.03265269896796634,
+        0.10520162196048806
+      ],
+      "max_action_ms": [
+        0.6172920111566782,
+        0.1347920042462647
+      ],
+      "final_state_hash": "1c6a7e22b3f0d0f1ffe5c78f450dfcc01e5cb6129fd4a9a8d9bd5a1d24cb4b87",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        0,
+        1
+      ],
+      "damage_taken": [
+        0,
+        3
+      ],
+      "energy_spent": [
+        157.86666666666645,
+        140.5087337532625
+      ],
+      "jitter": true,
+      "wall_seconds": 0.028813583019655198,
+      "learner_seat": 1,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10009,
+      "controllers": [
+        "checkpoint",
+        "close_range_ai"
+      ],
+      "winner": 1,
+      "draw": false,
+      "ticks": 211,
+      "seconds": 7.033333333333333,
+      "health": [
+        0,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10599980601970266,
+        0.019953213742453058
+      ],
+      "max_action_ms": [
+        0.12862496078014374,
+        0.34500000765547156
+      ],
+      "final_state_hash": "f9e935dc2aa95623d2d47af555647631f2f44640a3168dd94688b834f13d0097",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        4
+      ],
+      "blocks": [
+        1,
+        0
+      ],
+      "shield_activations": [
+        3,
+        0
+      ],
+      "damage_taken": [
+        3,
+        0
+      ],
+      "energy_spent": [
+        175.51483812779088,
+        181.86666666666648
+      ],
+      "jitter": true,
+      "wall_seconds": 0.03956795803969726,
+      "learner_seat": 0,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10009,
+      "controllers": [
+        "close_range_ai",
+        "checkpoint"
+      ],
+      "winner": 0,
+      "draw": false,
+      "ticks": 211,
+      "seconds": 7.033333333333333,
+      "health": [
+        3,
+        0
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.021272324305910494,
+        0.10410487354993468
+      ],
+      "max_action_ms": [
+        0.8159999852068722,
+        0.12304197298362851
+      ],
+      "final_state_hash": "55a9e2de67f92848a95a9051fba9a1523749abb6c041afb69688d064a809b853",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        4,
+        0
+      ],
+      "blocks": [
+        0,
+        1
+      ],
+      "shield_activations": [
+        0,
+        2
+      ],
+      "damage_taken": [
+        0,
+        3
+      ],
+      "energy_spent": [
+        181.33333333333314,
+        166.08454009727168
+      ],
+      "jitter": true,
+      "wall_seconds": 0.03600304201245308,
+      "learner_seat": 1,
+      "opponent": "close_range_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 0,
+      "controllers": [
+        "checkpoint",
+        "bank_shot_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        1
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10219031205418071,
+        0.013416353699371771
+      ],
+      "max_action_ms": [
+        0.1526669948361814,
+        0.023874978069216013
+      ],
+      "final_state_hash": "85d5d8fd84b10df6e6ab1353fe7b3c7cf101c4003b62425b4c07dac8275a444b",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        18,
+        3
+      ],
+      "blocks": [
+        1,
+        0
+      ],
+      "shield_activations": [
+        19,
+        0
+      ],
+      "damage_taken": [
+        0,
+        2
+      ],
+      "energy_spent": [
+        1149.6545951736648,
+        1179.599999999992
+      ],
+      "jitter": false,
+      "wall_seconds": 0.4335246660048142,
+      "learner_seat": 0,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 0,
+      "controllers": [
+        "bank_shot_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.012714193176685108,
+        0.10181126829357473
+      ],
+      "max_action_ms": [
+        0.021458021365106106,
+        0.22112502483651042
+      ],
+      "final_state_hash": "4cf01f14f74951797e93adca09221878b9b5480a589a83a1d41a83999963f64d",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        2
+      ],
+      "blocks": [
+        0,
+        1
+      ],
+      "shield_activations": [
+        0,
+        37
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        1179.5999999999915,
+        1176.182153721862
+      ],
+      "jitter": false,
+      "wall_seconds": 0.406692499993369,
+      "learner_seat": 1,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10000,
+      "controllers": [
+        "checkpoint",
+        "bank_shot_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        2,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10424619685013399,
+        0.014714405276916094
+      ],
+      "max_action_ms": [
+        0.1355410204268992,
+        0.022833002731204033
+      ],
+      "final_state_hash": "9c746e0ec0f307957886a58dfadcbb9eda5f7730de104cf72ab4d3bf0e8b6219",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        16,
+        3
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        21,
+        0
+      ],
+      "damage_taken": [
+        1,
+        0
+      ],
+      "energy_spent": [
+        1165.9555843299886,
+        1179.5999999999956
+      ],
+      "jitter": true,
+      "wall_seconds": 0.45791020803153515,
+      "learner_seat": 0,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10000,
+      "controllers": [
+        "bank_shot_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        2,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.013882653115110265,
+        0.10354585639477053
+      ],
+      "max_action_ms": [
+        0.022290972992777824,
+        0.1570410095155239
+      ],
+      "final_state_hash": "ef0b0a339e5ed22c1115a1f3ba07d47100e044fcf5ca3a46a5bfadbdf1cfae47",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        7
+      ],
+      "blocks": [
+        0,
+        1
+      ],
+      "shield_activations": [
+        0,
+        31
+      ],
+      "damage_taken": [
+        1,
+        0
+      ],
+      "energy_spent": [
+        1179.5999999999954,
+        1179.356830252597
+      ],
+      "jitter": true,
+      "wall_seconds": 0.43676662497455254,
+      "learner_seat": 1,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10001,
+      "controllers": [
+        "checkpoint",
+        "bank_shot_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        2,
+        2
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10606800682446056,
+        0.015153196549767422
+      ],
+      "max_action_ms": [
+        0.18162501510232687,
+        0.03145798109471798
+      ],
+      "final_state_hash": "87ddd37587df6838260ef9463b365ffa9f41fb26f1f5b95d45cf1408938ce9a4",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        17,
+        3
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        20,
+        0
+      ],
+      "damage_taken": [
+        1,
+        1
+      ],
+      "energy_spent": [
+        1163.0614036159884,
+        1179.5999999999922
+      ],
+      "jitter": true,
+      "wall_seconds": 0.4656894580111839,
+      "learner_seat": 0,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10001,
+      "controllers": [
+        "bank_shot_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        2,
+        2
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.013907904331399885,
+        0.10548792570329237
+      ],
+      "max_action_ms": [
+        0.023667002096772194,
+        0.1342500327154994
+      ],
+      "final_state_hash": "ed571db6cc46345923a25bf977c57531a24b87037d703b0c8840f9b47f5fd163",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        7
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        0,
+        30
+      ],
+      "damage_taken": [
+        1,
+        1
+      ],
+      "energy_spent": [
+        1179.5999999999926,
+        1160.9430334581357
+      ],
+      "jitter": true,
+      "wall_seconds": 0.44176750001497567,
+      "learner_seat": 1,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10002,
+      "controllers": [
+        "checkpoint",
+        "bank_shot_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        2,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10571236388016216,
+        0.014915229338738654
+      ],
+      "max_action_ms": [
+        1.3843749766238034,
+        0.03724999260157347
+      ],
+      "final_state_hash": "c1760b5ba59323aecfc7a77cd46300068401e3a8a0991e3fea3ac7c7d27af185",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        15,
+        3
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        22,
+        0
+      ],
+      "damage_taken": [
+        1,
+        0
+      ],
+      "energy_spent": [
+        1171.2248924080398,
+        1179.5999999999933
+      ],
+      "jitter": true,
+      "wall_seconds": 0.46143004100304097,
+      "learner_seat": 0,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10002,
+      "controllers": [
+        "bank_shot_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.013254239801662387,
+        0.10530619192178603
+      ],
+      "max_action_ms": [
+        0.023792032152414322,
+        0.1812499831430614
+      ],
+      "final_state_hash": "5dfab503eda87df4629725ee1873d1492a2720c41a3a222d72bd7f1aa1e4cd3f",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        19
+      ],
+      "blocks": [
+        0,
+        1
+      ],
+      "shield_activations": [
+        0,
+        18
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        1179.599999999996,
+        1151.9658713913443
+      ],
+      "jitter": true,
+      "wall_seconds": 0.49629391700727865,
+      "learner_seat": 1,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10003,
+      "controllers": [
+        "checkpoint",
+        "bank_shot_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        2,
+        2
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10572779574431479,
+        0.01483622177383276
+      ],
+      "max_action_ms": [
+        0.1872499706223607,
+        0.023124972358345985
+      ],
+      "final_state_hash": "c6e2410257533e745c58d74870701daff1434df7bf061dee990b3cc34c958da1",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        18,
+        3
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        19,
+        0
+      ],
+      "damage_taken": [
+        1,
+        1
+      ],
+      "energy_spent": [
+        1174.1799949200397,
+        1179.5999999999922
+      ],
+      "jitter": true,
+      "wall_seconds": 0.4643403749796562,
+      "learner_seat": 0,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10003,
+      "controllers": [
+        "bank_shot_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        2,
+        2
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.014190803092249014,
+        0.10637601296400169
+      ],
+      "max_action_ms": [
+        0.026499968953430653,
+        0.24683302035555243
+      ],
+      "final_state_hash": "44f35e730a4f4d2191484763254f97488ffda90830b86ec5a807db3a78ed3ded",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        4,
+        6
+      ],
+      "blocks": [
+        0,
+        1
+      ],
+      "shield_activations": [
+        0,
+        34
+      ],
+      "damage_taken": [
+        1,
+        1
+      ],
+      "energy_spent": [
+        1179.5999999999915,
+        1178.0194967126063
+      ],
+      "jitter": true,
+      "wall_seconds": 0.4486679169931449,
+      "learner_seat": 1,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10004,
+      "controllers": [
+        "checkpoint",
+        "bank_shot_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        1
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10508535294017445,
+        0.015031837888441429
+      ],
+      "max_action_ms": [
+        0.2239589812234044,
+        0.04654203075915575
+      ],
+      "final_state_hash": "944ee9d903a99c4929d77f7370a2ca7160df2a43b26d7af6fac4859b1e784a80",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        19,
+        3
+      ],
+      "blocks": [
+        1,
+        0
+      ],
+      "shield_activations": [
+        18,
+        0
+      ],
+      "damage_taken": [
+        0,
+        2
+      ],
+      "energy_spent": [
+        1164.9934784577788,
+        1179.6000000000076
+      ],
+      "jitter": true,
+      "wall_seconds": 0.46512258402071893,
+      "learner_seat": 0,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10004,
+      "controllers": [
+        "bank_shot_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        1,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.01414705464547431,
+        0.1059588366964211
+      ],
+      "max_action_ms": [
+        0.031041039619594812,
+        0.196124950889498
+      ],
+      "final_state_hash": "df4f6e1c9ec15b7295b7dc223ba38e41d4d3ac9159b38732daf579ad56e8826b",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        9
+      ],
+      "blocks": [
+        0,
+        1
+      ],
+      "shield_activations": [
+        0,
+        30
+      ],
+      "damage_taken": [
+        2,
+        0
+      ],
+      "energy_spent": [
+        1179.599999999991,
+        1167.6217936271605
+      ],
+      "jitter": true,
+      "wall_seconds": 0.44604929198976606,
+      "learner_seat": 1,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10005,
+      "controllers": [
+        "checkpoint",
+        "bank_shot_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        2,
+        2
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10564277644907297,
+        0.014875160284443863
+      ],
+      "max_action_ms": [
+        0.1354999840259552,
+        0.023540982510894537
+      ],
+      "final_state_hash": "58fe1696dedc5911f4e85a0d8e34a1fc699d0a0c9755e94413a17ac39c58b457",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        16,
+        3
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        21,
+        0
+      ],
+      "damage_taken": [
+        1,
+        1
+      ],
+      "energy_spent": [
+        1173.2203446078397,
+        1179.5999999999972
+      ],
+      "jitter": true,
+      "wall_seconds": 0.46327745798043907,
+      "learner_seat": 0,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10005,
+      "controllers": [
+        "bank_shot_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.014354911831173081,
+        0.1102162938763353
+      ],
+      "max_action_ms": [
+        0.08887500734999776,
+        0.5062089767307043
+      ],
+      "final_state_hash": "03978bea28763899a30f6595b3a45ee1298d8b431240312a438310ca5532e19b",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        0
+      ],
+      "blocks": [
+        0,
+        1
+      ],
+      "shield_activations": [
+        0,
+        40
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        1179.5999999999922,
+        1167.9444027259563
+      ],
+      "jitter": true,
+      "wall_seconds": 0.44936312502250075,
+      "learner_seat": 1,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10006,
+      "controllers": [
+        "checkpoint",
+        "bank_shot_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        2,
+        2
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.11584472292775495,
+        0.01646803450529222
+      ],
+      "max_action_ms": [
+        1.8496669945307076,
+        0.5242909537628293
+      ],
+      "final_state_hash": "f541dd002737c9cd0ab365c7eef72bd0500cf2d3febbdba780bf49e80e150e7a",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        16,
+        3
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        21,
+        0
+      ],
+      "damage_taken": [
+        1,
+        1
+      ],
+      "energy_spent": [
+        1167.3382156033576,
+        1179.5999999999947
+      ],
+      "jitter": true,
+      "wall_seconds": 0.506050291005522,
+      "learner_seat": 0,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10006,
+      "controllers": [
+        "bank_shot_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.01439945811095337,
+        0.1063686980072547
+      ],
+      "max_action_ms": [
+        0.16674998914822936,
+        0.46149996342137456
+      ],
+      "final_state_hash": "1a0974dc88758c0340093b2b7e9b07dabc80c0ca5156a20a3f7d9e2e7a255183",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        0
+      ],
+      "blocks": [
+        0,
+        1
+      ],
+      "shield_activations": [
+        0,
+        40
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        1179.5999999999924,
+        1178.6270861640328
+      ],
+      "jitter": true,
+      "wall_seconds": 0.43725141597678885,
+      "learner_seat": 1,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10007,
+      "controllers": [
+        "checkpoint",
+        "bank_shot_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        1,
+        2
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10340170943419691,
+        0.014903589811486501
+      ],
+      "max_action_ms": [
+        0.24825002765282989,
+        0.030708033591508865
+      ],
+      "final_state_hash": "17eaa4bd62eec648bf53a290b1fe5dbc31a82d48b165624d1d8b55f45b4660f9",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        16,
+        3
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        21,
+        0
+      ],
+      "damage_taken": [
+        2,
+        1
+      ],
+      "energy_spent": [
+        1166.5962213894027,
+        1179.6
+      ],
+      "jitter": true,
+      "wall_seconds": 0.4548309160163626,
+      "learner_seat": 0,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10007,
+      "controllers": [
+        "bank_shot_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.014249799229825538,
+        0.10670167316372195
+      ],
+      "max_action_ms": [
+        0.07837498560547829,
+        1.056250010151416
+      ],
+      "final_state_hash": "60f0c6eca3769c477ed6361cb6bfe3cca123c5fb414785dc92ed13fc9f3cdf47",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        2
+      ],
+      "blocks": [
+        0,
+        1
+      ],
+      "shield_activations": [
+        0,
+        41
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        1179.599999999992,
+        1178.3134582965392
+      ],
+      "jitter": true,
+      "wall_seconds": 0.4404986249865033,
+      "learner_seat": 1,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10008,
+      "controllers": [
+        "checkpoint",
+        "bank_shot_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        2,
+        2
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10427946354159051,
+        0.014872907583291331
+      ],
+      "max_action_ms": [
+        0.2625000197440386,
+        0.024290988221764565
+      ],
+      "final_state_hash": "6e64bec969d127ea94cb5894d0fc2126b337248c849749bcd0604530a74c0903",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        17,
+        3
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        20,
+        0
+      ],
+      "damage_taken": [
+        1,
+        1
+      ],
+      "energy_spent": [
+        1173.5410327635857,
+        1179.5999999999945
+      ],
+      "jitter": true,
+      "wall_seconds": 0.4581166250281967,
+      "learner_seat": 0,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10008,
+      "controllers": [
+        "bank_shot_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.012711034721211979,
+        0.1024879820006727
+      ],
+      "max_action_ms": [
+        0.02562499139457941,
+        0.1337080029770732
+      ],
+      "final_state_hash": "3c89da69734f071031e14edb0fa5c705f870020686f4b235dc84c69d62830853",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        1
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        0,
+        35
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        1179.5999999999915,
+        1149.32395940063
+      ],
+      "jitter": true,
+      "wall_seconds": 0.42301845899783075,
+      "learner_seat": 1,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10009,
+      "controllers": [
+        "checkpoint",
+        "bank_shot_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        2
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10506017170242828,
+        0.014959879680881622
+      ],
+      "max_action_ms": [
+        0.282666995190084,
+        0.027375004719942808
+      ],
+      "final_state_hash": "8647dbdea2da085fcfd551ea610e933fc77b1792263ccf215e74752a6c3de42b",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        17,
+        3
+      ],
+      "blocks": [
+        1,
+        0
+      ],
+      "shield_activations": [
+        21,
+        0
+      ],
+      "damage_taken": [
+        0,
+        1
+      ],
+      "energy_spent": [
+        1175.5740435699852,
+        1179.5999999999926
+      ],
+      "jitter": true,
+      "wall_seconds": 0.4957022089511156,
+      "learner_seat": 0,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10009,
+      "controllers": [
+        "bank_shot_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.01440466383765279,
+        0.10388141482878752
+      ],
+      "max_action_ms": [
+        0.028541951905936003,
+        0.1842500059865415
+      ],
+      "final_state_hash": "0e4db4b7cd656cb255297f715cd79159f6c1739a3925bd04262ab0c1964f5069",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        3,
+        12
+      ],
+      "blocks": [
+        0,
+        1
+      ],
+      "shield_activations": [
+        0,
+        25
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        1179.5999999999924,
+        1166.9629666762132
+      ],
+      "jitter": true,
+      "wall_seconds": 0.4553375829709694,
+      "learner_seat": 1,
+      "opponent": "bank_shot_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 0,
+      "controllers": [
+        "checkpoint",
+        "reactive_defender_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10116875208310645,
+        0.006442627679832556
+      ],
+      "max_action_ms": [
+        0.15633401926606894,
+        0.013000040780752897
+      ],
+      "final_state_hash": "731c634f1a7655850525641feac9808dfe34d724938aef610ebdf00461700c1b",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        18,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        2,
+        0
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        685.46931825573,
+        0
+      ],
+      "jitter": false,
+      "wall_seconds": 0.4015533750061877,
+      "learner_seat": 0,
+      "opponent": "reactive_defender_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 0,
+      "controllers": [
+        "reactive_defender_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.005287273045353316,
+        0.09917701428531911
+      ],
+      "max_action_ms": [
+        0.009999959729611874,
+        0.12750003952533007
+      ],
+      "final_state_hash": "2687348cd3f3445da3c199bd970d7b759a4fa4bb3ea394404cce49990afe17b0",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        0,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        0,
+        40
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        0,
+        1162.9493238382315
+      ],
+      "jitter": false,
+      "wall_seconds": 0.3711252920329571,
+      "learner_seat": 1,
+      "opponent": "reactive_defender_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10000,
+      "controllers": [
+        "checkpoint",
+        "reactive_defender_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10130214933909615,
+        0.005706082490548768
+      ],
+      "max_action_ms": [
+        0.12229196727275848,
+        0.010041985660791397
+      ],
+      "final_state_hash": "87a92c515ac0f5041f52dd6a8e0e0c5fd24744b2731a14eaf06888d915073e8c",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        0,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        40,
+        0
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        1162.517624205665,
+        0
+      ],
+      "jitter": true,
+      "wall_seconds": 0.38385012495564297,
+      "learner_seat": 0,
+      "opponent": "reactive_defender_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10000,
+      "controllers": [
+        "reactive_defender_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.005310287039416532,
+        0.10199388605542481
+      ],
+      "max_action_ms": [
+        0.016082951333373785,
+        0.18304097466170788
+      ],
+      "final_state_hash": "5ffad69a764f7769d151a0fbbd8c07e2dfde2c4c5a9c4ac9f2d003c8e186e516",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        0,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        0,
+        38
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        0,
+        1178.392803441021
+      ],
+      "jitter": true,
+      "wall_seconds": 0.3853866249555722,
+      "learner_seat": 1,
+      "opponent": "reactive_defender_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10001,
+      "controllers": [
+        "checkpoint",
+        "reactive_defender_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10478459796609564,
+        0.00743447408442282
+      ],
+      "max_action_ms": [
+        0.18895900575444102,
+        0.014499993994832039
+      ],
+      "final_state_hash": "2582a139448bd0579de771aa42d28a364e74476583bc60ff44a42a0922ab7c81",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        33,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        2,
+        0
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        1162.9320139326048,
+        0
+      ],
+      "jitter": true,
+      "wall_seconds": 0.4526244170265272,
+      "learner_seat": 0,
+      "opponent": "reactive_defender_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10001,
+      "controllers": [
+        "reactive_defender_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.00527396892990779,
+        0.100868453500206
+      ],
+      "max_action_ms": [
+        0.008540984708815813,
+        0.12325000716373324
+      ],
+      "final_state_hash": "ea5044abfa831b60086cdee268701593ce20d52538fa52ca6b8ab50c3694cd62",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        0,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        0,
+        39
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        0,
+        1173.3296852304006
+      ],
+      "jitter": true,
+      "wall_seconds": 0.3823632499552332,
+      "learner_seat": 1,
+      "opponent": "reactive_defender_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10002,
+      "controllers": [
+        "checkpoint",
+        "reactive_defender_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10091825823851482,
+        0.005804491013771406
+      ],
+      "max_action_ms": [
+        0.12258300557732582,
+        0.012625008821487427
+      ],
+      "final_state_hash": "8612a512604361d070bf66fa9f591da9e7c6e4b8b293bba7d336c77a0ede43ef",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        8,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        28,
+        0
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        1178.6632063433203,
+        0
+      ],
+      "jitter": true,
+      "wall_seconds": 0.3872069159988314,
+      "learner_seat": 0,
+      "opponent": "reactive_defender_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10002,
+      "controllers": [
+        "reactive_defender_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.005246743784044628,
+        0.10059493934494201
+      ],
+      "max_action_ms": [
+        0.007916998583823442,
+        0.11916598305106163
+      ],
+      "final_state_hash": "dec73e76054cc2895061db16a9f491f313d865e23352dd20cd1be0a314ff32b8",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        0,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        0,
+        38
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        0,
+        1178.0388039004004
+      ],
+      "jitter": true,
+      "wall_seconds": 0.38079883402679116,
+      "learner_seat": 1,
+      "opponent": "reactive_defender_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10003,
+      "controllers": [
+        "checkpoint",
+        "reactive_defender_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10316339668524624,
+        0.007325208150885171
+      ],
+      "max_action_ms": [
+        0.19204197451472282,
+        0.013625016435980797
+      ],
+      "final_state_hash": "29b854f42f25624392a01fed70f74f6375b8fa1336938b9824137a384df802b2",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        34,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        1,
+        0
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        1175.566938045711,
+        0
+      ],
+      "jitter": true,
+      "wall_seconds": 0.45097166701452807,
+      "learner_seat": 0,
+      "opponent": "reactive_defender_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10003,
+      "controllers": [
+        "reactive_defender_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.005291472318478757,
+        0.10207202749033631
+      ],
+      "max_action_ms": [
+        0.009167008101940155,
+        0.2193749533034861
+      ],
+      "final_state_hash": "e988517fb80e47497c16f76d2c5e329a9c04c1b4245cce56b906f3ab88a8bb8a",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        0,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        0,
+        40
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        0,
+        1167.9333139474684
+      ],
+      "jitter": true,
+      "wall_seconds": 0.3873017500154674,
+      "learner_seat": 1,
+      "opponent": "reactive_defender_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10004,
+      "controllers": [
+        "checkpoint",
+        "reactive_defender_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10298309944725285,
+        0.007185314618120039
+      ],
+      "max_action_ms": [
+        0.12845895253121853,
+        0.012792006600648165
+      ],
+      "final_state_hash": "85b9a35537d4556e768da1bbd94bcdb8115e9da57e6c491747e973de212519b9",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        33,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        2,
+        0
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        1165.6172933384235,
+        0
+      ],
+      "jitter": true,
+      "wall_seconds": 0.44428250001510605,
+      "learner_seat": 0,
+      "opponent": "reactive_defender_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10004,
+      "controllers": [
+        "reactive_defender_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.005292594303480454,
+        0.10217722703668254
+      ],
+      "max_action_ms": [
+        0.008458970114588737,
+        0.12674997560679913
+      ],
+      "final_state_hash": "9b52d59fe735d4af090408d58e4666af686540d8e3da3f352aee31fe60789b93",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        0,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        0,
+        38
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        0,
+        1172.3689593429071
+      ],
+      "jitter": true,
+      "wall_seconds": 0.38537204201566055,
+      "learner_seat": 1,
+      "opponent": "reactive_defender_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10005,
+      "controllers": [
+        "checkpoint",
+        "reactive_defender_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10391985484467889,
+        0.007366221247206408
+      ],
+      "max_action_ms": [
+        0.23449998116120696,
+        0.020832987502217293
+      ],
+      "final_state_hash": "97cac11b55342008c88a5ed4bc077b8b25998f812601eb7df2e8b45f5c40813e",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        34,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        1,
+        0
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        1168.7799361041136,
+        0
+      ],
+      "jitter": true,
+      "wall_seconds": 0.4545573749928735,
+      "learner_seat": 0,
+      "opponent": "reactive_defender_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10005,
+      "controllers": [
+        "reactive_defender_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.005337874366280934,
+        0.10110008109930076
+      ],
+      "max_action_ms": [
+        0.021915999241173267,
+        0.28437498258426785
+      ],
+      "final_state_hash": "8c369c2b7a02fb59b8911a58fc2e437d5be4d8ad7846bebb41ad567ef8233370",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        0,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        0,
+        40
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        0,
+        1163.1234397068697
+      ],
+      "jitter": true,
+      "wall_seconds": 0.384018000040669,
+      "learner_seat": 1,
+      "opponent": "reactive_defender_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10006,
+      "controllers": [
+        "checkpoint",
+        "reactive_defender_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10284087019196402,
+        0.007065432771384992
+      ],
+      "max_action_ms": [
+        0.1259580021724105,
+        0.01654098741710186
+      ],
+      "final_state_hash": "8ca91606cc5a520c1b2dad29dc141e0a9c6aef75d17dee34a5f847f27999b111",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        33,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        2,
+        0
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        1175.476791310883,
+        0
+      ],
+      "jitter": true,
+      "wall_seconds": 0.44007616699673235,
+      "learner_seat": 0,
+      "opponent": "reactive_defender_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10006,
+      "controllers": [
+        "reactive_defender_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.005270952177751396,
+        0.10120089359891911
+      ],
+      "max_action_ms": [
+        0.026124995201826096,
+        0.25587499840185046
+      ],
+      "final_state_hash": "09d3a509e5e58ee61a030119e5d2ed5f995f110b719ae1f66a2008ebcab58b3e",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        0,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        0,
+        38
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        0,
+        1166.121910188107
+      ],
+      "jitter": true,
+      "wall_seconds": 0.38271383300889283,
+      "learner_seat": 1,
+      "opponent": "reactive_defender_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10007,
+      "controllers": [
+        "checkpoint",
+        "reactive_defender_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.1011434012239247,
+        0.00567358148853398
+      ],
+      "max_action_ms": [
+        0.11995801469311118,
+        0.008833012543618679
+      ],
+      "final_state_hash": "a633dea50ffea4c31045e15f1c385fd704f6d6cf087cf0dac8ee52e105cba3ef",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        0,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        40,
+        0
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        1159.2621618716425,
+        0
+      ],
+      "jitter": true,
+      "wall_seconds": 0.3831460830406286,
+      "learner_seat": 0,
+      "opponent": "reactive_defender_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10007,
+      "controllers": [
+        "reactive_defender_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.0052613602882182154,
+        0.10107163406684305
+      ],
+      "max_action_ms": [
+        0.009999959729611874,
+        0.22933300351724029
+      ],
+      "final_state_hash": "77c2c44e38503b7d17ada7361050ea9540367d429ccf532a3daacc8719865f2c",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        0,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        0,
+        38
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        0,
+        1160.5902772089175
+      ],
+      "jitter": true,
+      "wall_seconds": 0.38275791599880904,
+      "learner_seat": 1,
+      "opponent": "reactive_defender_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10008,
+      "controllers": [
+        "checkpoint",
+        "reactive_defender_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.102392256785943,
+        0.006188118325856825
+      ],
+      "max_action_ms": [
+        0.1816670410335064,
+        0.012375006917864084
+      ],
+      "final_state_hash": "e2b8f9bbf7ea17858e888a261669aba7525844cb3f3301464a0c2e7f59d54990",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        14,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        1,
+        0
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        612.6754910739402,
+        0
+      ],
+      "jitter": true,
+      "wall_seconds": 0.4066919169854373,
+      "learner_seat": 0,
+      "opponent": "reactive_defender_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10008,
+      "controllers": [
+        "reactive_defender_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.0052407327651356654,
+        0.10269962820327945
+      ],
+      "max_action_ms": [
+        0.008624978363513947,
+        0.13329199282452464
+      ],
+      "final_state_hash": "dcdf8d3fe82c58ef94d8e86eb0bfb486d5d5c1b2014f8a5ae731598fbe8e32cb",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        0,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        0,
+        38
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        0,
+        1169.3229847471002
+      ],
+      "jitter": true,
+      "wall_seconds": 0.3872845830046572,
+      "learner_seat": 1,
+      "opponent": "reactive_defender_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10009,
+      "controllers": [
+        "checkpoint",
+        "reactive_defender_ai"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.10378955583157086,
+        0.007426183265461414
+      ],
+      "max_action_ms": [
+        0.23179198615252972,
+        0.019041995983570814
+      ],
+      "final_state_hash": "cf656b0fc81511d965a4e2524fad00d026262a57fcaef3610111f680a27e1c58",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        33,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        2,
+        0
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        1163.619630504366,
+        0
+      ],
+      "jitter": true,
+      "wall_seconds": 0.46210204099770635,
+      "learner_seat": 0,
+      "opponent": "reactive_defender_ai"
+    },
+    {
+      "map_id": "channels",
+      "seed": 10009,
+      "controllers": [
+        "reactive_defender_ai",
+        "checkpoint"
+      ],
+      "winner": null,
+      "draw": true,
+      "ticks": 2700,
+      "seconds": 90.0,
+      "health": [
+        3,
+        3
+      ],
+      "faults": [
+        0,
+        0
+      ],
+      "mean_action_ms": [
+        0.005352040968352446,
+        0.10101101143475347
+      ],
+      "max_action_ms": [
+        0.00825000461190939,
+        0.130290980450809
+      ],
+      "final_state_hash": "30694fbfd1efb3a510f58def963b921e4ffd9838f8cbd40ae747c04b365f638e",
+      "forfeit_player": null,
+      "invalid": false,
+      "errors": [
+        [],
+        []
+      ],
+      "shots": [
+        0,
+        0
+      ],
+      "blocks": [
+        0,
+        0
+      ],
+      "shield_activations": [
+        0,
+        38
+      ],
+      "damage_taken": [
+        0,
+        0
+      ],
+      "energy_spent": [
+        0,
+        1174.3879304423638
+      ],
+      "jitter": true,
+      "wall_seconds": 0.3820597499725409,
+      "learner_seat": 1,
+      "opponent": "reactive_defender_ai"
+    }
+  ]
+}

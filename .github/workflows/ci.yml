@@ -62,6 +62,30 @@ jobs:
       - name: Test the training code
         run: python -m pytest -q ml/tests
 
+  ricochet:
+    name: Ricochet
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: games/ricochet
+    env:
+      SDL_VIDEODRIVER: dummy
+      SDL_AUDIODRIVER: dummy
+      PYTHONPATH: src # test the working tree, as the game's README does
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: games/ricochet/pyproject.toml
+      - name: Install
+        run: |
+          pip install torch==2.14.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[display,learn,dev]"
+      - name: Test the game, its bots and the training code
+        run: python -m pytest -q
+
   web:
     name: Website
     runs-on: ubuntu-latest

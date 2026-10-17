@@ -212,17 +212,20 @@ function Match({
   }, [phase, count, go]);
 
   const { pause, resume } = live;
+  const pauseKey = play.pauseKey ?? " ";
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      // A focused button, link or field keeps its own use of the space bar.
-      if (event.key !== " " || (event.target instanceof Element && event.target.closest("button, a, input, select, textarea, [role=button]"))) return;
+      if (event.key.toLowerCase() !== pauseKey.toLowerCase() || event.ctrlKey || event.metaKey || event.altKey) return;
+      // A field keeps its keys, and a focused button or link keeps its own use of the space bar.
+      const exempt = pauseKey === " " ? "button, a, input, select, textarea, [role=button]" : "input, select, textarea";
+      if (event.target instanceof Element && event.target.closest(exempt)) return;
       event.preventDefault();
       if (phase === "playing") pause();
       else if (phase === "paused") resume();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [phase, pause, resume]);
+  }, [phase, pause, resume, pauseKey]);
 
   // A refused move is shown for a moment.
   const [, setTick] = useState(0);
@@ -305,7 +308,7 @@ function Match({
         )}
         {phase === "paused" && (
           <button type="button" className="play-overlay play-paused" onClick={live.resume}>
-            Paused. Click or press space to carry on.
+            Paused. Click or press {keyName(pauseKey)} to carry on.
           </button>
         )}
         {outcome && (
@@ -368,10 +371,15 @@ function Match({
         {play.help.map((line) => (
           <li key={line}>{line}</li>
         ))}
-        <li>Space pauses and carries on.</li>
+        <li>{keyName(pauseKey)} pauses and carries on.</li>
       </ul>
     </div>
   );
+}
+
+/** A key as the help names it: "Space", "Esc", "P". */
+function keyName(key: string): string {
+  return ({ " ": "Space", Escape: "Esc" } as Record<string, string>)[key] ?? key.toUpperCase();
 }
 
 /** The last setup played on this device, so "play again later" starts where it left off. */
