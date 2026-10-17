@@ -6,7 +6,7 @@ import pygame
 
 from game import Game
 from game_types import BLUE, GREEN, NEUTRAL, RED
-from sizing import base_radii
+from sizing import LARGE_MAP, base_radii
 from theme import (
     BLUE as BLUE_COLOR,
     GREEN as GREEN_COLOR,
@@ -35,7 +35,11 @@ class Renderer:
         pygame.init()
         self.player_names = {RED: "Red", BLUE: "Blue", GREEN: "Green", **(player_names or {})}
         size = (game.map_definition.width, game.map_definition.height)
-        self.screen = pygame.display.set_mode(size)
+        # Large maps are drawn at full size and shown shrunk to fit the display.
+        desktop = pygame.display.get_desktop_sizes()[0]
+        self.scale = min(1.0, 0.92 * desktop[0] / size[0], 0.88 * desktop[1] / size[1])
+        self.window = pygame.display.set_mode((round(size[0] * self.scale), round(size[1] * self.scale)))
+        self.screen = self.window if self.scale == 1.0 else pygame.Surface(size)
         pygame.display.set_caption("Graphite")
 
         self.background = load_background(size)
@@ -44,6 +48,8 @@ class Renderer:
 
         base_count = len(game.bases)
         self.dense_map = base_count >= 25
+        # Too many bases for every badge and name: only the hovered or selected base shows them.
+        self.large_map = base_count >= LARGE_MAP
         if self.dense_map:
             name_size, production_size = 12, 13
         elif base_count >= 15:
@@ -72,6 +78,16 @@ class Renderer:
         """``streams`` maps the source of each running stream to its target; they are drawn on their routes."""
 
         self._draw_board(game, selected_base_id, streams)
+        self._present()
+
+    def map_position(self, position: tuple[int, int]) -> tuple[int, int]:
+        """A point in the window, such as a click, in map coordinates."""
+
+        return round(position[0] / self.scale), round(position[1] / self.scale)
+
+    def _present(self) -> None:
+        if self.screen is not self.window:
+            pygame.transform.smoothscale(self.screen, self.window.get_size(), self.window)
         pygame.display.flip()
 
     def _draw_board(
@@ -102,8 +118,9 @@ class Renderer:
             outer_color = MUSTARD if selected else INK
             inner_color = PAPER_LIGHT if selected else PAPER_DARK
 
-            pygame.draw.line(self.screen, outer_color, (a.x, a.y), (b.x, b.y), 7)
-            pygame.draw.line(self.screen, inner_color, (a.x, a.y), (b.x, b.y), 3)
+            outer_width, inner_width = (5, 2) if self.large_map else (7, 3)
+            pygame.draw.line(self.screen, outer_color, (a.x, a.y), (b.x, b.y), outer_width)
+            pygame.draw.line(self.screen, inner_color, (a.x, a.y), (b.x, b.y), inner_width)
 
             if selected:
                 start, end = (a, b) if selected_base_id == edge.a else (b, a)
@@ -180,12 +197,16 @@ class Renderer:
             elif hovered:
                 pygame.draw.circle(self.screen, MUSTARD, center, radius + 6, width=2)
 
-            pygame.draw.circle(self.screen, INK, center, radius + 3)
+            outline, rim = (2, 3) if self.large_map else (3, 5)
+            pygame.draw.circle(self.screen, INK, center, radius + outline)
             pygame.draw.circle(self.screen, PAPER_LIGHT, center, radius)
-            pygame.draw.circle(self.screen, owner_color(base.owner), center, radius - 5)
+            pygame.draw.circle(self.screen, owner_color(base.owner), center, radius - rim)
 
             text_color = INK if base.owner == NEUTRAL else WHITE
             units = self._render_units(str(int(base.units)), radius, text_color)
+            if self.large_map and not (selected or hovered):
+                self.screen.blit(units, units.get_rect(center=center))
+                continue
             # Sit slightly high so the production badge on the rim never covers it.
             self.screen.blit(units, units.get_rect(center=(base.x, base.y - radius // 8)))
 
@@ -203,13 +224,14 @@ class Renderer:
     def _render_units(self, label: str, radius: int, color: tuple[int, int, int]) -> pygame.Surface:
         """Render a unit count as large as the base allows, shrinking long numbers to fit."""
 
-        size = max(13, round(radius * 0.92))
-        max_width = 2 * (radius - 7)
+        smallest = 8 if self.large_map else 11
+        size = max(smallest + 2, round(radius * 0.92))
+        max_width = 2 * (radius - (4 if self.large_map else 7))
         while True:
             if size not in self._count_fonts:
                 self._count_fonts[size] = font(size, bold=True)
             text = self._count_fonts[size].render(label, True, color)
-            if text.get_width() <= max_width or size <= 11:
+            if text.get_width() <= max_width or size <= smallest:
                 return text
             size -= 1
 
@@ -395,7 +417,7 @@ class Renderer:
         self.screen.blit(right, right.get_rect(midright=(width - 25, top + FOOTER_HEIGHT // 2)))
 
     def _hovered_base(self, game: Game) -> str | None:
-        mouse_x, mouse_y = pygame.mouse.get_pos()
+        mouse_x, mouse_y = self.map_position(pygame.mouse.get_pos())
         for base in game.bases.values():
             if math.hypot(mouse_x - base.x, mouse_y - base.y) <= self.base_radii[base.id] + 5:
                 return base.id
@@ -454,10 +476,10 @@ class Renderer:
             self._blit_centered(name, (center_x, center_y - 4))
 
         home_button, quit_button = self.result_buttons()
-        mouse_position = pygame.mouse.get_pos()
+        mouse_position = self.map_position(pygame.mouse.get_pos())
         self._draw_result_button(home_button, "Home screen", home_button.collidepoint(mouse_position))
         self._draw_result_button(quit_button, "Quit", quit_button.collidepoint(mouse_position))
-        pygame.display.flip()
+        self._present()
 
     def _draw_result_button(self, rect: pygame.Rect, label: str, hovered: bool) -> None:
         fill = MUSTARD if hovered else INK

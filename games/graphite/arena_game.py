@@ -34,6 +34,7 @@ from game import Game as Engine  # noqa: E402
 from game_types import BLUE, GREEN, NEUTRAL, PLAYERS, RED, SendAction  # noqa: E402
 from bot_names import bot_name  # noqa: E402
 from loading import available_ais, available_maps, load_map  # noqa: E402
+from sizing import LARGE_MAP  # noqa: E402
 
 from arena.contract import BotInfo, GameInfo, MapInfo, Outcome, SeatInfo, bot_from_module  # noqa: E402
 
@@ -49,6 +50,11 @@ THEME = json.loads(THEME_FILE.read_text())
 HIDDEN = {"atlas_ai"}
 # Bots that use a neural network.
 NEURAL = {"neural_ai", "beast_ai"}
+# Map groups a bot leaves out of tournaments. On the large maps Atlas Clean's search
+# takes over half a second a move, and the networks spend over 15 minutes on one match
+# (they were trained on maps of at most 30 bases and three-minute matches).
+LARGE_MAPS = "Large maps"
+SITS_OUT = {name: (LARGE_MAPS,) for name in ("atlas_clean_ai", "neural_ai", "beast_ai")}
 # What the website says about each bot. A bot not listed here is described by the
 # first paragraph of its module's docstring.
 BLURBS = {
@@ -205,7 +211,14 @@ class GraphiteGame:
             owners = {base.owner for base in definition.bases}
             seats = tuple(SEAT_OF[player] for player in PLAYERS if player in owners)
             description = f"{len(definition.bases)} bases, {len(definition.edges)} routes"
-            maps.append(MapInfo(map_id, _title(definition.name), seats, description))
+            if definition.tagline:
+                description = f"{definition.tagline}. {description}"
+            max_ticks = None
+            if definition.time_limit is not None:
+                max_ticks = round(definition.time_limit / INFO.tick_seconds)
+                description += f", {definition.time_limit / 60:g} minutes"
+            group = LARGE_MAPS if len(definition.bases) >= LARGE_MAP else ""
+            maps.append(MapInfo(map_id, _title(definition.name), seats, description, max_ticks, group))
         return tuple(maps)
 
     def bots(self) -> tuple[BotInfo, ...]:
@@ -215,6 +228,7 @@ class GraphiteGame:
                 name=bot_name(name),
                 description=BLURBS.get(name) or _summary(ROOT / "ais" / f"{name}.py"),
                 kind="neural" if name in NEURAL else "scripted",
+                sits_out=SITS_OUT.get(name, ()),
             )
             for name in _roster()
         )

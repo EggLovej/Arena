@@ -76,7 +76,7 @@ def play_visual(
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN and human_controller is not None:
                 human_controller.handle_click(
-                    event.pos,
+                    renderer.map_position(event.pos),
                     event.button,
                     game,
                     shift_held=bool(pygame.key.get_mods() & pygame.KMOD_SHIFT),
@@ -119,10 +119,11 @@ def play_visual(
                     waiting = False
                 elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     home_button, quit_button = renderer.result_buttons()
-                    if home_button.collidepoint(event.pos):
+                    position = renderer.map_position(event.pos)
+                    if home_button.collidepoint(position):
                         return_home = True
                         waiting = False
-                    elif quit_button.collidepoint(event.pos):
+                    elif quit_button.collidepoint(position):
                         waiting = False
             renderer.draw_result(game, message)
             clock.tick(30)
@@ -156,7 +157,7 @@ def parse_args():
     parser.add_argument("--human", choices=("red", "blue", "green"))
     parser.add_argument("--headless", action="store_true")
     parser.add_argument("--tick-seconds", type=float, default=0.1)
-    parser.add_argument("--max-seconds", type=float, default=180)
+    parser.add_argument("--max-seconds", type=float, help="default: the map's own time limit, or 180")
     parser.add_argument("--speed", type=float, default=1.0)
     return parser.parse_args()
 
@@ -187,7 +188,7 @@ def configure_from_home_screen(args) -> bool:
 
 def main() -> None:
     args = parse_args()
-    if args.max_seconds <= 0 or args.speed <= 0:
+    if (args.max_seconds is not None and args.max_seconds <= 0) or args.speed <= 0:
         raise ValueError("max-seconds and speed must be positive")
     if args.human and args.headless:
         raise ValueError("Human play requires the visual window")
@@ -220,7 +221,8 @@ def main() -> None:
                 blue_controller = human_controller.choose_action
             else:
                 green_controller = human_controller.choose_action
-        max_ticks = int(args.max_seconds / args.tick_seconds)
+        max_seconds = args.max_seconds or game.map_definition.time_limit or 180
+        max_ticks = int(max_seconds / args.tick_seconds)
         names = {RED: controller_label(args.red_ai), BLUE: controller_label(args.blue_ai)}
         if GREEN in game.players:
             names[GREEN] = controller_label(args.green_ai)

@@ -89,13 +89,14 @@ def play_match(
     started = time.perf_counter()
     random.seed(seed)  # bots that use the random module play the same way again
     match = game.new_match(map_id, seed)
+    max_ticks = next((m.max_ticks for m in game.maps() if m.id == map_id and m.max_ticks), info.max_ticks)
     if set(lineup) != set(match.seats):
         raise ValueError(f"Map {map_id} has seats {match.seats}, but the lineup names {tuple(lineup)}")
 
     reports = {seat: SeatReport(lineup[seat]) for seat in match.seats}
     bots = {}  # seat -> bot, or None once it has forfeited the match
     for seat in match.seats:
-        context = BotContext(info.id, map_id, seat, match.seats, seat_seed(seed, seat), info.tick_seconds, info.max_ticks)
+        context = BotContext(info.id, map_id, seat, match.seats, seat_seed(seed, seat), info.tick_seconds, max_ticks)
         bot = None
         try:  # a broken bot loses its moves, not the whole tournament
             with time_limit(info.move_time_limit):
@@ -120,7 +121,7 @@ def play_match(
             hashes[str(match.tick)] = state_hash(match.save_state())
 
     observe_state()
-    while not match.finished() and match.tick < info.max_ticks:
+    while not match.finished() and match.tick < max_ticks:
         tick = match.tick
         actions = {}
         for seat in match.acting():
@@ -176,7 +177,7 @@ def play_match(
             "map": map_id,
             "seed": seed,
             "tick_seconds": info.tick_seconds,
-            "max_ticks": info.max_ticks,
+            "max_ticks": max_ticks,
             "seats": [{"seat": seat, "bot": lineup[seat]} for seat in match.seats],
             "board": match.board(),
             "frames": frames.to_json(),

@@ -34,6 +34,10 @@ class MapDefinition:
     height: int
     bases: tuple[BaseDefinition, ...]
     edges: tuple[EdgeDefinition, ...]
+    # Seconds of game time before the match is a draw, for maps that take longer than
+    # the usual three minutes to play out. None keeps the usual limit.
+    time_limit: float | None = None
+    tagline: str = ""  # a few words on the map's character, for people choosing a map
 
 
 @dataclass(frozen=True)

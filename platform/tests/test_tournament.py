@@ -1,3 +1,6 @@
+import sys
+from dataclasses import replace
+
 import pytest
 
 from arena.leaderboard import points, standings
@@ -24,6 +27,17 @@ def test_chosen_bots_and_rounds(race):
         schedule(race, bots=["nobody"])
     with pytest.raises(ValueError, match="no map"):
         schedule(race, maps=["moon"])
+
+
+def test_a_bot_can_sit_out_a_group_of_maps(race, monkeypatch):
+    module = sys.modules[type(race).__module__]
+    track = module.MAPS["short"]
+    monkeypatch.setitem(module.MAPS, "short", replace(track, info=replace(track.info, group="Large maps")))
+    info, bot = module.BOTS["sprinter"]
+    monkeypatch.setitem(module.BOTS, "sprinter", (replace(info, sits_out=("Large maps",)), bot))
+    short = [plan for plan in schedule(race) if plan.map == "short"]
+    assert len(short) == 2  # steady and dice only
+    assert all("sprinter" not in plan.bots for plan in short)
 
 
 @pytest.mark.parametrize("workers", [1, 2])

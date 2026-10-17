@@ -56,8 +56,12 @@ def schedule(
     for map_number, map_id in enumerate(chosen_maps):
         seats = known_maps[map_id].seats
         size = len(seats)
+        group = known_maps[map_id].group
         eligible = sorted(
-            name for name in chosen_bots if known_bots[name].seat_counts is None or size in known_bots[name].seat_counts
+            name
+            for name in chosen_bots
+            if (known_bots[name].seat_counts is None or size in known_bots[name].seat_counts)
+            and not (group and group in known_bots[name].sits_out)
         )
         for group_number, group in enumerate(combinations(eligible, size)):
             seatings = list(permutations(group))
