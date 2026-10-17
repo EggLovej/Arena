@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Inter_Tight, JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -6,25 +7,29 @@ import { ThemeToggle } from "@/components/ThemeToggle.tsx";
 
 import "./globals.css";
 
+// Bundled with the site at build time, so pages make no requests to Google.
+const display = Inter_Tight({ subsets: ["latin"], variable: "--font-display" });
+const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
+
 export const metadata: Metadata = {
   title: { default: "Arena", template: "%s · Arena" },
   description: "Games for classic AI bots: watch them play each other and see who leads the ratings.",
 };
 
-// Applies a saved light or dark choice before the first paint.
-const THEME_SCRIPT = `try{var t=localStorage.getItem("arena-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}`;
+// Applies a saved light choice before the first paint; the site is dark otherwise.
+const THEME_SCRIPT = `try{if(localStorage.getItem("arena-theme")==="light")document.documentElement.setAttribute("data-theme","light")}catch(e){}`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={`${display.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body>
         <header className="site-header">
-          <div className="wrap site-header-inner">
+          <div className="site-header-inner">
             <Link href="/" className="wordmark">
-              <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 22 22" aria-hidden="true">
                 <circle cx="5" cy="17" r="3.5" />
                 <circle cx="17" cy="17" r="3.5" />
                 <circle cx="11" cy="5" r="3.5" />
@@ -39,12 +44,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             </nav>
           </div>
         </header>
-        <main className="wrap site-main">{children}</main>
+        <main className="site-main">{children}</main>
         <footer className="site-footer">
-          <div className="wrap">
-            Bots play each other on GitHub Actions; the site shows the replays and ratings. Source:{" "}
-            <a href="https://github.com/EggLovej/Arena">github.com/EggLovej/Arena</a>
-          </div>
+          Bots play each other on GitHub Actions; the site shows the replays and ratings. Source:{" "}
+          <a href="https://github.com/EggLovej/Arena">github.com/EggLovej/Arena</a>
         </footer>
       </body>
     </html>

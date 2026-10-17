@@ -4,7 +4,7 @@ export const metadata: Metadata = { title: "About" };
 
 export default function About() {
   return (
-    <div className="prose">
+    <div className="page prose">
       <h1>How Arena works</h1>
       <p className="lede">
         Arena hosts games that bots play. The bots are classic AI: hand-written strategies, search, and neural networks

@@ -25,6 +25,40 @@ export type GameView = {
   /** One number per seat for the chart under a replay: how well each side is doing. */
   strength: (board: unknown, snapshot: Snapshot) => Record<string, number>;
   strengthLabel: string;
-  /** The map drawn on the game's card on the home page (the first map if not given). */
+  /** A few words under the game's name in the game list, for example "Real-time strategy". */
+  genre: string;
+  /** The map drawn beside the game's name in the game list (the first map if not given). */
   cardMap?: string;
+  /** The glow around the game's board in the home page's preview (the site's accent if not given). */
+  accent?: string;
+  /** The map whose strongest replay plays on the home page and the game's overview (else the first featured match). */
+  liveMap?: string;
+  /** The game's own look on its pages; they use the site's look if not given. */
+  look?: GameLook;
+};
+
+/** Site colours a game can replace on its own pages; the names are the custom properties on :root in globals.css. */
+export type LookColor =
+  | "bg"
+  | "surface"
+  | "surface-2"
+  | "text"
+  | "muted"
+  | "border"
+  | "border-strong"
+  | "accent"
+  | "accent-text"
+  | "accent-soft"
+  | "on-accent"
+  | "stage-accent"
+  | "win"
+  | "loss";
+
+export type GameLook = {
+  scheme: "light" | "dark"; // for form controls and scroll bars
+  colors: Partial<Record<LookColor, string>>;
+  /** Headings' font, from next/font: the class that loads it and the font-family list to use. */
+  font?: { className: string; family: string };
+  /** A picture behind the pages, such as a paper texture. */
+  backdrop?: string;
 };

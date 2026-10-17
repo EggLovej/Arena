@@ -4,6 +4,8 @@
 import { readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
+import { GAME_VIEWS } from "@/games/index.ts";
+
 import type { GameData, GameSummary, Leaderboard, MatchRow } from "./types.ts";
 
 const DATA = path.join(process.cwd(), "public", "data");
@@ -23,8 +25,11 @@ function read<T>(...parts: string[]): T | null {
   return value;
 }
 
+/** Every published game, in the order src/games/index.ts lists them. */
 export function listGames(): GameSummary[] {
-  return read<GameSummary[]>("games.json") ?? [];
+  const order = Object.keys(GAME_VIEWS);
+  const place = (id: string) => (order.includes(id) ? order.indexOf(id) : order.length);
+  return [...(read<GameSummary[]>("games.json") ?? [])].sort((a, b) => place(a.id) - place(b.id));
 }
 
 export function getGame(id: string): GameData {
