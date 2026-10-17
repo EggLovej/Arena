@@ -372,8 +372,8 @@ select:hover {
 
 .game-item-art {
   flex: none;
-  width: 104px;
-  height: 78px;
+  width: 92px;
+  height: 70px;
   border-radius: 5px;
   overflow: hidden;
   background: #efe7d6;
@@ -404,6 +404,17 @@ select:hover {
   color: var(--muted);
 }
 
+.game-item-open {
+  flex: none;
+  margin-left: auto;
+  color: var(--accent-text);
+  visibility: hidden;
+}
+
+.game-item[aria-current] .game-item-open {
+  visibility: visible;
+}
+
 .game-item-soon {
   justify-content: center;
   min-height: 72px;
@@ -424,6 +435,60 @@ select:hover {
 
 .game-header {
   margin-bottom: 1.4rem;
+}
+
+.preview-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  margin-bottom: 2rem;
+}
+
+.game-title a {
+  color: inherit;
+}
+
+.game-title a:hover {
+  text-decoration: none;
+}
+
+.preview-open {
+  font-family: var(--mono);
+  white-space: nowrap;
+}
+
+/* A game's own pages */
+
+.game-page {
+  min-height: calc(100vh - var(--header));
+  background-color: var(--bg);
+  background-position: top center;
+  background-repeat: repeat-y;
+  background-size: 100% auto;
+  color: var(--text);
+}
+
+.game-page-inner {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 24px 24px 64px;
+  container: main / inline-size;
+}
+
+.game-crumb {
+  display: inline-block;
+  margin-bottom: 1.2rem;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.game-crumb:hover {
+  color: var(--accent-text);
+  text-decoration: none;
 }
 
 .game-title {
@@ -478,6 +543,24 @@ select:hover {
   grid-template-columns: minmax(0, 1fr) 320px;
   gap: 28px;
   align-items: start;
+}
+
+.overview-wide-side {
+  grid-template-columns: minmax(0, 1fr) 400px;
+}
+
+.overview-side > div + div h2 {
+  margin-top: 1.6rem;
+}
+
+.overview-side > div:first-child h2 {
+  margin-top: 0;
+}
+
+@container main (max-width: 960px) {
+  .overview-wide-side {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 @container main (max-width: 860px) {
@@ -935,6 +1018,10 @@ select:hover {
 
   .page {
     padding-inline: 16px;
+  }
+
+  .game-page-inner {
+    padding: 16px 16px 48px;
   }
 
   .explorer {

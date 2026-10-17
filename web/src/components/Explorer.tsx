@@ -1,55 +1,20 @@
-// The frame around every game page: the list of games on the left, and the
-// chosen game's name, tagline and sections beside it.
-
-import Link from "next/link";
-import type { ReactNode } from "react";
+// The home page: the list of games on the left and a preview of the chosen
+// one beside it. Each game's own pages are separate (see GameShell).
 
 import { gameView } from "@/games/index.ts";
 import { getGame, listGames } from "@/lib/data.ts";
 
-import { GameTabs } from "./GameTabs.tsx";
+import { GameExplorer } from "./GameExplorer.tsx";
+import { GamePreview } from "./GameOverview.tsx";
 import { MapPreview } from "./MapPreview.tsx";
 
-export function Explorer({ gameId, home = false, children }: { gameId: string; home?: boolean; children: ReactNode }) {
-  const game = getGame(gameId);
-  return (
-    <div className="explorer">
-      <GameList current={gameId} />
-      <div className="explorer-main">
-        <div className="game-header">
-          <h1 className="game-title">{game.name}</h1>
-          <p className="game-tagline">{game.tagline}</p>
-        </div>
-        <GameTabs gameId={gameId} home={home} />
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function GameList({ current }: { current: string }) {
-  return (
-    <nav className="game-list" aria-label="Games">
-      <h2>Games</h2>
-      <ul>
-        {listGames().map((summary) => {
-          const game = getGame(summary.id);
-          const view = gameView(game.id);
-          const map = game.maps.find((entry) => entry.id === view.cardMap) ?? game.maps[0];
-          return (
-            <li key={game.id}>
-              <Link href={`/games/${game.id}`} className="game-item" aria-current={game.id === current ? "true" : undefined}>
-                <span className="game-item-art">{map && <MapPreview game={game} map={map} />}</span>
-                <span className="game-item-text">
-                  <strong>{game.name}</strong>
-                  <small>{view.genre}</small>
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-        <li className="game-item game-item-soon">More games are on the way.</li>
-      </ul>
-    </nav>
-  );
+export function Explorer() {
+  const games = listGames().map((summary) => {
+    const game = getGame(summary.id);
+    const view = gameView(game.id);
+    const map = game.maps.find((entry) => entry.id === view.cardMap) ?? game.maps[0];
+    return { id: game.id, name: game.name, genre: view.genre, art: map && <MapPreview game={game} map={map} /> };
+  });
+  const previews = Object.fromEntries(games.map((game) => [game.id, <GamePreview key={game.id} gameId={game.id} />]));
+  return <GameExplorer games={games} previews={previews} />;
 }
