@@ -34,7 +34,7 @@ export function LeaderboardTable({ table, gameId, limit }: { table: Table; gameI
               <td className="numeric rank">{index + 1}</td>
               <td>
                 <Link href={`/games/${gameId}/bots#${entry.bot}`} className="bot-cell">
-                  <BotAvatar id={entry.bot} kind={entry.kind} size={28} />
+                  <BotAvatar game={gameId} id={entry.bot} kind={entry.kind} size={28} />
                   <BotName name={entry.name} />
                   {entry.kind === "neural" && !limit && <span className="tag">neural</span>}
                 </Link>
@@ -77,7 +77,7 @@ export function ScoreBar({ value }: { value: number }) {
   );
 }
 
-export function HeadToHead({ table }: { table: Table }) {
+export function HeadToHead({ table, gameId }: { table: Table; gameId: string }) {
   const bots = table.entries;
   return (
     <div className="table-scroll">
@@ -87,7 +87,7 @@ export function HeadToHead({ table }: { table: Table }) {
             <th>Row against column</th>
             {bots.map((bot) => (
               <th key={bot.bot} title={bot.name} className="head-to-head-column">
-                <BotAvatar id={bot.bot} kind={bot.kind} size={24} />
+                <BotAvatar game={gameId} id={bot.bot} kind={bot.kind} size={24} />
                 <span>{bot.name}</span>
               </th>
             ))}

@@ -1677,6 +1677,10 @@ tbody tr + tr th {
   gap: 0.35em;
 }
 
+.bot-name > .bot-avatar {
+  align-self: center;
+}
+
 .bot-badge {
   font-family: var(--mono);
   font-size: 0.62em;

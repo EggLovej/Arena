@@ -45,7 +45,7 @@ export function Ladder({ gameId, tables, note }: { gameId: string; tables: Ladde
               <li key={entry.bot}>
                 <span className="ladder-rank">{index + 1}</span>
                 <Link href={`/games/${gameId}/bots#${entry.bot}`} className="ladder-bot">
-                  <BotAvatar id={entry.bot} kind={entry.kind} size={32} />
+                  <BotAvatar game={gameId} id={entry.bot} kind={entry.kind} size={32} />
                   <BotName name={entry.name} />
                 </Link>
                 <span className="ladder-rating">{entry.rating}</span>

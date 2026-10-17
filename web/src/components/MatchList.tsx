@@ -93,7 +93,7 @@ export function MatchList({ gameId, rows, seats, botNames, mapNames, tickSeconds
                   {Object.entries(row.lineup).map(([seat, id]) => (
                     <span key={seat} className={`match-player${winner === seat ? " is-winner" : ""}`}>
                       <span className="seat-dot" style={{ background: colors[seat] }} />
-                      <BotName name={botNames[id] ?? id} />
+                      <BotName name={botNames[id] ?? id} game={gameId} id={id} />
                     </span>
                   ))}
                 </span>
