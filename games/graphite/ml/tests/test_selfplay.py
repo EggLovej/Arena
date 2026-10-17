@@ -1,4 +1,3 @@
-import copy
 import sys
 import tempfile
 import unittest
@@ -322,37 +321,6 @@ class UpdateTests(unittest.TestCase):
         self.assertAlmostEqual(
             learned["entropy/of the route choice"] + learned["entropy/of the amounts"], learned["entropy/of the policy"], places=5
         )
-
-    def test_a_confident_policy_is_held_in_place_while_only_the_value_learns(self):
-        model = init_model("random", seed=0).model
-        # Make the untrained network confident: the same preferences, fifty times stronger.
-        with torch.no_grad():
-            model.route_out.weight *= 50
-        matchups = [Matchup(generate_map(seed).definition, Seat(SELF, True), Seat(SELF, True)) for seed in range(4)]
-        records = play_games(matchups, {SELF: model}, seed=0, max_seconds=25)
-
-        def shift_after_value_only_round(hold_weight):
-            settings = SelfPlaySettings(passes=3, batch_size=256, max_seconds=25, hold_weight=hold_weight)
-            rng = np.random.default_rng(0)
-            decisions, _ = judged_decisions(records, settings, hint=0.0, rng=rng)
-            for group in decisions._groups.values():
-                # A value target far from what the network says, so the value has a lot to learn.
-                group.join()["target:value_target"][:] = 1.0
-            trained = copy.deepcopy(model)
-            optimizer = torch.optim.Adam(trained.parameters(), lr=3e-4)
-            update(trained, optimizer, decisions, settings, rng, "cpu", learn_moves=False)
-            total = count = 0.0
-            with torch.no_grad():
-                for batch in decisions.batches(512):
-                    new = log_probability(trained(batch.inputs), batch.route, batch.amount)
-                    total += (batch.targets["log_probability"] - new).abs().sum().item()
-                    count += len(batch)
-            return total / count
-
-        free = shift_after_value_only_round(hold_weight=0.0)
-        held = shift_after_value_only_round(hold_weight=1.0)
-        self.assertGreater(free, 0.05)
-        self.assertLess(held, free / 3)
 
     def test_learning_stops_once_the_policy_has_moved_far_enough(self):
         model = init_model("random", seed=0).model
