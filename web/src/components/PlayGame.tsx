@@ -215,8 +215,10 @@ function Match({
   const pauseKey = play.pauseKey ?? " ";
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      // A focused button, link or field keeps its own use of the space bar.
-      if (event.key !== pauseKey || (event.target instanceof Element && event.target.closest("button, a, input, select, textarea, [role=button]"))) return;
+      if (event.key.toLowerCase() !== pauseKey.toLowerCase() || event.ctrlKey || event.metaKey || event.altKey) return;
+      // A field keeps its keys, and a focused button or link keeps its own use of the space bar.
+      const exempt = pauseKey === " " ? "button, a, input, select, textarea, [role=button]" : "input, select, textarea";
+      if (event.target instanceof Element && event.target.closest(exempt)) return;
       event.preventDefault();
       if (phase === "playing") pause();
       else if (phase === "paused") resume();

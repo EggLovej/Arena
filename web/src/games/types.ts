@@ -38,7 +38,7 @@ export type PlayView = {
   help: string[];
   /** The map the play page starts on (the first map if not given). */
   map?: string;
-  /** The key that pauses and carries on (KeyboardEvent.key), for games that use the space bar themselves. */
+  /** The key that pauses and carries on (KeyboardEvent.key, any case), for games that use the space bar themselves. Not Escape: in full screen the browser keeps it. */
   pauseKey?: string;
 };
 

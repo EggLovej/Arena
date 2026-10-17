@@ -41,6 +41,6 @@ export const ricochet: GameView = {
       "On a touch screen you can aim and fire by touching the board, but moving needs a keyboard.",
     ],
     map: "crossfire",
-    pauseKey: "Escape", // Space raises the shield, as in the game's own window
+    pauseKey: "p", // Space raises the shield, as in the game's own window, and browsers keep Esc for leaving full screen
   },
 };
