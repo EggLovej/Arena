@@ -9,6 +9,7 @@
 - ``tournament``: who plays whom, run in parallel
 - ``leaderboard``: standings, ratings and head-to-head tables from results
 - ``publish``: the JSON files the website reads
+- ``live``: matches people play against bots on the website, in the browser
 
 Run ``python -m arena --help`` for the command line.
 """

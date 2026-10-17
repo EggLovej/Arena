@@ -2,7 +2,7 @@
 
 A website of games that classic (non-generative) AI bots play: scripted
 strategies, search, and neural networks trained by self-play. Watch the bots
-play each other and see who leads the ratings.
+play each other, see who leads the ratings, and play against them yourself.
 
 The first game is **Graphite**, real-time strategy on a graph.
 
@@ -14,7 +14,7 @@ The first game is **Graphite**, real-time strategy on a graph.
 | `games/<game>/checkpoints/` | The one network each neural bot plays (training output in `ml/runs/` stays out of git) |
 | `platform/arena/` | What every game shares: the game contract, match runner, replays, tournaments, ratings, and the files the website reads |
 | `platform/tests/` | Tests for the platform, with a tiny Race game that is also a template for new games |
-| `web/` | The website (Next.js). Vercel deploys this folder only |
+| `web/` | The website (Next.js). Vercel deploys this folder; its build also copies the games' Python for the play page |
 | `web/public/data/` | The published tournaments: leaderboards, match lists and replays, written by `arena tournament` |
 | `.github/workflows/` | CI, and the Tournament workflow that plays the leaderboard matches and commits the results |
 
@@ -72,11 +72,34 @@ game's tournament, refreshes the tables, and commits `web/public/data` to
 `main`, which Vercel then deploys. It needs to push to `main`: if `main` gets
 branch protection, allow GitHub Actions to bypass it.
 
+## Playing against the bots
+
+A game's Play page runs the match in the visitor's browser: the real Python
+rules and bots, in [Pyodide](https://pyodide.org) (Python compiled to
+WebAssembly) inside a web worker, so nothing runs on a server.
+`platform/arena/live.py` plays the match a tick at a time; the page draws it
+and sends the person's clicks, which the game's `person(seat)` (in its
+`arena_game.py`) turns into actions. As in the tournaments, every bot moves
+every tick, so a bot that thinks slowly slows the game down rather than
+playing worse.
+Before each build, `web/scripts/bundle-python.mjs` copies the game's code and
+checkpoints into `web/public/play/` (not committed).
+
+Neural bots play without PyTorch there: `games/graphite/ml/play/numpy_model.py`
+reads the checkpoint and runs the same network in numpy, and the tests check
+it gives the same moves. A bot that needs more than its own code (numpy, a
+checkpoint) says so through the game's `web_needs(bot_id)`.
+
+Pyodide itself (about 15 MB the first time, then cached) comes from jsDelivr;
+set `NEXT_PUBLIC_PYODIDE_URL` at build time to serve it from elsewhere.
+
 ## Deploying
 
 On Vercel, import this repository and set **Root Directory** to `web`. The
 framework (Next.js) is detected; no environment variables are needed. Every
-page is static, built from `web/public/data`.
+page is static, built from `web/public/data`. The build also reads `games/`
+and `platform/`, so keep **Include source files outside of the Root Directory
+in the Build Step** on (the default).
 
 ## Adding a bot to Graphite
 
@@ -99,6 +122,9 @@ once merged, the Tournament workflow rates it.
 3. Add a board for it to the website: `web/src/games/<id>/` with a component that
    draws one snapshot, registered in `web/src/games/index.ts` (see
    `web/src/games/types.ts`). The replay player, match lists, leaderboards and
-   bot pages are shared.
+   bot pages are shared. To let people play it, give the view a `play` entry
+   with the controls that lie over the board (Graphite's are in
+   `web/src/games/graphite/GraphiteControls.tsx`). They send the game's own
+   actions, or simpler commands that a `person(seat)` on `GAME` turns into actions.
 4. Run `python -m arena tournament <id>` and commit `web/public/data`, or let the
    Tournament workflow do it after merging.

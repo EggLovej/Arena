@@ -27,6 +27,16 @@ def choose_action(state):
 
 
 def _build(entry):
+    try:
+        import torch  # noqa: F401
+    except ModuleNotFoundError:
+        # Without PyTorch (as on the Arena website, which plays in the browser) a network:
+        # Beast plays through numpy; a look-ahead Beast cannot.
+        from ml.play.numpy_agent import network_player
+
+        if entry is None:
+            raise ValueError("beast_ai: without PyTorch, Beast needs its file (checkpoints/beast.json)")
+        return network_player(entry["player"], seed=0)
     from ml.evaluation.evaluate import load_player
 
     if entry is None:

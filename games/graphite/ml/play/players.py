@@ -7,13 +7,28 @@ temperature (``network:``). Settings can follow the path:
 ``lookahead:PATH?mine=8&rule=nash&judge=PATH``, ``network:PATH?temperature=0.2``.
 """
 
-from dataclasses import fields
+from dataclasses import dataclass, fields
+
+
+NETWORK = "network:"
+
+
+@dataclass(frozen=True)
+class NetworkSettings:
+    """The settings of a ``network:`` player. Kept here, away from PyTorch, so that playing
+    without it (ml/play/numpy_agent.py) reads the same names."""
+
+    temperature: float = 1.0  # 1 draws by the network's own odds; Neural AI plays at 0.2
+
+    def __post_init__(self):
+        if self.temperature <= 0:
+            raise ValueError(f"temperature must be above 0, not {self.temperature}")
 
 
 def _kinds() -> dict:
     """Name prefix -> (settings class, a function building the player from a path, settings and seed)."""
 
-    from ml.play.agent import PREFIX as NETWORK, NetworkSettings, NeuralAgent
+    from ml.play.agent import NeuralAgent
     from ml.play.lookahead import PREFIX as LOOKAHEAD, LookaheadPlayer, LookaheadSettings
     from ml.play.value_player import PREFIX as VALUE, ValuePlayer, ValueSettings
 

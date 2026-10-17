@@ -152,12 +152,13 @@ def published_inputs(game: Game, output: Path) -> str | None:
 
 
 # Files that cannot change how bots play: notes, notebooks, tests and training scripts,
-# and the shared code that only rates, checks or publishes finished matches.
+# and the shared code that only rates, checks or publishes finished matches, or plays
+# matches with people on the website.
 _IGNORED_SUFFIXES = (".md", ".ipynb", ".txt", ".png", ".jpg")
 _IGNORED_PARTS = ("tests", "scripts", "runs", "colab", "__pycache__", ".venv")
 _IGNORED_FILES = {
     f"platform/arena/{name}"
-    for name in ("__init__.py", "__main__.py", "cli.py", "leaderboard.py", "publish.py", "ratings.py", "replay.py")
+    for name in ("__init__.py", "__main__.py", "cli.py", "leaderboard.py", "live.py", "publish.py", "ratings.py", "replay.py")
 }
 
 
