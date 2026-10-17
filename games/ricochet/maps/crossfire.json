@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "crossfire",
+  "name": "Crossfire",
+  "width": 960,
+  "height": 640,
+  "spawns": [
+    {"player_id": 0, "position": {"x": 120, "y": 320}, "aim": {"x": 1, "y": 0}},
+    {"player_id": 1, "position": {"x": 840, "y": 320}, "aim": {"x": -1, "y": 0}}
+  ],
+  "walls": [
+    {"id": "north_west", "x": 330, "y": 180, "width": 110, "height": 30},
+    {"id": "north_east", "x": 520, "y": 180, "width": 110, "height": 30},
+    {"id": "south_west", "x": 330, "y": 430, "width": 110, "height": 30},
+    {"id": "south_east", "x": 520, "y": 430, "width": 110, "height": 30}
+  ]
+}
+
