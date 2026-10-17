@@ -82,7 +82,7 @@ A game's Play page runs the match in the visitor's browser: the real Python
 rules and bots, in [Pyodide](https://pyodide.org) (Python compiled to
 WebAssembly) inside a web worker, so nothing runs on a server.
 `platform/arena/live.py` plays the match a tick at a time; the page draws it
-and sends the person's clicks, which the game's `person(seat)` (in its
+and sends the person's clicks and keys, which the game's `person(seat)` (in its
 `arena_game.py`) turns into actions. As in the tournaments, every bot moves
 every tick, so a bot that thinks slowly slows the game down rather than
 playing worse.
@@ -131,7 +131,8 @@ once merged, the Tournament workflow rates it.
    (colours, heading font, backdrop) as `web/src/games/graphite/look.ts` does.
    The game list follows the order in `web/src/games/index.ts`. To let people
    play it, give the view a `play` entry with the controls that lie over the
-   board (Graphite's are in `web/src/games/graphite/GraphiteControls.tsx`).
+   board (Graphite's clicks are in `web/src/games/graphite/GraphiteControls.tsx`,
+   Ricochet's keyboard and mouse in `web/src/games/ricochet/RicochetControls.tsx`).
    They send the game's own actions, or simpler commands that a `person(seat)`
    on `GAME` turns into actions.
 4. Run `python -m arena tournament <id>` and commit `web/public/data`, or let the

@@ -136,3 +136,49 @@ def test_anything_but_an_action_is_refused(ricochet, kind):
     }[kind]
     with pytest.raises((TypeError, ValueError)):
         ricochet.action_to_json(wrong)
+
+
+def test_a_person_moves_aims_and_fires_in_the_browser(ricochet):
+    from arena.live import PERSON, LiveMatch
+
+    live = LiveMatch(ricochet, "classic", {"cyan": PERSON, "coral": "direct_ai"}, seed=1)
+    start = live.start()
+    x, y, _ = start["snapshot"]["tanks"]["cyan"]
+    # Held keys stay held: move right, aim straight down from wherever the tank is, fire.
+    assert live.command("cyan", {"move": [1, 0], "target": [x, y + 500], "fire": True, "shield": False}) is None
+    for _ in range(10):
+        update = live.step()
+    tanks = live.match.snapshot()["tanks"]
+    assert tanks["cyan"][0] > x and tanks["cyan"][1] == y
+    # Aiming at the point, from where the tank has moved to (the aim is a tick behind the move).
+    assert tanks["cyan"][2] == pytest.approx(math.degrees(math.atan2(500, x - tanks["cyan"][0])), abs=1.5)
+    assert any(shot[0] == "cyan" for shot in live.match.snapshot()["shots"].values())
+    assert update["refused"] == {} and update["errors"] == {}
+    # Letting go stops it.
+    live.command("cyan", {"move": [0, 0], "target": None, "fire": False, "shield": False})
+    live.step()
+    before = live.match.snapshot()["tanks"]["cyan"]
+    for _ in range(5):
+        live.step()
+    assert live.match.snapshot()["tanks"]["cyan"][:2] == before[:2]
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "fire",
+        {"move": [1, 0]},
+        {"move": [1], "target": None, "fire": False, "shield": False},
+        {"move": [1, 0], "target": [math.nan, 0], "fire": False, "shield": False},
+        {"move": [1, 0], "target": None, "fire": 1, "shield": False},
+        {"move": [True, 0], "target": None, "fire": False, "shield": False},
+    ],
+)
+def test_a_person_s_wrong_command_is_refused(ricochet, command):
+    from ricochet import Vec2
+
+    from arena.live import PERSON, LiveMatch
+
+    live = LiveMatch(ricochet, "classic", {"cyan": PERSON, "coral": "direct_ai"}, seed=1)
+    assert live.command("cyan", command)  # why it was refused
+    assert live.people["cyan"].held["move"] == Vec2(0.0, 0.0)

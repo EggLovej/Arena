@@ -2,6 +2,7 @@ import type { Snapshot } from "@/lib/types.ts";
 
 import type { GameView, SeatStat } from "../types.ts";
 import { RicochetBoard, type StatusState } from "./RicochetBoard.tsx";
+import { RicochetControls } from "./RicochetControls.tsx";
 import { look } from "./look.ts";
 
 function statuses(snapshot: Snapshot): Record<string, StatusState> {
@@ -30,4 +31,16 @@ export const ricochet: GameView = {
     return Object.fromEntries(Object.entries(statuses(snapshot)).map(([seat, [health]]) => [seat, health]));
   },
   strengthLabel: "Health",
+  play: {
+    Controls: RicochetControls,
+    help: [
+      "W A S D move your tank (the arrow keys do too), and it aims at the pointer.",
+      "Hold the left mouse button to fire. A shot bounces off the first wall it meets and stops at the second; after the bounce it can hit you too.",
+      "Hold Space or the right mouse button to raise your shield: it blocks every shot, but you can't fire and you move slower while it is up.",
+      "Firing, moving and the shield cost energy, which comes back over time. Three hits and a tank is out.",
+      "On a touch screen you can aim and fire by touching the board, but moving needs a keyboard.",
+    ],
+    map: "crossfire",
+    pauseKey: "Escape", // Space raises the shield, as in the game's own window
+  },
 };

@@ -204,6 +204,47 @@ class RicochetMatch:
         return {"engine": self.engine.capture_state(), "shots": self.shots, "last_hit": self.last_hit}
 
 
+class WebPerson:
+    """A person playing on the website, with the game window's controls (src/ricochet/display/human.py):
+    keys to move, the pointer to aim, buttons to fire and raise the shield. The page sends what is
+    held whenever it changes, and it stays held until the next command:
+
+    ``{"move": [x, y], "target": [x, y] or None, "fire": bool, "shield": bool}``
+
+    ``target`` is the point on the board under the pointer; the tank aims at it every tick, from
+    wherever it has moved to, as in the window. None keeps the aim it has.
+    """
+
+    def __init__(self):
+        self.held = {"move": Vec2(0.0, 0.0), "target": None, "fire": False, "shield": False}
+
+    def command(self, data: dict) -> None:
+        try:
+            move = _vector(data["move"]).limited()
+            target = None if data["target"] is None else _vector(data["target"])
+            fire, shield = data["fire"], data["shield"]
+        except (TypeError, ValueError, KeyError) as error:
+            raise ValueError(f"not a command: {error!r}") from None
+        if not isinstance(fire, bool) or not isinstance(shield, bool):
+            raise ValueError("fire and shield are true or false")
+        self.held = {"move": move, "target": target, "fire": fire, "shield": shield}
+
+    def act(self, observation) -> ControlAction:
+        target = self.held["target"]
+        aim = target - observation.me.position if target is not None else Vec2(0.0, 0.0)
+        return ControlAction(self.held["move"], aim, self.held["fire"], self.held["shield"])
+
+    def view(self) -> dict:
+        return {}
+
+
+def _vector(data) -> Vec2:
+    x, y = data
+    if isinstance(x, bool) or isinstance(y, bool) or not all(isinstance(n, (int, float)) and math.isfinite(n) for n in (x, y)):
+        raise ValueError(f"{data!r} is not two numbers")
+    return Vec2(float(x), float(y))
+
+
 class RicochetGame:
     info = INFO
 
@@ -232,6 +273,9 @@ class RicochetGame:
         match.shots = {key: list(shot) for key, shot in state["shots"].items()}
         match.last_hit = dict(state["last_hit"])
         return match
+
+    def person(self, seat: str) -> WebPerson:
+        return WebPerson()
 
     def action_to_json(self, action) -> list | int:
         """[move x, move y, aim x, aim y, fire + 2 * shield], or 0 for doing nothing. Every tick of
