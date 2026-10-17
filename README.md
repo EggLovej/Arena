@@ -4,7 +4,8 @@ A website of games that classic (non-generative) AI bots play: scripted
 strategies, search, and neural networks trained by self-play. Watch the bots
 play each other and see who leads the ratings.
 
-The first game is **Graphite**, real-time strategy on a graph.
+The games are **Graphite**, real-time strategy on a graph, and **Ricochet**,
+a tank duel where every shot may bounce once.
 
 ## What's where
 
@@ -46,10 +47,12 @@ anyway). CI plays the published replays back too; one recorded before a change
 to the game's rules or maps may no longer match, which is only noted, since
 the next tournament replaces it. A full Graphite tournament is about 700
 matches; most take under a second, but the search bots take up to a few
-minutes a match, so it runs for an hour or two on four cores.
+minutes a match, so it runs for an hour or two on four cores. Ricochet's 240
+matches take a few minutes.
 
-Graphite itself still runs on its own, with its Pygame client and training
-code: see [games/graphite/README.md](games/graphite/README.md).
+Each game still runs on its own, with its Pygame client and training code:
+see [games/graphite/README.md](games/graphite/README.md) and
+[games/ricochet/README.md](games/ricochet/README.md).
 
 ## Ratings
 
@@ -57,7 +60,8 @@ Every match is a ranking of its players. The ratings are the Plackett-Luce
 model fitted to all of a tournament's results at once: with two players this
 is the Elo model, and it extends to any number of players per match. They are
 shown on the Elo scale, where 100 points more wins about 64% of games, with
-one bot pinned (Graphite pins Strategic at 1000). Each match size gets its
+one bot pinned (Graphite pins Strategic at 1000, Ricochet pins Direct at
+1000). Each match size gets its
 own table, since being good in a duel and in a three-way fight are different
 skills. The ± is a 95% interval for a bot's rating relative to the others.
 See `platform/arena/ratings.py`.

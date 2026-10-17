@@ -4,9 +4,11 @@
 
 import type { GameView } from "./types.ts";
 import { graphite } from "./graphite/index.ts";
+import { ricochet } from "./ricochet/index.ts";
 
 export const GAME_VIEWS: Record<string, GameView> = {
   graphite,
+  ricochet,
 };
 
 export function gameView(id: string): GameView {

@@ -1421,6 +1421,11 @@ td {
   white-space: nowrap;
 }
 
+/* A long bot name wraps rather than pushing the numbers out of a narrow table. */
+.leaderboard .bot-column {
+  white-space: normal;
+}
+
 thead th {
   font-size: 0.78rem;
   text-transform: uppercase;
