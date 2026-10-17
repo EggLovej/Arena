@@ -25,6 +25,9 @@ type FleetState = [string, number, string, string, number, number];
 
 const FONT = '"DejaVu Sans Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif';
 
+/** Maps with this many bases draw small bases with only their units on them (games/graphite/sizing.py). */
+const LARGE_MAP = 80;
+
 /** Smallest and largest radius; crowded maps use smaller bases (games/graphite/sizing.py). */
 function radiusRange(count: number): [number, number] {
   if (count >= 25) return [17, 29];
@@ -33,6 +36,10 @@ function radiusRange(count: number): [number, number] {
 }
 
 export function baseRadii(board: GraphiteBoardData): Record<string, number> {
+  if (board.bases.length >= LARGE_MAP) {
+    // Each base by its own rate, so one outsized prize doesn't shrink all the others.
+    return Object.fromEntries(board.bases.map((base) => [base.id, Math.round(8 + 6 * Math.sqrt(base.production))]));
+  }
   const [smallest, largest] = radiusRange(board.bases.length);
   const most = Math.max(0, ...board.bases.map((base) => base.production));
   return Object.fromEntries(
@@ -46,14 +53,16 @@ export function baseRadii(board: GraphiteBoardData): Record<string, number> {
 /** The part of the map that holds bases, with room for their labels. */
 export function viewBox(board: GraphiteBoardData, compact: boolean): [number, number, number, number] {
   const radii = baseRadii(board);
+  // Room for the production badge and name under each base, which large maps leave out.
+  const labels = !compact && board.bases.length < LARGE_MAP;
   const margin = compact ? 12 : 30;
   let left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity;
   for (const base of board.bases) {
     const r = radii[base.id];
-    left = Math.min(left, base.x - r - margin - (compact ? 0 : 30));
-    right = Math.max(right, base.x + r + margin + (compact ? 0 : 30));
+    left = Math.min(left, base.x - r - margin - (labels ? 30 : 0));
+    right = Math.max(right, base.x + r + margin + (labels ? 30 : 0));
     top = Math.min(top, base.y - r - margin);
-    bottom = Math.max(bottom, base.y + r + margin + (compact ? 0 : 42));
+    bottom = Math.max(bottom, base.y + r + margin + (labels ? 42 : 0));
   }
   left = Math.max(0, left);
   top = Math.max(0, top);
@@ -81,6 +90,9 @@ export function GraphiteBoard({ board: rawBoard, snapshot, tick, tickSeconds, th
   const byId = Object.fromEntries(board.bases.map((base) => [base.id, base]));
   const radii = baseRadii(board);
   const dense = board.bases.length >= 25;
+  const large = board.bases.length >= LARGE_MAP;
+  const route = large ? [5, 2] : compact ? [9, 4] : [7, 3];
+  const fleetScale = large ? 0.7 : 1;
   const nameSize = dense ? 12 : board.bases.length >= 15 ? 14 : 16;
   const productionSize = nameSize + 1;
   const [x0, y0, width, height] = viewBox(board, compact);
@@ -109,8 +121,8 @@ export function GraphiteBoard({ board: rawBoard, snapshot, tick, tickSeconds, th
         const b = byId[edge.b];
         return (
           <g key={`${edge.a}|${edge.b}`}>
-            <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={ink} strokeWidth={compact ? 9 : 7} />
-            <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={paperDark} strokeWidth={compact ? 4 : 3} />
+            <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={ink} strokeWidth={route[0]} />
+            <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={paperDark} strokeWidth={route[1]} />
           </g>
         );
       })}
@@ -146,14 +158,14 @@ export function GraphiteBoard({ board: rawBoard, snapshot, tick, tickSeconds, th
         const fill = color(owner);
         return (
           <g key={`fleet-${id}`}>
-            <circle cx={x - dx * 27} cy={y - dy * 27} r={3} fill={fill} />
-            <circle cx={x - dx * 42} cy={y - dy * 42} r={2} fill={fill} />
-            <g transform={`translate(${x} ${y}) rotate(${(angle * 180) / Math.PI})`}>
+            <circle cx={x - dx * 27 * fleetScale} cy={y - dy * 27 * fleetScale} r={3 * fleetScale} fill={fill} />
+            <circle cx={x - dx * 42 * fleetScale} cy={y - dy * 42 * fleetScale} r={2 * fleetScale} fill={fill} />
+            <g transform={`translate(${x} ${y}) rotate(${(angle * 180) / Math.PI}) scale(${fleetScale})`}>
               <polygon points="17,0 -12,11 -8,0 -12,-11" fill={ink} />
               <polygon points="13.94,0 -9.84,9.02 -6.56,0 -9.84,-9.02" fill={fill} />
             </g>
             {!compact && (
-              <text x={x - 2} y={y} fontSize={13} fontWeight={700} fill={white} textAnchor="middle" dominantBaseline="central">
+              <text x={x - 2} y={y} fontSize={13 * fleetScale} fontWeight={700} fill={white} textAnchor="middle" dominantBaseline="central">
                 {units}
               </text>
             )}
@@ -176,6 +188,22 @@ export function GraphiteBoard({ board: rawBoard, snapshot, tick, tickSeconds, th
           );
         }
         const label = String(units);
+        if (large) {
+          // Too many bases for badges and names: the size shows production, and the units fit inside.
+          let size = Math.round(r * 0.95);
+          while (textWidth(label, size) > 2 * (r - 4) && size > 7) size -= 1;
+          return (
+            <g key={base.id}>
+              <title>{`${base.id} · ${formatRate(base.production)}`}</title>
+              <circle cx={base.x} cy={base.y} r={r + 2} fill={ink} />
+              <circle cx={base.x} cy={base.y} r={r} fill={paperLight} />
+              <circle cx={base.x} cy={base.y} r={r - 3} fill={owner ? fill : paperDark} />
+              <text x={base.x} y={base.y} fontSize={size} fontWeight={700} fill={textColor} textAnchor="middle" dominantBaseline="central">
+                {label}
+              </text>
+            </g>
+          );
+        }
         let size = Math.max(13, Math.round(r * 0.92));
         while (textWidth(label, size) > 2 * (r - 7) && size > 11) size -= 1;
         const rate = formatRate(base.production);

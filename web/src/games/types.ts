@@ -19,6 +19,27 @@ export type BoardProps = {
 
 export type SeatStat = { label: string; value: number };
 
+export type PlayControlsProps = {
+  board: unknown;
+  snapshot: Snapshot; // the position as it stands
+  theme: unknown;
+  seat: string; // the person's seat
+  person: unknown; // what the game says about the person's seat beyond the board (its Person.view())
+  active: boolean; // false while paused, counting down or over: nothing to send then
+  send: (command: unknown) => void; // a command for the game's Person (platform/arena/live.py)
+  tools: HTMLElement | null; // a place in the row under the board for the game's own buttons (fill it with a portal)
+};
+
+/** What a game adds so that people can play it on the site (the play page is shared). */
+export type PlayView = {
+  /** Lies over the board while a person plays: takes their clicks and shows their selection and orders. */
+  Controls: ComponentType<PlayControlsProps>;
+  /** How to play, one short line each. */
+  help: string[];
+  /** The map the play page starts on (the first map if not given). */
+  map?: string;
+};
+
 export type GameView = {
   Board: ComponentType<BoardProps>;
   /** Numbers shown beside each seat in the scoreboard, for example units and bases. */
@@ -40,6 +61,8 @@ export type GameView = {
   look?: GameLook;
   /** Bots with a drawn portrait at public/bots/<game>/<bot id>.webp; the rest get a generated face. */
   botIcons?: readonly string[];
+  /** For people to play the game against the bots; the game has no play page without it. */
+  play?: PlayView;
 };
 
 /** Site colours a game can replace on its own pages; the names are the custom properties on :root in globals.css. */

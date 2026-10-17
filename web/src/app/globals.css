@@ -875,6 +875,10 @@ select:hover {
   text-transform: uppercase;
 }
 
+.button-play:not([aria-disabled="true"]):hover {
+  filter: brightness(1.08);
+}
+
 .button-play[aria-disabled="true"] {
   cursor: not-allowed;
   opacity: 0.55;
@@ -1621,6 +1625,15 @@ tbody tr + tr th {
   gap: 1.2rem;
 }
 
+.map-group + .map-group {
+  margin-top: 2.2rem;
+}
+
+.map-group > h2 {
+  margin: 0 0 0.9rem;
+  font-size: 1.15rem;
+}
+
 .map-card {
   overflow: hidden;
 }
@@ -1715,4 +1728,206 @@ tbody tr + tr th {
   border-radius: 4px;
   padding: 0 0.3em;
   white-space: nowrap;
+}
+
+/* Playing against the bots */
+
+.play {
+  display: grid;
+  gap: 0.8rem;
+  scroll-margin-top: 4.5rem; /* below the sticky header */
+}
+
+.play-setup {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(260px, 2fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.play-setup-map {
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #efe7d6;
+}
+
+.play-setup-fields {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.play-setup-fields label {
+  display: grid;
+  gap: 0.25rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.play-setup-fields select {
+  font-weight: 400;
+  width: 100%;
+}
+
+.play-setup-opponent {
+  border-left: 4px solid var(--seat);
+  padding-left: 0.6rem;
+}
+
+.play-setup-bot {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.play-setup-bot select {
+  flex: 1;
+  min-width: 0;
+}
+
+.play-start {
+  justify-self: start;
+  font-size: 1.1rem;
+  padding: 0.5rem 2rem;
+}
+
+.play-start:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.play-reload {
+  justify-self: start;
+}
+
+.play-status {
+  margin: 0;
+}
+
+.play-loading {
+  display: grid;
+  place-items: center;
+  min-height: 320px;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  color: var(--muted);
+}
+
+.play-board {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.play-controls-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: manipulation;
+}
+
+.play-target {
+  fill: none;
+  stroke-width: 3;
+  stroke-dasharray: 7 6;
+  opacity: 0.85;
+}
+
+.play-stream {
+  stroke-dasharray: 14 10;
+  stroke-linecap: round;
+  animation: play-stream-flow 0.6s linear infinite;
+}
+
+@keyframes play-stream-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .play-stream {
+    animation: none;
+  }
+}
+
+.play-tools {
+  display: contents;
+}
+
+/* Invisible until a base has the keyboard's focus. */
+.play-base-key {
+  fill: transparent;
+  stroke-width: 0;
+  outline: none;
+}
+
+.play-base-key:focus-visible {
+  stroke-width: 3;
+  stroke-dasharray: 6 4;
+}
+
+.play-switch.is-on {
+  background: var(--seat);
+  border-color: var(--seat);
+  color: #fff;
+}
+
+.play-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(20 20 22 / 0.35);
+  color: #fff;
+  border: none;
+  border-radius: 0;
+  font-weight: 700;
+}
+
+.play-countdown {
+  font-size: 5rem;
+  pointer-events: none;
+  text-shadow: 0 2px 12px rgb(0 0 0 / 0.5);
+}
+
+.play-paused {
+  font-size: 1.2rem;
+}
+
+.play-result-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.scoreboard-seat.is-you {
+  box-shadow: 0 0 0 2px var(--seat);
+}
+
+.play-notes {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.play-refused {
+  color: #c4372f;
+  font-weight: 600;
+}
+
+.play-help {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 760px) {
+  .play-setup {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .play-countdown {
+    font-size: 3.5rem;
+  }
 }

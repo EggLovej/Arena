@@ -139,6 +139,14 @@ endpoints, duplicate edges, positive travel times, required starting players,
 and graph connectivity must all be valid. Owners use `RED`, `BLUE`, and
 optionally `GREEN` from `game_types.py`; maps without Green remain two-player.
 
+Two optional fields: `tagline`, a few words on the map's character, and
+`time_limit`, the seconds of game time before a match is a draw when the map
+needs longer than the usual three minutes. The large maps (Clockwork Citadel,
+Shattered Spiral, Tectonic Archipelago and Threefold Crucible, each over 100
+bases) use ten minutes. On maps with 80 or more bases, bases are drawn smaller
+and show their production badge and name only while hovered or selected, and a
+window too big for the screen is shrunk to fit.
+
 ## Files
 
 - `game_types.py`: the public AI contract and map data types

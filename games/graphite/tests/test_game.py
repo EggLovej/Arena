@@ -103,14 +103,18 @@ class GameTests(unittest.TestCase):
             available_maps(),
             (
                 "classic",
+                "clockwork_citadel",
                 "crossroads",
                 "four_corners",
                 "frontier",
                 "nomads",
                 "ring",
                 "salt_and_pepper",
+                "shattered_spiral",
                 "siege",
+                "tectonic_archipelago",
                 "three_fronts",
+                "threefold_crucible",
                 "triangle",
                 "triple_ring",
             ),
@@ -139,14 +143,20 @@ class GameTests(unittest.TestCase):
         self.assertEqual(owners.count(BLUE), 4)
 
     def test_symmetric_maps_give_both_players_identical_positions(self):
-        # Nomads is mirrored left-right; Salt & Pepper is rotated 180 degrees.
-        for map_name, rotate in (("nomads", False), ("salt_and_pepper", True)):
+        # Nomads and Tectonic Archipelago are mirrored left-right; Salt & Pepper and
+        # Clockwork Citadel are rotated 180 degrees.
+        for map_name, rotate in (
+            ("nomads", False),
+            ("salt_and_pepper", True),
+            ("tectonic_archipelago", False),
+            ("clockwork_citadel", True),
+        ):
             with self.subTest(map_name):
                 map_definition = load_map(map_name)
                 xs = [base.x for base in map_definition.bases]
                 ys = [base.y for base in map_definition.bases]
                 by_position = {(base.x, base.y): base for base in map_definition.bases}
-                swapped = {RED: BLUE, BLUE: RED, NEUTRAL: NEUTRAL}
+                swapped = {RED: BLUE, BLUE: RED, GREEN: GREEN, NEUTRAL: NEUTRAL}
 
                 twin_ids = {}
                 for base in map_definition.bases:
@@ -166,6 +176,23 @@ class GameTests(unittest.TestCase):
                 for edge in map_definition.edges:
                     twin_edge = frozenset((twin_ids[edge.a], twin_ids[edge.b]))
                     self.assertEqual(travel_times.get(twin_edge), edge.travel_time)
+
+    def test_large_maps_play_for_ten_minutes(self):
+        for map_name in ("clockwork_citadel", "shattered_spiral", "tectonic_archipelago", "threefold_crucible"):
+            with self.subTest(map_name):
+                map_definition = load_map(map_name)
+                self.assertGreaterEqual(len(map_definition.bases), 100)
+                self.assertEqual(map_definition.time_limit, 600)
+                self.assertTrue(map_definition.tagline)
+
+    def test_threefold_crucible_guards_its_prize_behind_fortified_bridges(self):
+        bases = load_map("threefold_crucible").bases
+        prize = max(bases, key=lambda base: base.production_rate)
+        self.assertEqual((prize.id, prize.production_rate, prize.units), ("crucible", 10.0, 1000))
+        bridges = [base for base in bases if base.id.startswith("bridge")]
+        self.assertEqual(len(bridges), 9)
+        for bridge in bridges:
+            self.assertEqual((bridge.production_rate, bridge.units), (0.2, 80))
 
     def test_four_corners_starts_in_opposite_corners(self):
         map_definition = load_map("four_corners")
