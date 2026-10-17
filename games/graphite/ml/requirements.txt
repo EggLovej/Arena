@@ -1,0 +1,6 @@
+# Installed with the game's requirements.txt, which includes this file:
+#   uv pip install --python .venv -r requirements.txt
+# The game itself only needs pygame; these are for ml/ only.
+numpy==2.5.3
+torch==2.14.0
+tensorboard==2.21.0  # ml tensorboard (2026-10-10)

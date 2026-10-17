@@ -1,0 +1,27 @@
+{
+  "name": "ring",
+  "width": 1000,
+  "height": 800,
+  "bases": [
+    {"id": "red_start", "owner": -1, "units": 20, "production_rate": 1.1, "x": 90, "y": 400},
+    {"id": "amber", "owner": 0, "units": 8, "production_rate": 0.7, "x": 300, "y": 150},
+    {"id": "cedar", "owner": 0, "units": 15, "production_rate": 1.4, "x": 300, "y": 650},
+    {"id": "hub", "owner": 0, "units": 30, "production_rate": 2.0, "x": 500, "y": 400},
+    {"id": "delta", "owner": 0, "units": 15, "production_rate": 1.4, "x": 700, "y": 150},
+    {"id": "elm", "owner": 0, "units": 8, "production_rate": 0.7, "x": 700, "y": 650},
+    {"id": "blue_start", "owner": 1, "units": 20, "production_rate": 1.1, "x": 910, "y": 400}
+  ],
+  "edges": [
+    {"a": "red_start", "b": "amber", "travel_time": 4},
+    {"a": "red_start", "b": "cedar", "travel_time": 4},
+    {"a": "amber", "b": "delta", "travel_time": 4},
+    {"a": "cedar", "b": "elm", "travel_time": 4},
+    {"a": "delta", "b": "blue_start", "travel_time": 4},
+    {"a": "elm", "b": "blue_start", "travel_time": 4},
+    {"a": "amber", "b": "hub", "travel_time": 3},
+    {"a": "cedar", "b": "hub", "travel_time": 3},
+    {"a": "delta", "b": "hub", "travel_time": 3},
+    {"a": "elm", "b": "hub", "travel_time": 3}
+  ]
+}
+

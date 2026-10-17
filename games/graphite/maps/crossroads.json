@@ -1,0 +1,36 @@
+{
+  "name": "crossroads",
+  "width": 1000,
+  "height": 800,
+  "bases": [
+    {"id": "red_post", "owner": -1, "units": 22, "production_rate": 1.2, "x": 85, "y": 400},
+    {"id": "north_farm", "owner": 0, "units": 7, "production_rate": 0.8, "x": 280, "y": 175},
+    {"id": "south_mine", "owner": 0, "units": 10, "production_rate": 1.0, "x": 275, "y": 625},
+    {"id": "upper_gate", "owner": 0, "units": 16, "production_rate": 1.35, "x": 465, "y": 225},
+    {"id": "crossroads", "owner": 0, "units": 27, "production_rate": 2.2, "x": 500, "y": 400},
+    {"id": "lower_gate", "owner": 0, "units": 13, "production_rate": 1.2, "x": 470, "y": 580},
+    {"id": "north_mine", "owner": 0, "units": 10, "production_rate": 1.0, "x": 720, "y": 165},
+    {"id": "east_post", "owner": 0, "units": 15, "production_rate": 1.4, "x": 765, "y": 400},
+    {"id": "south_farm", "owner": 0, "units": 7, "production_rate": 0.8, "x": 725, "y": 635},
+    {"id": "blue_post", "owner": 1, "units": 22, "production_rate": 1.2, "x": 915, "y": 400}
+  ],
+  "edges": [
+    {"a": "red_post", "b": "north_farm", "travel_time": 3.8},
+    {"a": "red_post", "b": "crossroads", "travel_time": 5.2},
+    {"a": "red_post", "b": "south_mine", "travel_time": 3.5},
+    {"a": "north_farm", "b": "upper_gate", "travel_time": 2.6},
+    {"a": "north_farm", "b": "crossroads", "travel_time": 3.4},
+    {"a": "south_mine", "b": "crossroads", "travel_time": 3.2},
+    {"a": "south_mine", "b": "lower_gate", "travel_time": 2.7},
+    {"a": "upper_gate", "b": "crossroads", "travel_time": 2.4},
+    {"a": "upper_gate", "b": "north_mine", "travel_time": 3.0},
+    {"a": "crossroads", "b": "lower_gate", "travel_time": 2.3},
+    {"a": "crossroads", "b": "east_post", "travel_time": 3.1},
+    {"a": "lower_gate", "b": "south_farm", "travel_time": 3.0},
+    {"a": "north_mine", "b": "east_post", "travel_time": 3.1},
+    {"a": "north_mine", "b": "blue_post", "travel_time": 3.8},
+    {"a": "east_post", "b": "south_farm", "travel_time": 3.0},
+    {"a": "east_post", "b": "blue_post", "travel_time": 2.4},
+    {"a": "south_farm", "b": "blue_post", "travel_time": 3.4}
+  ]
+}

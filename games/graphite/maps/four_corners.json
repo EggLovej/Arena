@@ -1,0 +1,105 @@
+{
+  "name": "four_corners",
+  "width": 1000,
+  "height": 800,
+  "bases": [
+    {"id": "blue_nw", "owner": 1, "units": 24, "production_rate": 1.2, "x": 75, "y": 120},
+    {"id": "north_2", "owner": 0, "units": 7, "production_rate": 0.8, "x": 245, "y": 135},
+    {"id": "north_3", "owner": 0, "units": 12, "production_rate": 1.15, "x": 410, "y": 120},
+    {"id": "north_4", "owner": 0, "units": 9, "production_rate": 0.95, "x": 580, "y": 140},
+    {"id": "north_5", "owner": 0, "units": 6, "production_rate": 0.7, "x": 750, "y": 120},
+    {"id": "red_ne", "owner": -1, "units": 24, "production_rate": 1.2, "x": 925, "y": 125},
+
+    {"id": "west_2", "owner": 0, "units": 8, "production_rate": 0.85, "x": 95, "y": 255},
+    {"id": "grove", "owner": 0, "units": 5, "production_rate": 0.65, "x": 270, "y": 265},
+    {"id": "spire", "owner": 0, "units": 15, "production_rate": 1.4, "x": 435, "y": 250},
+    {"id": "bastion", "owner": 0, "units": 18, "production_rate": 1.55, "x": 600, "y": 275},
+    {"id": "forge", "owner": 0, "units": 7, "production_rate": 0.8, "x": 765, "y": 250},
+    {"id": "east_2", "owner": 0, "units": 10, "production_rate": 1.0, "x": 905, "y": 270},
+
+    {"id": "west_3", "owner": 0, "units": 11, "production_rate": 1.05, "x": 70, "y": 410},
+    {"id": "delta", "owner": 0, "units": 6, "production_rate": 0.75, "x": 235, "y": 400},
+    {"id": "market", "owner": 0, "units": 20, "production_rate": 1.75, "x": 405, "y": 420},
+    {"id": "crown", "owner": 0, "units": 30, "production_rate": 2.3, "x": 575, "y": 395},
+    {"id": "quarry", "owner": 0, "units": 13, "production_rate": 1.25, "x": 745, "y": 420},
+    {"id": "east_3", "owner": 0, "units": 8, "production_rate": 0.85, "x": 930, "y": 405},
+
+    {"id": "west_4", "owner": 0, "units": 9, "production_rate": 0.95, "x": 90, "y": 555},
+    {"id": "marsh", "owner": 0, "units": 5, "production_rate": 0.6, "x": 255, "y": 570},
+    {"id": "relay", "owner": 0, "units": 14, "production_rate": 1.3, "x": 425, "y": 545},
+    {"id": "harbor", "owner": 0, "units": 17, "production_rate": 1.5, "x": 590, "y": 575},
+    {"id": "mesa", "owner": 0, "units": 8, "production_rate": 0.9, "x": 760, "y": 550},
+    {"id": "east_4", "owner": 0, "units": 12, "production_rate": 1.1, "x": 910, "y": 565},
+
+    {"id": "red_sw", "owner": -1, "units": 24, "production_rate": 1.2, "x": 75, "y": 680},
+    {"id": "south_2", "owner": 0, "units": 7, "production_rate": 0.75, "x": 245, "y": 670},
+    {"id": "south_3", "owner": 0, "units": 10, "production_rate": 1.0, "x": 410, "y": 685},
+    {"id": "south_4", "owner": 0, "units": 6, "production_rate": 0.7, "x": 580, "y": 665},
+    {"id": "south_5", "owner": 0, "units": 13, "production_rate": 1.2, "x": 750, "y": 685},
+    {"id": "blue_se", "owner": 1, "units": 24, "production_rate": 1.2, "x": 925, "y": 675}
+  ],
+  "edges": [
+    {"a": "blue_nw", "b": "north_2", "travel_time": 2.4},
+    {"a": "north_2", "b": "north_3", "travel_time": 2.3},
+    {"a": "north_3", "b": "north_4", "travel_time": 2.4},
+    {"a": "north_4", "b": "north_5", "travel_time": 2.4},
+    {"a": "north_5", "b": "red_ne", "travel_time": 2.5},
+
+    {"a": "west_2", "b": "grove", "travel_time": 2.4},
+    {"a": "grove", "b": "spire", "travel_time": 2.3},
+    {"a": "spire", "b": "bastion", "travel_time": 2.3},
+    {"a": "bastion", "b": "forge", "travel_time": 2.3},
+    {"a": "forge", "b": "east_2", "travel_time": 2.1},
+
+    {"a": "west_3", "b": "delta", "travel_time": 2.3},
+    {"a": "delta", "b": "market", "travel_time": 2.4},
+    {"a": "market", "b": "crown", "travel_time": 2.4},
+    {"a": "crown", "b": "quarry", "travel_time": 2.4},
+    {"a": "quarry", "b": "east_3", "travel_time": 2.5},
+
+    {"a": "west_4", "b": "marsh", "travel_time": 2.3},
+    {"a": "marsh", "b": "relay", "travel_time": 2.4},
+    {"a": "relay", "b": "harbor", "travel_time": 2.3},
+    {"a": "harbor", "b": "mesa", "travel_time": 2.4},
+    {"a": "mesa", "b": "east_4", "travel_time": 2.2},
+
+    {"a": "red_sw", "b": "south_2", "travel_time": 2.4},
+    {"a": "south_2", "b": "south_3", "travel_time": 2.3},
+    {"a": "south_3", "b": "south_4", "travel_time": 2.4},
+    {"a": "south_4", "b": "south_5", "travel_time": 2.4},
+    {"a": "south_5", "b": "blue_se", "travel_time": 2.5},
+
+    {"a": "blue_nw", "b": "west_2", "travel_time": 2.1},
+    {"a": "north_2", "b": "grove", "travel_time": 2.0},
+    {"a": "north_3", "b": "spire", "travel_time": 2.1},
+    {"a": "north_4", "b": "bastion", "travel_time": 2.1},
+    {"a": "north_5", "b": "forge", "travel_time": 2.0},
+    {"a": "red_ne", "b": "east_2", "travel_time": 2.2},
+
+    {"a": "west_3", "b": "west_4", "travel_time": 2.0},
+    {"a": "delta", "b": "marsh", "travel_time": 2.2},
+    {"a": "market", "b": "relay", "travel_time": 2.0},
+    {"a": "crown", "b": "harbor", "travel_time": 2.2},
+    {"a": "quarry", "b": "mesa", "travel_time": 2.0},
+    {"a": "east_3", "b": "east_4", "travel_time": 2.2},
+
+    {"a": "west_4", "b": "red_sw", "travel_time": 2.0},
+    {"a": "marsh", "b": "south_2", "travel_time": 2.0},
+    {"a": "relay", "b": "south_3", "travel_time": 2.1},
+    {"a": "harbor", "b": "south_4", "travel_time": 2.1},
+    {"a": "mesa", "b": "south_5", "travel_time": 2.0},
+    {"a": "east_4", "b": "blue_se", "travel_time": 2.0},
+
+    {"a": "west_2", "b": "delta", "travel_time": 2.4},
+    {"a": "grove", "b": "market", "travel_time": 2.6},
+    {"a": "spire", "b": "crown", "travel_time": 2.4},
+    {"a": "bastion", "b": "quarry", "travel_time": 2.5},
+    {"a": "forge", "b": "east_3", "travel_time": 2.4},
+    {"a": "east_2", "b": "east_3", "travel_time": 2.0},
+
+    {"a": "north_2", "b": "west_2", "travel_time": 2.7},
+    {"a": "bastion", "b": "crown", "travel_time": 1.9},
+    {"a": "market", "b": "harbor", "travel_time": 3.0},
+    {"a": "quarry", "b": "south_5", "travel_time": 3.6}
+  ]
+}

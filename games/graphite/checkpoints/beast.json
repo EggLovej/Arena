@@ -1,0 +1,17 @@
+{
+ "player": "network:checkpoints/beast_ai.pt?temperature=0.2",
+ "since": "2026-10-13",
+ "why": "2026-10-13: free2_gap0 round 50 (the final network of the second send-limit ramp) drawing at temperature 0.2 beat free_gap0 round 50 (Beast) 60.8% over 200 games (106-63, 31 draws; +3.0 SE; maps 900300-900399, both seats; ml/runs/logs/round_robin_free2.json); the rule set before: 57.1%. The round's best other network, free2_gap3 round 50, scored 56.5% (+1.8 SE) and drew level with it (50.7% to 49.3%)",
+ "before": [
+  {
+   "player": "lookahead:ml/runs/deep_from_imitation/round_0500.pt?rule=nash&judge=ml/runs/judge1/best.pt",
+   "since": "2026-10-02",
+   "why": "2026-10-02: the two-move look-ahead (nash) with judge1 beat the original Atlas 82.5% (48-9, 3 draws, 60 games), the look-ahead with the old judge 59.5% (54-35, 11 draws, 100 games), and the plain network 65% (60 games)"
+  },
+  {
+   "player": "network:ml/runs/free_gap0/round_0050.pt?temperature=0.2",
+   "since": "2026-10-12",
+   "why": "2026-10-12: free_gap0 round 50 (free amounts, send-limit ramp) drawing at temperature 0.2 beat the look-ahead Beast 55.5% over 400 games (213-169, 18 draws; +2.2 SE; maps 900300-900499, both seats; ml/runs/logs/beast_match_free_gap0_r50_t0.2_maps300.json and _maps400.json); the rule set before the second batch: 55.0%"
+  }
+ ]
+}
