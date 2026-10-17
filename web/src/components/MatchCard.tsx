@@ -5,6 +5,7 @@ import Link from "next/link";
 import { formatDuration } from "@/lib/format.ts";
 import type { GameData, MatchRow } from "@/lib/types.ts";
 
+import { BotName } from "./BotName.tsx";
 import { MapPreview } from "./MapPreview.tsx";
 
 export function MatchCard({ game, row, botNames }: { game: GameData; row: MatchRow; botNames: Record<string, string> }) {
@@ -20,7 +21,7 @@ export function MatchCard({ game, row, botNames }: { game: GameData; row: MatchR
           {Object.entries(row.lineup).map(([seat, bot]) => (
             <span key={seat} className={`match-player${winner === seat ? " is-winner" : ""}`}>
               <span className="seat-dot" style={{ background: colors[seat] }} />
-              {botNames[bot] ?? bot}
+              <BotName name={botNames[bot] ?? bot} />
             </span>
           ))}
         </span>

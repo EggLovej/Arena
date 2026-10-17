@@ -32,6 +32,7 @@ os.environ.setdefault("BEAST_AI_FILE", str(ROOT / "checkpoints" / "beast.json"))
 
 from game import Game as Engine  # noqa: E402
 from game_types import BLUE, GREEN, NEUTRAL, PLAYERS, RED, SendAction  # noqa: E402
+from bot_names import bot_name  # noqa: E402
 from loading import available_ais, available_maps, load_map  # noqa: E402
 
 from arena.contract import BotInfo, GameInfo, MapInfo, Outcome, SeatInfo, bot_from_module  # noqa: E402
@@ -43,7 +44,7 @@ THEME_FILE = ROOT / "themes" / "paper_atlas.json"
 THEME = json.loads(THEME_FILE.read_text())
 
 # Bots in ais/ that the Arena leaves out. The original Atlas forecasts each opponent
-# by running a copy of it (the scripted AIs' code, or Neural AI's network), so it
+# by running a copy of it (the scripted AIs' code, or Instinct's network), so it
 # thinks for minutes per match; Atlas Clean plays its search without those copies.
 HIDDEN = {"atlas_ai"}
 # Bots that use a neural network.
@@ -211,7 +212,7 @@ class GraphiteGame:
         return tuple(
             BotInfo(
                 id=name,
-                name=_label(name),
+                name=bot_name(name),
                 description=BLURBS.get(name) or _summary(ROOT / "ais" / f"{name}.py"),
                 kind="neural" if name in NEURAL else "scripted",
             )
@@ -304,12 +305,6 @@ def _roster() -> tuple[str, ...]:
 
 def _seat(owner: int) -> str:
     return "" if owner == NEUTRAL else SEAT_OF[owner]
-
-
-def _label(name: str) -> str:
-    """``strategic_ai`` -> ``Strategic AI``, as in the game's own window."""
-
-    return name.removesuffix("_ai").replace("_", " ").title() + " AI"
 
 
 def _title(name: str) -> str:

@@ -57,7 +57,7 @@ Every match is a ranking of its players. The ratings are the Plackett-Luce
 model fitted to all of a tournament's results at once: with two players this
 is the Elo model, and it extends to any number of players per match. They are
 shown on the Elo scale, where 100 points more wins about 64% of games, with
-one bot pinned (Graphite pins Strategic AI at 1000). Each match size gets its
+one bot pinned (Graphite pins Strategic at 1000). Each match size gets its
 own table, since being good in a duel and in a three-way fight are different
 skills. The ± is a 95% interval for a bot's rating relative to the others.
 See `platform/arena/ratings.py`.

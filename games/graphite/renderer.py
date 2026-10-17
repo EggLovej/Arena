@@ -30,7 +30,7 @@ FOOTER_HEIGHT = 54
 
 class Renderer:
     def __init__(self, game: Game, player_names: dict[int, str] | None = None):
-        """``player_names`` labels each player in the header, for example {RED: "Strategic AI"}."""
+        """``player_names`` labels each player in the header, for example {RED: "Strategic"}."""
 
         pygame.init()
         self.player_names = {RED: "Red", BLUE: "Blue", GREEN: "Green", **(player_names or {})}
