@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-import { GameTabs } from "@/components/GameTabs.tsx";
-import { getGame, listGames } from "@/lib/data.ts";
+import { GameShell } from "@/components/GameShell.tsx";
+import { listGames } from "@/lib/data.ts";
 
 export const dynamicParams = false;
 
@@ -11,15 +11,5 @@ export function generateStaticParams() {
 
 export default async function GameLayout({ children, params }: { children: ReactNode; params: Promise<{ game: string }> }) {
   const { game: id } = await params;
-  const game = getGame(id);
-  return (
-    <>
-      <div className="game-header">
-        <h1>{game.name}</h1>
-        <p className="lede">{game.tagline}</p>
-      </div>
-      <GameTabs gameId={game.id} />
-      {children}
-    </>
-  );
+  return <GameShell gameId={id}>{children}</GameShell>;
 }

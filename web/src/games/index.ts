@@ -1,5 +1,6 @@
 // The games the website can draw. Adding a game means adding its folder here
 // with a board and its scoreboard numbers; every page around them is shared.
+// The game list shows them in this order, and the first is the home page's.
 
 import type { GameView } from "./types.ts";
 import { graphite } from "./graphite/index.ts";

@@ -7,9 +7,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import { gameView } from "@/games/index.ts";
-import { decodeFrames } from "@/lib/frames.ts";
 import { describeOutcome, formatClock } from "@/lib/format.ts";
-import type { Replay, Seat, Snapshot } from "@/lib/types.ts";
+import type { Seat, Snapshot } from "@/lib/types.ts";
+
+import { useAnimationClock, useReplay } from "./usePlayback.ts";
 
 import { BotName } from "./BotName.tsx";
 
@@ -25,32 +26,17 @@ type Props = {
 
 export function ReplayPlayer({ gameId, replayUrl, seats, botNames, theme }: Props) {
   const view = gameView(gameId);
-  const [replay, setReplay] = useState<Replay | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { replay, snapshots, error } = useReplay(replayUrl);
   const [position, setPosition] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(2);
 
   useEffect(() => {
-    let cancelled = false;
-    fetch(replayUrl)
-      .then((response) => {
-        if (!response.ok) throw new Error(`The replay could not be loaded (${response.status}).`);
-        return response.json() as Promise<Replay>;
-      })
-      .then((data) => {
-        if (cancelled) return;
-        setReplay(data);
-        setPosition(0);
-        setPlaying(true);
-      })
-      .catch((reason: Error) => !cancelled && setError(reason.message));
-    return () => {
-      cancelled = true;
-    };
-  }, [replayUrl]);
+    if (!replay) return;
+    setPosition(0);
+    setPlaying(true);
+  }, [replay]);
 
-  const snapshots = useMemo<Snapshot[]>(() => (replay ? decodeFrames(replay.frames) : []), [replay]);
   // Once loaded, scroll down to the player if its controls are off screen, so the
   // scoreboard, board and controls fill the window.
   const player = useRef<HTMLDivElement>(null);
@@ -62,23 +48,7 @@ export function ReplayPlayer({ gameId, replayUrl, seats, botNames, theme }: Prop
   const last = Math.max(0, snapshots.length - 1);
   const tickSeconds = replay?.tick_seconds ?? 0.1;
 
-  // Advance with the screen's refresh, so fleets glide between ticks.
-  const frame = useRef<number | null>(null);
-  useEffect(() => {
-    if (!playing || !replay) return;
-    // A frame's timestamp can be a little before performance.now(), so time starts at the first frame.
-    let previous: number | null = null;
-    const advance = (now: number) => {
-      const elapsed = previous === null ? 0 : Math.max(0, (now - previous) / 1000);
-      previous = now;
-      setPosition((current) => Math.min(last, current + (elapsed / tickSeconds) * speed));
-      frame.current = requestAnimationFrame(advance);
-    };
-    frame.current = requestAnimationFrame(advance);
-    return () => {
-      if (frame.current !== null) cancelAnimationFrame(frame.current);
-    };
-  }, [playing, replay, speed, last, tickSeconds]);
+  useAnimationClock(playing && !!replay, (seconds) => setPosition((current) => Math.min(last, current + (seconds / tickSeconds) * speed)));
 
   useEffect(() => {
     if (playing && replay && position >= last) setPlaying(false);
