@@ -33,6 +33,7 @@ os.environ.setdefault("BEAST_AI_FILE", str(ROOT / "checkpoints" / "beast.json"))
 from game import Game as Engine  # noqa: E402
 from game_types import BLUE, GREEN, NEUTRAL, PLAYERS, RED, SendAction  # noqa: E402
 from bot_names import bot_name  # noqa: E402
+from human_controller import SEND_FRACTION, HumanController  # noqa: E402
 from loading import available_ais, available_maps, load_map  # noqa: E402
 from sizing import LARGE_MAP  # noqa: E402
 
@@ -300,6 +301,21 @@ class GraphiteGame:
             ],
         }
 
+    def person(self, seat: str) -> "WebPerson":
+        return WebPerson(PLAYER_OF[seat])
+
+    def web_needs(self, bot_id: str) -> dict:
+        """The networks play through numpy in the browser, from their committed checkpoints."""
+
+        if bot_id == "neural_ai":
+            checkpoint = Path(os.environ["NEURAL_AI_CHECKPOINT"])
+        elif bot_id == "beast_ai":
+            player = json.loads(Path(os.environ["BEAST_AI_FILE"]).read_text())["player"]
+            checkpoint = ROOT / player.removeprefix("network:").partition("?")[0]
+        else:
+            return {}
+        return {"packages": ["numpy"], "files": [checkpoint.resolve().relative_to(ROOT).as_posix()]}
+
     def rules(self) -> str:
         return (ROOT / "RULES.md").read_text()
 
@@ -311,6 +327,49 @@ class GraphiteGame:
         for path in [ROOT / name for name in RULE_FILES] + sorted((ROOT / "maps").glob("*.json")):
             digest.update(path.name.encode() + b"\0" + path.read_bytes())
         return digest.hexdigest()[:16]
+
+
+class WebPerson(HumanController):
+    """A person playing on the website, with the game window's controls (human_controller.py).
+
+    The page sends what they did as commands:
+
+    - ``{"send": [source, target]}``: half the source's units go to the target, as a click does
+    - ``{"stream": [source, target]}``: from now on, every unit the source has goes there, as a shift-click does
+    - ``{"stop": source}``: that base's stream ends
+
+    Sends are played one a tick, in the order made, before any stream sends.
+    """
+
+    def __init__(self, player_id: int):
+        super().__init__(player_id)
+        self.sends: list[tuple[str, str]] = []
+
+    def command(self, data: dict) -> None:
+        if not isinstance(data, dict) or len(data) != 1:
+            raise ValueError("expected one of send, stream or stop")
+        (kind, value), = data.items()
+        if kind == "stop" and isinstance(value, str):
+            self.streams.pop(value, None)
+        elif kind in ("send", "stream") and isinstance(value, list) and len(value) == 2 and all(isinstance(part, str) for part in value):
+            if kind == "send":
+                self.sends.append((value[0], value[1]))
+            else:
+                self.streams[value[0]] = value[1]
+        else:
+            raise ValueError(f"not a command: {data!r}")
+
+    def act(self, view) -> SendAction | None:
+        while self.sends:
+            source_id, target_id = self.sends.pop(0)
+            source = next((base for base in view.bases if base.id == source_id), None)
+            if source is not None and source.owner == self.player_id and int(source.units) >= 1:
+                return SendAction(source_id, target_id, max(1, int(int(source.units) * SEND_FRACTION)))
+        return self.choose_action(view)
+
+    def view(self) -> dict:
+        # The streams from bases the person has lost are dropped by the next act().
+        return {"streams": dict(self.streams)}
 
 
 def _roster() -> tuple[str, ...]:

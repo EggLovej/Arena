@@ -57,7 +57,7 @@ export function GamePreview({ gameId }: { gameId: string }) {
         <section className="overview-stage" aria-label="Featured match">
           <Stage game={game} live={live} names={names} />
           <div className="overview-actions">
-            <PlayButton />
+            <PlayButton game={game} />
             <WatchButton game={game} live={live} />
           </div>
         </section>
@@ -80,7 +80,7 @@ export function GameOverview({ gameId }: { gameId: string }) {
         <section className="overview-stage" aria-label="Featured match">
           <Stage game={game} live={live} names={names} />
           <div className="overview-actions">
-            <PlayButton />
+            <PlayButton game={game} />
             <WatchButton game={game} live={live} />
           </div>
         </section>
@@ -152,17 +152,31 @@ function Stage({ game, live, names }: { game: GameData; live: MatchRow | undefin
   );
 }
 
-function PlayButton() {
+function PlayButton({ game }: { game: GameData }) {
+  const icon = (
+    <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+      <path d="M5 2.5 L19 11 L5 19.5 Z" />
+    </svg>
+  );
+  if (!gameView(game.id).play) {
+    return (
+      <span className="button button-play" aria-disabled="true" title="Playing against the bots in the browser is coming soon">
+        {icon}
+        <span>
+          Play game
+          <small>Coming soon</small>
+        </span>
+      </span>
+    );
+  }
   return (
-    <span className="button button-play" aria-disabled="true" title="Playing against the bots in the browser is coming soon">
-      <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
-        <path d="M5 2.5 L19 11 L5 19.5 Z" />
-      </svg>
+    <Link href={`/games/${game.id}/play`} className="button button-play">
+      {icon}
       <span>
         Play game
-        <small>Coming soon</small>
+        <small>Against the bots</small>
       </span>
-    </span>
+    </Link>
   );
 }
 

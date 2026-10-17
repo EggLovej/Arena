@@ -2,6 +2,7 @@ import type { Snapshot } from "@/lib/types.ts";
 
 import type { GameView, SeatStat } from "../types.ts";
 import { GraphiteBoard } from "./GraphiteBoard.tsx";
+import { GraphiteControls } from "./GraphiteControls.tsx";
 import { look } from "./look.ts";
 
 type BaseState = [string, number];
@@ -43,4 +44,14 @@ export const graphite: GameView = {
     return Object.fromEntries(Object.entries(totals(snapshot)).map(([seat, { units }]) => [seat, units]));
   },
   strengthLabel: "Units, including fleets on the way",
+  play: {
+    Controls: GraphiteControls,
+    help: [
+      "Click one of your bases, then a base next to it: half its units go there.",
+      "Shift-click the second base instead (or turn Stream on) to send it everything the first base has, every tick, until you shift-click the first base again.",
+      "You send one fleet a tick, like the bots. Right-click or Escape lets go of a selected base.",
+      "With a keyboard, Tab moves between the bases and Enter acts as a click (Shift+Enter as a Shift-click).",
+    ],
+    map: "crossroads",
+  },
 };

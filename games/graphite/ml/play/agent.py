@@ -16,7 +16,6 @@ A player called ``network:PATH`` is this agent wherever players are named
 ``network:ml/runs/free_gap0/round_0050.pt?temperature=0.2``.
 """
 
-from dataclasses import dataclass
 from pathlib import Path
 
 import torch
@@ -28,18 +27,7 @@ from ml.encoding.state_encoder import encode_state, layout_for
 from ml.models import PolicyValueModel, make_input
 from ml.models.checkpoint import init_model
 from ml.models.policy import choose, to_choices
-
-
-PREFIX = "network:"
-
-
-@dataclass(frozen=True)
-class NetworkSettings:
-    temperature: float = 1.0  # 1 draws by the network's own odds; Neural AI plays at 0.2
-
-    def __post_init__(self):
-        if self.temperature <= 0:
-            raise ValueError(f"temperature must be above 0, not {self.temperature}")
+from ml.play.players import NETWORK as PREFIX, NetworkSettings  # noqa: F401 (also read from here)
 
 
 class NeuralAgent:
