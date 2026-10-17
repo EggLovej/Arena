@@ -53,6 +53,8 @@ def load_map(name: str) -> MapDefinition:
         height=data["height"],
         bases=tuple(BaseDefinition(**base) for base in data["bases"]),
         edges=tuple(EdgeDefinition(**edge) for edge in data["edges"]),
+        time_limit=data.get("time_limit"),
+        tagline=data.get("tagline", ""),
     )
     validate_map(map_definition)
     return map_definition
@@ -63,6 +65,8 @@ def validate_map(map_definition: MapDefinition) -> None:
         raise ValueError("Map width and height must be positive")
     if not map_definition.bases:
         raise ValueError("A map must contain at least one base")
+    if map_definition.time_limit is not None and map_definition.time_limit <= 0:
+        raise ValueError("A map's time limit must be positive")
 
     base_ids = [base.id for base in map_definition.bases]
     if len(base_ids) != len(set(base_ids)):

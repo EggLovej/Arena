@@ -1,4 +1,5 @@
 import copy
+import sys
 from dataclasses import replace
 
 from arena.cli import main
@@ -57,6 +58,16 @@ def test_bots_that_fail_lose_their_moves_not_the_match(race):
     assert green.errors == 0 and green.refused == green.moves
     assert record.outcome.reason == "time" and record.outcome.ticks == race.info.max_ticks
     assert record.outcome.ranking == (("red", "blue", "green"),)
+    assert verify(race, record.replay) == []
+
+
+def test_a_map_can_have_a_longer_time_limit_than_its_game(race, monkeypatch):
+    tracks = sys.modules[type(race).__module__].MAPS
+    track = tracks["long"]
+    monkeypatch.setitem(tracks, "long", replace(track, info=replace(track.info, max_ticks=55)))
+    record = play_match(race, "long", {"red": "broken", "blue": "garbage", "green": "cheater"}, seed=2)
+    assert record.outcome.reason == "time" and record.outcome.ticks == 55 > race.info.max_ticks
+    assert record.replay["max_ticks"] == 55
     assert verify(race, record.replay) == []
 
 

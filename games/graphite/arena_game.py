@@ -34,6 +34,7 @@ from game import Game as Engine  # noqa: E402
 from game_types import BLUE, GREEN, NEUTRAL, PLAYERS, RED, SendAction  # noqa: E402
 from bot_names import bot_name  # noqa: E402
 from loading import available_ais, available_maps, load_map  # noqa: E402
+from sizing import LARGE_MAP  # noqa: E402
 
 from arena.contract import BotInfo, GameInfo, MapInfo, Outcome, SeatInfo, bot_from_module  # noqa: E402
 
@@ -205,7 +206,14 @@ class GraphiteGame:
             owners = {base.owner for base in definition.bases}
             seats = tuple(SEAT_OF[player] for player in PLAYERS if player in owners)
             description = f"{len(definition.bases)} bases, {len(definition.edges)} routes"
-            maps.append(MapInfo(map_id, _title(definition.name), seats, description))
+            if definition.tagline:
+                description = f"{definition.tagline}. {description}"
+            max_ticks = None
+            if definition.time_limit is not None:
+                max_ticks = round(definition.time_limit / INFO.tick_seconds)
+                description += f", {definition.time_limit / 60:g} minutes"
+            group = "Large maps" if len(definition.bases) >= LARGE_MAP else ""
+            maps.append(MapInfo(map_id, _title(definition.name), seats, description, max_ticks, group))
         return tuple(maps)
 
     def bots(self) -> tuple[BotInfo, ...]:

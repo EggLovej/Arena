@@ -1,7 +1,7 @@
 Graphite is played on a map of bases joined by routes. Every player starts with
 one or more bases; the rest are neutral. The last player with any bases or
 fleets left wins. A match that is still undecided after three minutes of game
-time is a draw between everyone still in it.
+time (ten on the large maps) is a draw between everyone still in it.
 
 ## Bases and fleets
 

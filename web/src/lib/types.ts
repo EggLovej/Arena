@@ -10,6 +10,8 @@ export type MapEntry = {
   name: string;
   seats: string[];
   description: string;
+  max_ticks?: number | null; // the map's own time limit, when it differs from the game's
+  group?: string; // a heading to list the map under; "" for the main list
   board: unknown;
   start: Snapshot;
 };

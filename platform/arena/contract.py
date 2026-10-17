@@ -53,6 +53,8 @@ class MapInfo:
     name: str
     seats: tuple[str, ...]  # the seats this map uses
     description: str = ""
+    max_ticks: int | None = None  # this map's own time limit, for maps that need longer than the game's
+    group: str = ""  # a heading the website lists the map under, such as "Large maps"; "" for the main list
 
 
 @dataclass(frozen=True)
