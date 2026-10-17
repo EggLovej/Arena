@@ -123,7 +123,7 @@ select:hover {
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--accent-text);
   outline-offset: 2px;
 }
 
@@ -1089,7 +1089,7 @@ select:hover {
   max-height: max(320px, calc(100vh - 260px));
 }
 
-@media (max-width: 640px) {
+@container main (max-width: 640px) {
   .scoreboard {
     display: grid;
     grid-template-columns: repeat(var(--seats, 2), minmax(0, 1fr));
@@ -1273,7 +1273,7 @@ select:hover {
   text-decoration: none;
 }
 
-@media (max-width: 640px) {
+@container main (max-width: 640px) {
   .match-row {
     grid-template-columns: minmax(0, 1fr);
   }

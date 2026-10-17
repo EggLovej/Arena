@@ -62,11 +62,12 @@ export function LiveMatch({ gameId, gameName, replayUrl, map, lineup, seats, bot
     setPosition((current) => Math.min(last, current + (Math.min(seconds, 0.25) / tickSeconds) * speed)),
   );
 
+  // The result stays up while the board is out of sight, so it is still there on scrolling back.
   useEffect(() => {
-    if (!finished || paused) return;
+    if (!finished || paused || !visible) return;
     const timer = setTimeout(() => setPosition(start), HOLD_SECONDS * 1000);
     return () => clearTimeout(timer);
-  }, [finished, paused, start]);
+  }, [finished, paused, visible, start]);
 
   const board = replay?.board ?? map.board;
   const tick = Math.max(0, Math.min(last, Math.floor(position)));
