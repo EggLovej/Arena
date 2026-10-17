@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { BotAvatar } from "./BotAvatar.tsx";
+import { BotName } from "./BotName.tsx";
 
 export type LadderTable = {
   players: number;
@@ -45,7 +46,7 @@ export function Ladder({ gameId, tables, note }: { gameId: string; tables: Ladde
                 <span className="ladder-rank">{index + 1}</span>
                 <Link href={`/games/${gameId}/bots#${entry.bot}`} className="ladder-bot">
                   <BotAvatar id={entry.bot} kind={entry.kind} size={32} />
-                  <span>{entry.name}</span>
+                  <BotName name={entry.name} />
                 </Link>
                 <span className="ladder-rating">{entry.rating}</span>
               </li>

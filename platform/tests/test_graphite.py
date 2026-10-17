@@ -18,9 +18,11 @@ def test_maps_bots_and_seats(graphite):
     assert maps["classic"].seats == ("red", "blue")
     assert maps["triangle"].seats == ("red", "blue", "green")
     bots = {bot.id: bot for bot in graphite.bots()}
-    assert {"strategic_ai", "careful_ai", "aggressive_ai", "neural_ai", "beast_ai", "atlas_ai"} <= set(bots)
+    assert {"strategic_ai", "careful_ai", "aggressive_ai", "neural_ai", "beast_ai", "atlas_clean_ai"} <= set(bots)
+    assert "atlas_ai" not in bots  # too slow: it runs a copy of each opponent to forecast it
     assert bots["neural_ai"].kind == "neural" and bots["strategic_ai"].kind == "scripted"
-    assert bots["atlas_ai"].seat_counts == (2,)
+    with pytest.raises(ValueError):
+        graphite.load_bot("atlas_ai")
     assert all(bot.description for bot in bots.values())
 
 

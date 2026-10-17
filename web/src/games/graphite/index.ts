@@ -26,7 +26,7 @@ export const graphite: GameView = {
   genre: "Real-time strategy",
   cardMap: "crossroads",
   accent: "#d3a42f", // the paper theme's highlight gold
-  liveMap: "crossroads", // Neural AI and Beast AI trade the lead three times
+  liveMap: "crossroads", // Instinct and Apex trade the lead three times
   look,
   stats(_board, snapshot) {
     const result: Record<string, SeatStat[]> = {};

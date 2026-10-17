@@ -16,6 +16,7 @@ from pathlib import Path
 import pygame
 
 from avatars import avatar_surface, human_avatar
+from bot_names import bot_name
 from game_types import GREEN as GREEN_PLAYER, NEUTRAL, RED as RED_PLAYER, MapDefinition
 from loading import load_map
 from sizing import base_radii
@@ -665,4 +666,4 @@ def _display_name(name: str) -> str:
 def _controller_name(name: str) -> str:
     if name == HUMAN:
         return "Human player"
-    return name.removesuffix("_ai").replace("_", " ").title() + " AI"
+    return bot_name(name)

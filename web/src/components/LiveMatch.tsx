@@ -10,6 +10,7 @@ import { gameView } from "@/games/index.ts";
 import { describeOutcome, formatClock } from "@/lib/format.ts";
 import type { MapEntry, Seat } from "@/lib/types.ts";
 
+import { BotName } from "./BotName.tsx";
 import { useAnimationClock, useReplay } from "./usePlayback.ts";
 
 const HOLD_SECONDS = 5; // how long the result shows before the match starts again
@@ -82,7 +83,9 @@ export function LiveMatch({ gameId, gameName, replayUrl, map, lineup, seats, bot
 
   const panel = (seat: string, right: boolean) => (
     <div key={seat} className={`hud-seat${right ? " is-right" : ""}`} style={{ "--seat": seatInfo[seat]?.color } as CSSProperties}>
-      <span className="hud-name">{botNames[lineup[seat]] ?? lineup[seat]}</span>
+      <span className="hud-name">
+        <BotName name={botNames[lineup[seat]] ?? lineup[seat]} />
+      </span>
       <span className="hud-stats">
         {stats[seat] ? stats[seat].map((stat) => <span key={stat.label}>{`${stat.value} ${stat.label}`}</span>) : <span>knocked out</span>}
       </span>

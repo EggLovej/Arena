@@ -26,7 +26,7 @@ export function listNames(names: string[]): string {
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }
 
-/** One sentence about how a match ended, for example "Strategic AI (Red) won by elimination after 2 min 05 s." */
+/** One sentence about how a match ended, for example "Strategic (Red) won by elimination after 2 min 05 s." */
 export function describeOutcome(
   outcome: { ranking: string[][]; reason: string; ticks: number },
   lineup: Record<string, string>,

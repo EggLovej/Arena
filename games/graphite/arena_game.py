@@ -32,6 +32,7 @@ os.environ.setdefault("BEAST_AI_FILE", str(ROOT / "checkpoints" / "beast.json"))
 
 from game import Game as Engine  # noqa: E402
 from game_types import BLUE, GREEN, NEUTRAL, PLAYERS, RED, SendAction  # noqa: E402
+from bot_names import bot_name  # noqa: E402
 from loading import available_ais, available_maps, load_map  # noqa: E402
 
 from arena.contract import BotInfo, GameInfo, MapInfo, Outcome, SeatInfo, bot_from_module  # noqa: E402
@@ -42,11 +43,12 @@ PLAYER_OF = {seat: player for player, seat in SEAT_OF.items()}
 THEME_FILE = ROOT / "themes" / "paper_atlas.json"
 THEME = json.loads(THEME_FILE.read_text())
 
-# Bots that use a neural network (Atlas uses one to forecast its opponents).
-NEURAL = {"neural_ai", "beast_ai", "atlas_ai"}
-# Atlas thinks for minutes per match against the networks on large maps, so it
-# plays only the two-player maps; on three-player maps every match would include it.
-TWO_PLAYER_ONLY = {"atlas_ai"}
+# Bots in ais/ that the Arena leaves out. The original Atlas forecasts each opponent
+# by running a copy of it (the scripted AIs' code, or Instinct's network), so it
+# thinks for minutes per match; Atlas Clean plays its search without those copies.
+HIDDEN = {"atlas_ai"}
+# Bots that use a neural network.
+NEURAL = {"neural_ai", "beast_ai"}
 # What the website says about each bot. A bot not listed here is described by the
 # first paragraph of its module's docstring.
 BLURBS = {
@@ -58,8 +60,6 @@ BLURBS = {
     "without looking ahead.",
     "beast_ai": "Our strongest player so far, crowned by beating the previous one. Today that is a network "
     "that beat the last Beast in 61% of 200 games.",
-    "atlas_ai": "Searches ahead with an exact copy of the game, forecasting each opponent with an exact "
-    "copy of it (the scripted AIs' own code, or Neural AI's network). It thinks far longer than the others.",
     "atlas_clean_ai": "Atlas's look-ahead search without copies of its opponents: it forecasts each one "
     "with whichever of its own ten styles best explains the fleets it has seen.",
 }
@@ -212,16 +212,15 @@ class GraphiteGame:
         return tuple(
             BotInfo(
                 id=name,
-                name=_label(name),
+                name=bot_name(name),
                 description=BLURBS.get(name) or _summary(ROOT / "ais" / f"{name}.py"),
                 kind="neural" if name in NEURAL else "scripted",
-                seat_counts=(2,) if name in TWO_PLAYER_ONLY else None,
             )
-            for name in available_ais()
+            for name in _roster()
         )
 
     def load_bot(self, bot_id: str):
-        if bot_id not in available_ais():
+        if bot_id not in _roster():
             raise ValueError(f"Graphite has no bot named {bot_id!r}")
         return bot_from_module(importlib.import_module(f"ais.{bot_id}"))
 
@@ -300,14 +299,12 @@ class GraphiteGame:
         return digest.hexdigest()[:16]
 
 
+def _roster() -> tuple[str, ...]:
+    return tuple(name for name in available_ais() if name not in HIDDEN)
+
+
 def _seat(owner: int) -> str:
     return "" if owner == NEUTRAL else SEAT_OF[owner]
-
-
-def _label(name: str) -> str:
-    """``strategic_ai`` -> ``Strategic AI``, as in the game's own window."""
-
-    return name.removesuffix("_ai").replace("_", " ").title() + " AI"
 
 
 def _title(name: str) -> str:
