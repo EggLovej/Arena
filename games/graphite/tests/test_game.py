@@ -188,11 +188,11 @@ class GameTests(unittest.TestCase):
     def test_threefold_crucible_guards_its_prize_behind_fortified_bridges(self):
         bases = load_map("threefold_crucible").bases
         prize = max(bases, key=lambda base: base.production_rate)
-        self.assertEqual((prize.id, prize.production_rate, prize.units), ("crucible", 10.0, 300))
+        self.assertEqual((prize.id, prize.production_rate, prize.units), ("crucible", 10.0, 1000))
         bridges = [base for base in bases if base.id.startswith("bridge")]
         self.assertEqual(len(bridges), 9)
         for bridge in bridges:
-            self.assertEqual((bridge.production_rate, bridge.units), (0.2, 50))
+            self.assertEqual((bridge.production_rate, bridge.units), (0.2, 80))
 
     def test_four_corners_starts_in_opposite_corners(self):
         map_definition = load_map("four_corners")

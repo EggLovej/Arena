@@ -50,6 +50,10 @@ THEME = json.loads(THEME_FILE.read_text())
 HIDDEN = {"atlas_ai"}
 # Bots that use a neural network.
 NEURAL = {"neural_ai", "beast_ai"}
+# Map groups a bot leaves out of tournaments. Atlas Clean's search takes over half a
+# second a move on the large maps, so it would run out of its match time there.
+LARGE_MAPS = "Large maps"
+SITS_OUT = {"atlas_clean_ai": (LARGE_MAPS,)}
 # What the website says about each bot. A bot not listed here is described by the
 # first paragraph of its module's docstring.
 BLURBS = {
@@ -212,7 +216,7 @@ class GraphiteGame:
             if definition.time_limit is not None:
                 max_ticks = round(definition.time_limit / INFO.tick_seconds)
                 description += f", {definition.time_limit / 60:g} minutes"
-            group = "Large maps" if len(definition.bases) >= LARGE_MAP else ""
+            group = LARGE_MAPS if len(definition.bases) >= LARGE_MAP else ""
             maps.append(MapInfo(map_id, _title(definition.name), seats, description, max_ticks, group))
         return tuple(maps)
 
@@ -223,6 +227,7 @@ class GraphiteGame:
                 name=bot_name(name),
                 description=BLURBS.get(name) or _summary(ROOT / "ais" / f"{name}.py"),
                 kind="neural" if name in NEURAL else "scripted",
+                sits_out=SITS_OUT.get(name, ()),
             )
             for name in _roster()
         )

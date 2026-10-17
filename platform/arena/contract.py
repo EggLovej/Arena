@@ -65,6 +65,7 @@ class BotInfo:
     kind: str = "scripted"  # "scripted" or "neural"; the website shows it
     leaderboard: bool = True  # False keeps a bot out of tournaments
     seat_counts: tuple[int, ...] | None = None  # the match sizes it plays in tournaments; None for all
+    sits_out: tuple[str, ...] = ()  # map groups it leaves out of tournaments, such as ("Large maps",)
 
 
 @dataclass(frozen=True)

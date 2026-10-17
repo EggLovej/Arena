@@ -23,6 +23,7 @@ export type BotEntry = {
   kind: string;
   leaderboard: boolean;
   seat_counts: number[] | null;
+  sits_out?: string[]; // map groups the bot leaves out of tournaments
 };
 
 export type GameData = {

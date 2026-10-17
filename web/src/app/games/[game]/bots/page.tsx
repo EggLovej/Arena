@@ -60,6 +60,7 @@ export default async function Bots({ params }: Params) {
               </ul>
             )}
             {bot.seat_counts && <p className="small">Plays only on {bot.seat_counts.join(" and ")}-player maps.</p>}
+            {bot.sits_out?.length ? <p className="small">Sits out the {bot.sits_out.join(" and ").toLowerCase()}.</p> : null}
             <Link href={`/games/${id}/watch?bot=${bot.id}`}>Watch its matches</Link>
           </article>
         );
