@@ -23,6 +23,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from arena.contract import Game, Outcome, state_hash
+from arena.frames import apply
 from arena.runner import REPLAY_FORMAT, REPLAY_VERSION
 
 
@@ -69,16 +70,30 @@ def verify(game: Game, replay: dict) -> list[str]:
     frames = replay["frames"]
     keyframe_every = frames["keyframe_every"]
     final_tick = frames["count"] - 1
+    expected_keyframes = {str(tick) for tick in range(0, final_tick + 1, keyframe_every)}
+    if len(frames["deltas"]) != final_tick or set(frames["keyframes"]) != expected_keyframes:
+        return [f"the frames are not a keyframe every {keyframe_every} ticks and a delta for every tick"]
+
+    previous: dict | None = None  # the replayed snapshot of the tick before
+    differs = False
 
     def check(tick: int) -> None:
-        if tick % keyframe_every:
-            return
-        expected_hash = replay["hashes"].get(str(tick))
+        # Every frame the website can show: each tick's delta from the one before, and each
+        # keyframe. Only the first difference is reported, since a match that went another
+        # way differs from then on.
+        nonlocal previous, differs
+        snapshot = _plain(match.snapshot())
+        keyframe = frames["keyframes"].get(str(tick))
+        if not differs and (
+            (keyframe is not None and _plain(keyframe) != snapshot)
+            or (previous is not None and _plain(apply(previous, frames["deltas"][tick - 1])) != snapshot)
+        ):
+            problems.append(f"snapshot differs at tick {tick}")
+            differs = True
+        previous = snapshot
+        expected_hash = replay["hashes"].get(str(tick)) if tick % keyframe_every == 0 else None
         if expected_hash is not None and expected_hash != state_hash(match.save_state()):
             problems.append(f"state differs at tick {tick}")
-        expected_frame = frames["keyframes"].get(str(tick))
-        if expected_frame is not None and _plain(expected_frame) != _plain(match.snapshot()):
-            problems.append(f"snapshot differs at tick {tick}")
 
     check(0)
     while match.tick < final_tick:

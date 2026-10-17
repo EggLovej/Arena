@@ -33,6 +33,9 @@ concurrency:
 
 jobs:
   tournament:
+    # It pushes to main, so it only plays main: a run started on another branch would
+    # push that branch's commits along with its results.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 300
     steps:

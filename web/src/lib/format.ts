@@ -38,13 +38,18 @@ export function describeOutcome(
   const when = formatDuration(outcome.ticks * tickSeconds);
   const [first = [], ...rest] = outcome.ranking;
   if (first.length === 1) {
-    const how = outcome.reason === "elimination" ? "by elimination" : "on time";
+    const how = { elimination: " by elimination", time: " on time" }[outcome.reason] ?? "";
     const others = rest.length > 1 ? ` ${rest.map((group, index) => `${ordinal(index + 2)}: ${listNames(group.map(who))}`).join("; ")}.` : "";
-    return `${who(first[0])} won ${how} after ${when}.${others}`;
+    return `${who(first[0])} won${how} after ${when}.${others}`;
   }
   const out = rest.flat();
   const tail = out.length ? ` ${listNames(out.map(who))} ${out.length === 1 ? "was" : "were"} knocked out.` : "";
-  const ending = outcome.reason === "time" ? `time ran out after ${when}` : `they fell at the same moment, after ${when}`;
+  const ending =
+    outcome.reason === "time"
+      ? `time ran out after ${when}`
+      : outcome.reason === "elimination"
+        ? `they fell at the same moment, after ${when}`
+        : `they finished level after ${when}`;
   return `Draw between ${listNames(first.map(who))}: ${ending}.${tail}`;
 }
 

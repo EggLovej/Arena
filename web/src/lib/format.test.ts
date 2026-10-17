@@ -31,3 +31,10 @@ test("a draw on time", () => {
   const text = describeOutcome({ ranking: [["red", "blue"], ["green"]], reason: "time", ticks: 1800 }, lineup, names, seats, 0.1);
   assert.equal(text, "Draw between Strategic AI (Red) and Careful AI (Blue): time ran out after 3 min 00 s. Aggressive AI (Green) was knocked out.");
 });
+
+test("a game's own way of ending gets plain words", () => {
+  const won = describeOutcome({ ranking: [["blue"], ["red"]], reason: "finish", ticks: 90 }, lineup, names, seats, 0.1);
+  assert.equal(won, "Careful AI (Blue) won after 9 s.");
+  const level = describeOutcome({ ranking: [["red", "blue"]], reason: "finish", ticks: 90 }, lineup, names, seats, 0.1);
+  assert.equal(level, "Draw between Strategic AI (Red) and Careful AI (Blue): they finished level after 9 s.");
+});

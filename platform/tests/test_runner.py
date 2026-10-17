@@ -40,6 +40,15 @@ def test_a_changed_frame_is_caught(race):
     assert "snapshot differs at tick 2" in verify(race, tampered)
 
 
+def test_a_changed_delta_is_caught(race):
+    replay = play_match(race, "short", {"red": "steady", "blue": "steady"}, seed=1).replay
+    tampered = copy.deepcopy(replay)
+    tampered["frames"]["deltas"][0]["runners"] = {"red": [999]}
+    assert verify(race, tampered) == ["snapshot differs at tick 1"]
+    del tampered["frames"]["deltas"][-1]
+    assert "a delta for every tick" in verify(race, tampered)[0]
+
+
 def test_bots_that_fail_lose_their_moves_not_the_match(race):
     record = play_match(race, "long", {"red": "broken", "blue": "garbage", "green": "cheater"}, seed=2)
     red, blue, green = (record.seats[seat] for seat in ("red", "blue", "green"))
@@ -109,4 +118,5 @@ def test_verify_tells_a_broken_replay_from_one_older_rules_changed(race, tmp_pat
     assert main(["verify", str(old), str(good)]) == 0
     assert "1 of 2 replays play back exactly" in capsys.readouterr().out
     assert main(["verify", str(broken), str(old)]) == 1
-    assert "broken.json: final state differs" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "broken.json: snapshot differs at tick 1;" in out and "final state differs" in out and "old.json" not in out
