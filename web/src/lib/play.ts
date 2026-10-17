@@ -54,7 +54,16 @@ export function result(outcome: Outcome, seat: string): "won" | "lost" | "drew" 
   return first.length === 1 ? "won" : "drew";
 }
 
-/** A seat for every place on the map: the person in theirs, and the chosen bot (or the first choice) elsewhere. */
-export function lineupFor(seats: string[], personSeat: string, bots: Record<string, string>, fallback: string): Record<string, string> {
-  return Object.fromEntries(seats.map((seat) => [seat, seat === personSeat ? PERSON : bots[seat] || fallback]));
+/** Whether a bot plays a map: a bot sits out the maps of the groups it names, such as Graphite's large maps. */
+export function playsOn(bot: { sits_out?: string[] }, map: { group?: string }): boolean {
+  return !map.group || !bot.sits_out?.includes(map.group);
+}
+
+/**
+ * A seat for every place on the map: the person in theirs (none when they watch), and elsewhere
+ * the bot chosen for that seat if it plays the map, else `fallback` if it does, else the first bot that does.
+ */
+export function lineupFor(seats: string[], personSeat: string | null, bots: Record<string, string>, playable: string[], fallback: string): Record<string, string> {
+  const other = playable.includes(fallback) ? fallback : (playable[0] ?? fallback);
+  return Object.fromEntries(seats.map((seat) => [seat, seat === personSeat ? PERSON : playable.includes(bots[seat]) ? bots[seat] : other]));
 }

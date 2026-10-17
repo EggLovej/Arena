@@ -82,6 +82,11 @@ and sends the person's clicks, which the game's `person(seat)` (in its
 `arena_game.py`) turns into actions. As in the tournaments, every bot moves
 every tick, so a bot that thinks slowly slows the game down rather than
 playing worse.
+The same page can seat a bot in every place, to watch any bots play each
+other live, and shows the match full screen (the F key). A bot that sits out a
+group of maps in the tournaments (`BotInfo.sits_out`, such as Graphite's large
+maps) isn't offered for them there either, and each map keeps its own time
+limit (`MapInfo.max_ticks`).
 Before each build, `web/scripts/bundle-python.mjs` copies the game's code and
 checkpoints into `web/public/play/` (not committed).
 

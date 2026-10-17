@@ -74,6 +74,12 @@ def seat_seed(seed: int, seat: str) -> int:
     return int.from_bytes(digest[:4], "big")
 
 
+def max_ticks_for(game: Game, map_id: str) -> int:
+    """How many ticks a match on this map may last: the map's own limit, or the game's."""
+
+    return next((m.max_ticks for m in game.maps() if m.id == map_id and m.max_ticks), game.info.max_ticks)
+
+
 def play_match(
     game: Game,
     map_id: str,
@@ -89,7 +95,7 @@ def play_match(
     started = time.perf_counter()
     random.seed(seed)  # bots that use the random module play the same way again
     match = game.new_match(map_id, seed)
-    max_ticks = next((m.max_ticks for m in game.maps() if m.id == map_id and m.max_ticks), info.max_ticks)
+    max_ticks = max_ticks_for(game, map_id)
     if set(lineup) != set(match.seats):
         raise ValueError(f"Map {map_id} has seats {match.seats}, but the lineup names {tuple(lineup)}")
 

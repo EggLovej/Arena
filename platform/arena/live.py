@@ -29,7 +29,7 @@ from typing import Protocol
 from arena.contract import JSON, Action, BotContext, Game, Observation
 from arena.frames import delta
 from arena.registry import load_game
-from arena.runner import SeatReport, _note_error, seat_seed
+from arena.runner import SeatReport, _note_error, max_ticks_for, seat_seed
 
 
 PERSON = "person"  # stands in for a bot id where a person plays a seat
@@ -87,6 +87,7 @@ class LiveMatch:
         self.game = game
         random.seed(seed)  # as in a tournament, for bots that use the random module
         self.match = game.new_match(map_id, seed)
+        self.max_ticks = max_ticks_for(game, map_id)
         if set(lineup) != set(self.match.seats):
             raise ValueError(f"Map {map_id} has seats {self.match.seats}, but the lineup names {tuple(lineup)}")
         known = {bot.id for bot in game.bots()}
@@ -100,7 +101,7 @@ class LiveMatch:
                 continue
             if lineup[seat] not in known:
                 raise ValueError(f"{info.name} has no bot {lineup[seat]!r}")
-            context = BotContext(info.id, map_id, seat, self.match.seats, seat_seed(seed, seat), info.tick_seconds, info.max_ticks)
+            context = BotContext(info.id, map_id, seat, self.match.seats, seat_seed(seed, seat), info.tick_seconds, self.max_ticks)
             bot = None
             try:  # a bot that fails to load sits the match out, as in a tournament
                 bot = game.load_bot(lineup[seat])
@@ -178,7 +179,7 @@ class LiveMatch:
         return self._update({seat: reason for seat, reason in {**refused, **problems}.items() if seat in self.people})
 
     def finished(self) -> bool:
-        return self.match.finished() or self.match.tick >= self.game.info.max_ticks
+        return self.match.finished() or self.match.tick >= self.max_ticks
 
     def _checked(self, action: Action | None, report: SeatReport) -> Action | None:
         """The action as the game reads it back from JSON, as in a tournament; None if it is not one."""

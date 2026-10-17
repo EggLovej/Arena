@@ -1,5 +1,8 @@
 """Matches people play on the website (arena.live), with the Race game and with Graphite."""
 
+import sys
+from dataclasses import replace
+
 import pytest
 
 from arena.frames import apply
@@ -85,6 +88,14 @@ def test_bots_that_break_are_reported_and_the_match_goes_on(race):
     assert "this bot always fails" in errors["blue"]
     assert errors["green"].startswith("load: ")
     assert updates[-1]["outcome"]["ranking"][0] == ["red"]
+
+
+def test_a_map_with_a_longer_time_limit_plays_longer(race, monkeypatch):
+    tracks = sys.modules[type(race).__module__].MAPS
+    monkeypatch.setitem(tracks, "long", replace(tracks["long"], info=replace(tracks["long"].info, max_ticks=55)))
+    live = LiveMatch(race, "long", {"red": PERSON, "blue": "broken", "green": "cheater"}, seed=2)
+    outcome = play_out(live)[-1]["outcome"]
+    assert outcome["reason"] == "time" and outcome["ticks"] == 55 > race.info.max_ticks
 
 
 def test_a_lineup_must_fill_the_map(race):
