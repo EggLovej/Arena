@@ -1,5 +1,8 @@
-// A small robot portrait generated from a bot's id, so every bot in every game
-// gets a face without anyone drawing one. The same id always gives the same face.
+// A bot's portrait: the drawn icon when its game has one for this bot, otherwise
+// a small robot face generated from the id, so every bot in every game gets a
+// face without anyone drawing one. The same id always gives the same face.
+
+import { GAME_VIEWS } from "@/games/index.ts";
 
 function hash(text: string): number {
   let value = 2166136261;
@@ -10,7 +13,10 @@ function hash(text: string): number {
   return value >>> 0;
 }
 
-export function BotAvatar({ id, kind, size = 40 }: { id: string; kind?: string; size?: number }) {
+export function BotAvatar({ game, id, kind, size = 40 }: { game: string; id: string; kind?: string; size?: number }) {
+  if (GAME_VIEWS[game]?.botIcons?.includes(id)) {
+    return <img src={`/bots/${game}/${id}.webp`} width={size} height={size} alt="" className="bot-avatar" />;
+  }
   const seed = hash(id);
   const pick = (count: number, shift: number) => (seed >>> shift) % count;
   const hue = seed % 360;

@@ -102,7 +102,7 @@ export function ReplayPlayer({ gameId, replayUrl, seats, botNames, theme }: Prop
           return (
             <div key={seat} className={`scoreboard-seat${out ? " is-out" : ""}`} style={{ "--seat": seatInfo[seat]?.color } as CSSProperties}>
               <span className="scoreboard-name">
-                <BotName name={botNames[bot] ?? bot} />
+                <BotName name={botNames[bot] ?? bot} game={gameId} id={bot} />
               </span>
               <span className="scoreboard-color">{seatInfo[seat]?.name ?? seat}</span>
               <span className="scoreboard-stats">

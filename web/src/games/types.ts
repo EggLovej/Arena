@@ -56,6 +56,8 @@ export type GameView = {
   liveMap?: string;
   /** The game's own look on its pages; they use the site's look if not given. */
   look?: GameLook;
+  /** Bots with a drawn portrait at public/bots/<game>/<bot id>.webp; the rest get a generated face. */
+  botIcons?: readonly string[];
   /** For people to play the game against the bots; the game has no play page without it. */
   play?: PlayView;
 };

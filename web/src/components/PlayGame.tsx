@@ -12,6 +12,7 @@ import { describeOutcome, formatClock } from "@/lib/format.ts";
 import { PERSON, drawnTick, lineupFor, result } from "@/lib/play.ts";
 import type { GameData } from "@/lib/types.ts";
 
+import { BotAvatar } from "./BotAvatar.tsx";
 import { BotName } from "./BotName.tsx";
 import { MapPreview } from "./MapPreview.tsx";
 import { usePlayMatch, type Setup } from "./usePlayMatch.ts";
@@ -94,14 +95,17 @@ export function PlayGame({ game, ratings, thinking }: Props) {
             .map((seat) => (
               <label key={seat} style={{ "--seat": seatInfo[seat]?.color } as CSSProperties} className="play-setup-opponent">
                 {seatInfo[seat]?.name ?? seat}
-                <select value={lineup[seat]} onChange={(event) => setChoice({ ...choice, bots: { ...choice.bots, [seat]: event.target.value } })}>
-                  {bots.map((bot) => (
-                    <option key={bot.id} value={bot.id}>
-                      {bot.name}
-                      {sized[bot.id] !== undefined ? ` (rated ${sized[bot.id]})` : ""}
-                    </option>
-                  ))}
-                </select>
+                <span className="play-setup-bot">
+                  <BotAvatar game={game.id} id={lineup[seat]} size={34} />
+                  <select value={lineup[seat]} onChange={(event) => setChoice({ ...choice, bots: { ...choice.bots, [seat]: event.target.value } })}>
+                    {bots.map((bot) => (
+                      <option key={bot.id} value={bot.id}>
+                        {bot.name}
+                        {sized[bot.id] !== undefined ? ` (rated ${sized[bot.id]})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </span>
               </label>
             ))}
           <button type="submit" className="button-primary play-start">
@@ -249,7 +253,7 @@ function Match({
           const out = outcome !== null && outcome.ranking.findIndex((group) => group.includes(seat)) > 0;
           return (
             <div key={seat} className={`scoreboard-seat${out ? " is-out" : ""}${seat === person ? " is-you" : ""}`} style={{ "--seat": seatInfo[seat]?.color } as CSSProperties}>
-              <span className="scoreboard-name">{seat === person ? "You" : <BotName name={names[setup.lineup[seat]] ?? setup.lineup[seat]} />}</span>
+              <span className="scoreboard-name">{seat === person ? "You" : <BotName name={names[setup.lineup[seat]] ?? setup.lineup[seat]} game={game.id} id={setup.lineup[seat]} />}</span>
               <span className="scoreboard-color">{seatInfo[seat]?.name ?? seat}</span>
               <span className="scoreboard-stats">
                 {stats[seat] ? (

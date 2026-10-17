@@ -84,7 +84,7 @@ export function LiveMatch({ gameId, gameName, replayUrl, map, lineup, seats, bot
   const panel = (seat: string, right: boolean) => (
     <div key={seat} className={`hud-seat${right ? " is-right" : ""}`} style={{ "--seat": seatInfo[seat]?.color } as CSSProperties}>
       <span className="hud-name">
-        <BotName name={botNames[lineup[seat]] ?? lineup[seat]} />
+        <BotName name={botNames[lineup[seat]] ?? lineup[seat]} game={gameId} id={lineup[seat]} />
       </span>
       <span className="hud-stats">
         {stats[seat] ? stats[seat].map((stat) => <span key={stat.label}>{`${stat.value} ${stat.label}`}</span>) : <span>knocked out</span>}

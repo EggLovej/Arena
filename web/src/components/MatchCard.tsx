@@ -21,7 +21,7 @@ export function MatchCard({ game, row, botNames }: { game: GameData; row: MatchR
           {Object.entries(row.lineup).map(([seat, bot]) => (
             <span key={seat} className={`match-player${winner === seat ? " is-winner" : ""}`}>
               <span className="seat-dot" style={{ background: colors[seat] }} />
-              <BotName name={botNames[bot] ?? bot} />
+              <BotName name={botNames[bot] ?? bot} game={game.id} id={bot} />
             </span>
           ))}
         </span>

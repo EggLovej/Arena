@@ -26,6 +26,7 @@ export const graphite: GameView = {
   Board: GraphiteBoard,
   genre: "Real-time strategy",
   cardMap: "crossroads",
+  botIcons: ["aggressive_ai", "careful_ai", "strategic_ai", "neural_ai", "beast_ai", "atlas_clean_ai", "atlas_ai"],
   accent: "#d3a42f", // the paper theme's highlight gold
   liveMap: "crossroads", // Instinct and Apex trade the lead three times
   look,

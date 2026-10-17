@@ -38,7 +38,7 @@ export default async function LeaderboardPage({ params }: Params) {
             The share of points the bot on the left took from the bot above
             {table.players > 2 ? ", counting a match as a win for whoever finished ahead" : ""}.
           </p>
-          <HeadToHead table={table} />
+          <HeadToHead table={table} gameId={id} />
         </section>
       ))}
     </>

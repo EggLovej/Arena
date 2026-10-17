@@ -506,12 +506,14 @@ select:hover {
   margin: 0;
 }
 
+/* Wraps onto a second line on narrow screens rather than scrolling, so the
+   menu never shows a scroll bar and every section stays in view. */
 .game-tabs {
   display: flex;
-  gap: 0.25rem;
+  flex-wrap: wrap;
+  gap: 0 0.25rem;
   border-bottom: 1px solid var(--border);
   margin-bottom: 1.8rem;
-  overflow-x: auto;
 }
 
 .game-tabs a {
@@ -566,6 +568,13 @@ select:hover {
 @container main (max-width: 860px) {
   .overview {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The top-bots tables fit a phone without scrolling; the full table keeps the interval. */
+@container main (max-width: 480px) {
+  .overview-side .interval {
+    display: none;
   }
 }
 
@@ -1681,6 +1690,10 @@ tbody tr + tr th {
   gap: 0.35em;
 }
 
+.bot-name > .bot-avatar {
+  align-self: center;
+}
+
 .bot-badge {
   font-family: var(--mono);
   font-size: 0.62em;
@@ -1737,6 +1750,17 @@ tbody tr + tr th {
 .play-setup-opponent {
   border-left: 4px solid var(--seat);
   padding-left: 0.6rem;
+}
+
+.play-setup-bot {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.play-setup-bot select {
+  flex: 1;
+  min-width: 0;
 }
 
 .play-start {
