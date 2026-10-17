@@ -40,7 +40,7 @@ export default function Home() {
                   {leader && (
                     <li>
                       Leader: <strong>
-                        <BotName name={leader.name} />
+                        <BotName name={leader.name} game={game.id} id={leader.bot} />
                       </strong>
                     </li>
                   )}

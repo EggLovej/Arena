@@ -27,4 +27,6 @@ export type GameView = {
   strengthLabel: string;
   /** The map drawn on the game's card on the home page (the first map if not given). */
   cardMap?: string;
+  /** Bots with a drawn portrait at public/bots/<game>/<bot id>.webp; the rest get a generated face. */
+  botIcons?: readonly string[];
 };

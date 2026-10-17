@@ -30,7 +30,7 @@ export default async function Bots({ params }: Params) {
         return (
           <article key={bot.id} id={bot.id} className="card bot-card">
             <div className="bot-card-head">
-              <BotAvatar id={bot.id} kind={bot.kind} size={48} />
+              <BotAvatar game={id} id={bot.id} kind={bot.kind} size={48} />
               <div>
                 <h2>
                   <BotName name={bot.name} />
