@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { featuredMatches } from "./featured.ts";
+import { featuredMatches, liveMatch } from "./featured.ts";
 import type { Leaderboard, MatchRow } from "./types.ts";
 
 const order = ["ace", "bee", "cat", "dog"];
@@ -32,4 +32,12 @@ test("strong lineups first, each map and each set of bots once, with the largest
 test("repeats a lineup only when there are not enough different ones", () => {
   const rows = ["m1", "m2", "m3"].map((map) => row(map, "ace", "bee"));
   assert.equal(featuredMatches(rows, leaderboard, 3).length, 3);
+});
+
+test("the live match is the strongest replay on the chosen map", () => {
+  const rows = [row("m1", "ace", "bee"), row("m2", "cat", "dog"), row("m2", "ace", "cat"), row("m2", "bee", "dog")];
+  assert.equal(liveMatch(rows, leaderboard, "m2")?.id, "m2.ace.cat.0");
+  assert.equal(liveMatch(rows, leaderboard, "nowhere")?.id, "m1.ace.bee.0");
+  assert.equal(liveMatch(rows, leaderboard)?.id, "m1.ace.bee.0");
+  assert.equal(liveMatch(rows, null, "m2")?.id, "m2.cat.dog.0");
 });

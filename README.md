@@ -121,10 +121,14 @@ once merged, the Tournament workflow rates it.
    and `games/graphite/arena_game.py` a real one.
 3. Add a board for it to the website: `web/src/games/<id>/` with a component that
    draws one snapshot, registered in `web/src/games/index.ts` (see
-   `web/src/games/types.ts`). The replay player, match lists, leaderboards and
-   bot pages are shared. To let people play it, give the view a `play` entry
-   with the controls that lie over the board (Graphite's are in
-   `web/src/games/graphite/GraphiteControls.tsx`). They send the game's own
-   actions, or simpler commands that a `person(seat)` on `GAME` turns into actions.
+   `web/src/games/types.ts`), plus a genre for the game list. The home page's
+   game list and preview, the game's own pages, replay player, match lists,
+   leaderboards and bot pages are shared; a game can give its own pages a look
+   (colours, heading font, backdrop) as `web/src/games/graphite/look.ts` does.
+   The game list follows the order in `web/src/games/index.ts`. To let people
+   play it, give the view a `play` entry with the controls that lie over the
+   board (Graphite's are in `web/src/games/graphite/GraphiteControls.tsx`).
+   They send the game's own actions, or simpler commands that a `person(seat)`
+   on `GAME` turns into actions.
 4. Run `python -m arena tournament <id>` and commit `web/public/data`, or let the
    Tournament workflow do it after merging.
