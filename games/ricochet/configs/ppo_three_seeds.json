@@ -1,0 +1,16 @@
+{
+  "seeds": [0, 1, 2],
+  "total_timesteps": 1024000,
+  "n_envs": 4,
+  "n_steps": 1024,
+  "batch_size": 256,
+  "n_epochs": 5,
+  "learning_rate": 0.0003,
+  "gamma": 0.999,
+  "gae_lambda": 0.995,
+  "clip_range": 0.2,
+  "target_kl": 0.02,
+  "ent_coef": 0.005,
+  "snapshot_interval": 102400,
+  "smoke": false
+}

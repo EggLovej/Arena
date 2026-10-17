@@ -4,7 +4,8 @@ A website of games that classic (non-generative) AI bots play: scripted
 strategies, search, and neural networks trained by self-play. Watch the bots
 play each other, see who leads the ratings, and play against them yourself.
 
-The first game is **Graphite**, real-time strategy on a graph.
+The games are **Graphite**, real-time strategy on a graph, and **Ricochet**,
+a tank duel where every shot may bounce once.
 
 ## What's where
 
@@ -46,10 +47,12 @@ anyway). CI plays the published replays back too; one recorded before a change
 to the game's rules or maps may no longer match, which is only noted, since
 the next tournament replaces it. A full Graphite tournament is about 700
 matches; most take under a second, but the search bots take up to a few
-minutes a match, so it runs for an hour or two on four cores.
+minutes a match, so it runs for an hour or two on four cores. Ricochet's 240
+matches take a few minutes.
 
-Graphite itself still runs on its own, with its Pygame client and training
-code: see [games/graphite/README.md](games/graphite/README.md).
+Each game still runs on its own, with its Pygame client and training code:
+see [games/graphite/README.md](games/graphite/README.md) and
+[games/ricochet/README.md](games/ricochet/README.md).
 
 ## Ratings
 
@@ -57,7 +60,8 @@ Every match is a ranking of its players. The ratings are the Plackett-Luce
 model fitted to all of a tournament's results at once: with two players this
 is the Elo model, and it extends to any number of players per match. They are
 shown on the Elo scale, where 100 points more wins about 64% of games, with
-one bot pinned (Graphite pins Strategic at 1000). Each match size gets its
+one bot pinned (Graphite pins Strategic at 1000, Ricochet pins Direct at
+1000). Each match size gets its
 own table, since being good in a duel and in a three-way fight are different
 skills. The ± is a 95% interval for a bot's rating relative to the others.
 See `platform/arena/ratings.py`.
@@ -78,7 +82,7 @@ A game's Play page runs the match in the visitor's browser: the real Python
 rules and bots, in [Pyodide](https://pyodide.org) (Python compiled to
 WebAssembly) inside a web worker, so nothing runs on a server.
 `platform/arena/live.py` plays the match a tick at a time; the page draws it
-and sends the person's clicks, which the game's `person(seat)` (in its
+and sends the person's clicks and keys, which the game's `person(seat)` (in its
 `arena_game.py`) turns into actions. As in the tournaments, every bot moves
 every tick, so a bot that thinks slowly slows the game down rather than
 playing worse.
@@ -132,7 +136,8 @@ once merged, the Tournament workflow rates it.
    (colours, heading font, backdrop) as `web/src/games/graphite/look.ts` does.
    The game list follows the order in `web/src/games/index.ts`. To let people
    play it, give the view a `play` entry with the controls that lie over the
-   board (Graphite's are in `web/src/games/graphite/GraphiteControls.tsx`).
+   board (Graphite's clicks are in `web/src/games/graphite/GraphiteControls.tsx`,
+   Ricochet's keyboard and mouse in `web/src/games/ricochet/RicochetControls.tsx`).
    They send the game's own actions, or simpler commands that a `person(seat)`
    on `GAME` turns into actions.
 4. Run `python -m arena tournament <id>` and commit `web/public/data`, or let the

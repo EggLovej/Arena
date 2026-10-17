@@ -124,7 +124,7 @@ export function ReplayPlayer({ gameId, replayUrl, seats, botNames, theme }: Prop
       </div>
 
       <div className="replay-board">
-        <Board board={replay.board} snapshot={snapshot} tick={position} tickSeconds={tickSeconds} theme={theme} seats={seats} />
+        <Board board={replay.board} snapshot={snapshot} next={snapshots[tick + 1]} tick={position} tickSeconds={tickSeconds} theme={theme} seats={seats} />
         {finished && (
           <div className="replay-result">
             <p>{describeOutcome(replay.outcome, lineup, botNames, seatInfo, tickSeconds)}</p>

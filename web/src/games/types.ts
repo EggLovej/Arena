@@ -10,6 +10,7 @@ export type BoardProps = {
   board: unknown; // the replay's or map's "board": what never changes in a match
   snapshot: Snapshot; // what to draw for this tick
   tick: number; // may have a fraction, so moving things move smoothly between ticks
+  next?: Snapshot; // the tick after, when there is one, to move between the two
   tickSeconds: number;
   theme: unknown; // the game's theme JSON
   seats: Seat[];
@@ -37,6 +38,8 @@ export type PlayView = {
   help: string[];
   /** The map the play page starts on (the first map if not given). */
   map?: string;
+  /** The key that pauses and carries on (KeyboardEvent.key, any case), for games that use the space bar themselves. Not Escape: in full screen the browser keeps it. Not F, which switches full screen. */
+  pauseKey?: string;
 };
 
 export type GameView = {
@@ -54,6 +57,8 @@ export type GameView = {
   accent?: string;
   /** The map whose strongest replay plays on the home page and the game's overview (else the first featured match). */
   liveMap?: string;
+  /** How fast that match plays, as a multiple of game time (2 if not given). */
+  liveSpeed?: number;
   /** The game's own look on its pages; they use the site's look if not given. */
   look?: GameLook;
   /** Bots with a drawn portrait at public/bots/<game>/<bot id>.webp; the rest get a generated face. */

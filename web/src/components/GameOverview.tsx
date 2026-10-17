@@ -16,7 +16,7 @@ import { LiveMatch } from "./LiveMatch.tsx";
 import { MapPreview } from "./MapPreview.tsx";
 import { MatchCard } from "./MatchCard.tsx";
 
-const LIVE_SPEED = 2;
+const LIVE_SPEED = 2; // unless the game's view sets its own
 
 function load(gameId: string) {
   const game = getGame(gameId);
@@ -117,7 +117,9 @@ export function GameOverview({ gameId }: { gameId: string }) {
 
 function Stage({ game, live, names }: { game: GameData; live: MatchRow | undefined; names: Record<string, string> }) {
   const map = live && game.maps.find((entry) => entry.id === live.map);
-  const cardMap = game.maps.find((entry) => entry.id === gameView(game.id).cardMap) ?? game.maps[0];
+  const view = gameView(game.id);
+  const cardMap = game.maps.find((entry) => entry.id === view.cardMap) ?? game.maps[0];
+  const speed = view.liveSpeed ?? LIVE_SPEED;
   return (
     <>
       {live && map ? (
@@ -131,7 +133,7 @@ function Stage({ game, live, names }: { game: GameData; live: MatchRow | undefin
           botNames={names}
           theme={game.theme}
           tickSeconds={game.tick_seconds}
-          speed={LIVE_SPEED}
+          speed={speed}
         />
       ) : (
         <div className="stage">{cardMap && <MapPreview game={game} map={cardMap} />}</div>
@@ -142,7 +144,7 @@ function Stage({ game, live, names }: { game: GameData; live: MatchRow | undefin
             <span>Featured match</span>
             <span>{map.name}</span>
             <span>{Object.values(live.lineup).map((bot) => names[bot] ?? bot).join(" vs ")}</span>
-            <span>{LIVE_SPEED}× speed</span>
+            <span>{speed === 1 ? "Real time" : `${speed}× speed`}</span>
           </>
         ) : (
           <span>No matches played yet</span>

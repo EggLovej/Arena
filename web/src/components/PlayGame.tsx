@@ -239,22 +239,26 @@ function Match({
   }, [phase, count, go]);
 
   const { pause, resume } = live;
+  const pauseKey = play.pauseKey ?? " ";
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.ctrlKey || event.metaKey || event.altKey || (event.target instanceof Element && event.target.closest("input, select, textarea"))) return;
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      // A field keeps its keys, and a focused button or link keeps its own use of the space bar.
+      if (event.target instanceof Element && event.target.closest("input, select, textarea")) return;
       if (event.key === "f" || event.key === "F") {
         event.preventDefault();
         toggleFull();
+        return;
       }
-      // A focused button or link keeps its own use of the space bar.
-      if (event.key !== " " || (event.target instanceof Element && event.target.closest("button, a, [role=button]"))) return;
+      if (event.key.toLowerCase() !== pauseKey.toLowerCase()) return;
+      if (pauseKey === " " && event.target instanceof Element && event.target.closest("button, a, [role=button]")) return;
       event.preventDefault();
       if (phase === "playing") pause();
       else if (phase === "paused") resume();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [phase, pause, resume, toggleFull]);
+  }, [phase, pause, resume, pauseKey, toggleFull]);
 
   // A refused move is shown for a moment.
   const [, setTick] = useState(0);
@@ -339,7 +343,7 @@ function Match({
         )}
         {phase === "paused" && (
           <button type="button" className="play-overlay play-paused" onClick={live.resume}>
-            Paused. Click or press space to carry on.
+            Paused. Click or press {keyName(pauseKey)} to carry on.
           </button>
         )}
         {outcome && (
@@ -406,10 +410,15 @@ function Match({
           play.help.map((line) => (
             <li key={line}>{line}</li>
           ))}
-        <li>Space pauses and carries on. F switches full screen on and off.</li>
+        <li>{keyName(pauseKey)} pauses and carries on. F switches full screen on and off.</li>
       </ul>
     </div>
   );
+}
+
+/** A key as the help names it: "Space", "Esc", "P". */
+function keyName(key: string): string {
+  return ({ " ": "Space", Escape: "Esc" } as Record<string, string>)[key] ?? key.toUpperCase();
 }
 
 /**

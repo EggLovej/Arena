@@ -1,0 +1,1262 @@
+[
+  {
+    "map_id": "classic",
+    "seed": 100,
+    "controllers": [
+      "sentinel_ai",
+      "bank_shot_ai"
+    ],
+    "winner": 0,
+    "draw": false,
+    "ticks": 253,
+    "seconds": 8.433333333333334,
+    "health": [
+      3,
+      0
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      1.2185204276730393,
+      0.014690027283246927
+    ],
+    "max_action_ms": [
+      10.29404200380668,
+      0.16304204473271966
+    ],
+    "final_state_hash": "68f68a82e686c84bac7e812bc4399c11b5bf4035e83259f8c5bdd150cebe0b9b",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "classic",
+    "seed": 100,
+    "controllers": [
+      "bank_shot_ai",
+      "sentinel_ai"
+    ],
+    "winner": 1,
+    "draw": false,
+    "ticks": 253,
+    "seconds": 8.433333333333334,
+    "health": [
+      0,
+      3
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.015346052699350557,
+      1.453539181506195
+    ],
+    "max_action_ms": [
+      0.056500022765249014,
+      28.986041026655585
+    ],
+    "final_state_hash": "71b0d2071c50d9630b686b18a22c085a1ed712037767bff0e1dd55855922285c",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "classic",
+    "seed": 100,
+    "controllers": [
+      "sentinel_ai",
+      "close_range_ai"
+    ],
+    "winner": 0,
+    "draw": false,
+    "ticks": 328,
+    "seconds": 10.933333333333334,
+    "health": [
+      3,
+      0
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      2.828274883341226,
+      0.02010835678225792
+    ],
+    "max_action_ms": [
+      28.8123749778606,
+      0.6804579752497375
+    ],
+    "final_state_hash": "8e161e48f01c0c1eb4d3836252df096829530b9da415ccc70330c947152bcfe7",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "classic",
+    "seed": 100,
+    "controllers": [
+      "close_range_ai",
+      "sentinel_ai"
+    ],
+    "winner": 1,
+    "draw": false,
+    "ticks": 335,
+    "seconds": 11.166666666666666,
+    "health": [
+      0,
+      3
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.0317338435326828,
+      2.4463913947302127
+    ],
+    "max_action_ms": [
+      4.101499973330647,
+      29.88908300176263
+    ],
+    "final_state_hash": "7445beb78eb5e09b7bdc1645db7ece70100b4f4f2cb348971be3e23b36c57fd1",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "classic",
+    "seed": 100,
+    "controllers": [
+      "sentinel_ai",
+      "direct_ai"
+    ],
+    "winner": 0,
+    "draw": false,
+    "ticks": 1028,
+    "seconds": 34.266666666666666,
+    "health": [
+      3,
+      0
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.6664631044485785,
+      0.01984509200732865
+    ],
+    "max_action_ms": [
+      29.586917022243142,
+      9.851999988313764
+    ],
+    "final_state_hash": "030878b9faeaff79f76b7c6fdb29ead0df3eb81e5c1e2a8ab17eccea2c0f90ca",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "classic",
+    "seed": 100,
+    "controllers": [
+      "direct_ai",
+      "sentinel_ai"
+    ],
+    "winner": 1,
+    "draw": false,
+    "ticks": 1028,
+    "seconds": 34.266666666666666,
+    "health": [
+      0,
+      3
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.014054688968394922,
+      0.691012984888215
+    ],
+    "max_action_ms": [
+      2.350666036363691,
+      10.0568329798989
+    ],
+    "final_state_hash": "68b141f1394af07c1eefdc5f835db92363bd555ba87f56c534430de9f3f5676a",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "classic",
+    "seed": 100,
+    "controllers": [
+      "sentinel_ai",
+      "random_ai"
+    ],
+    "winner": 0,
+    "draw": false,
+    "ticks": 198,
+    "seconds": 6.6,
+    "health": [
+      3,
+      0
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      1.063273387380189,
+      0.005030917236581445
+    ],
+    "max_action_ms": [
+      6.950290990062058,
+      0.017291982658207417
+    ],
+    "final_state_hash": "2f7c3cf3650d0367bf30c4c76aa402b250c8eca01e7679295aa2084d4bde34d9",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "classic",
+    "seed": 100,
+    "controllers": [
+      "random_ai",
+      "sentinel_ai"
+    ],
+    "winner": 1,
+    "draw": false,
+    "ticks": 252,
+    "seconds": 8.4,
+    "health": [
+      0,
+      3
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.004591779933044953,
+      1.435067400933125
+    ],
+    "max_action_ms": [
+      0.018791004549711943,
+      33.53687498020008
+    ],
+    "final_state_hash": "1a6a4af1ec24512907e3b6f7a2fc6840bbb73192c97d8f2ffe779802511813aa",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "classic",
+    "seed": 100,
+    "controllers": [
+      "sentinel_ai",
+      "reactive_defender_ai"
+    ],
+    "winner": 0,
+    "draw": false,
+    "ticks": 394,
+    "seconds": 13.133333333333333,
+    "health": [
+      3,
+      0
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.6686721480484616,
+      0.005809763957023015
+    ],
+    "max_action_ms": [
+      8.630541036836803,
+      0.09045901242643595
+    ],
+    "final_state_hash": "2f007e844544ac53eb6c98d49ab7045307ee481aa4a3533b68af5fde055d5ca6",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "classic",
+    "seed": 100,
+    "controllers": [
+      "reactive_defender_ai",
+      "sentinel_ai"
+    ],
+    "winner": 1,
+    "draw": false,
+    "ticks": 394,
+    "seconds": 13.133333333333333,
+    "health": [
+      0,
+      3
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.007034147921760524,
+      0.6494593831975259
+    ],
+    "max_action_ms": [
+      0.7102920208126307,
+      8.725708001293242
+    ],
+    "final_state_hash": "a0f10be03d24f48308520f5c293de069ee9701ad2181a41fbbd70636bd7fac54",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "classic",
+    "seed": 100,
+    "controllers": [
+      "sentinel_ai",
+      "template_ai"
+    ],
+    "winner": 0,
+    "draw": false,
+    "ticks": 76,
+    "seconds": 2.533333333333333,
+    "health": [
+      3,
+      0
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      4.7384260435233285,
+      0.00807453149096354
+    ],
+    "max_action_ms": [
+      16.91479200962931,
+      0.09908300125971437
+    ],
+    "final_state_hash": "fc715ef52d24df53e33b5ba7a052d38a12c2ffe3d18bb566762fd77e79dc0643",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "classic",
+    "seed": 100,
+    "controllers": [
+      "template_ai",
+      "sentinel_ai"
+    ],
+    "winner": 1,
+    "draw": false,
+    "ticks": 76,
+    "seconds": 2.533333333333333,
+    "health": [
+      0,
+      3
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.008335014603002682,
+      4.933679775077556
+    ],
+    "max_action_ms": [
+      0.050499977078288794,
+      14.501707977615297
+    ],
+    "final_state_hash": "939663b9a279e04814f4f48b09680be47355196bc023d5af26f3348cef462bc2",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "crossfire",
+    "seed": 100,
+    "controllers": [
+      "sentinel_ai",
+      "bank_shot_ai"
+    ],
+    "winner": 0,
+    "draw": false,
+    "ticks": 343,
+    "seconds": 11.433333333333334,
+    "health": [
+      3,
+      0
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      4.314462805666442,
+      0.024939630467053664
+    ],
+    "max_action_ms": [
+      77.86379102617502,
+      1.5362910344265401
+    ],
+    "final_state_hash": "79df75d66a4c1852d39d5a172ce8948fda9f8e925b551e87d75d9abe9ae55caf",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "crossfire",
+    "seed": 100,
+    "controllers": [
+      "bank_shot_ai",
+      "sentinel_ai"
+    ],
+    "winner": 1,
+    "draw": false,
+    "ticks": 343,
+    "seconds": 11.433333333333334,
+    "health": [
+      0,
+      3
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.04156048439508277,
+      3.119385726756685
+    ],
+    "max_action_ms": [
+      6.0776249738410115,
+      29.662417015060782
+    ],
+    "final_state_hash": "982edbcc7bcf0348e85cab9945959818c674485e483a49fa67f740eb0e051d77",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "crossfire",
+    "seed": 100,
+    "controllers": [
+      "sentinel_ai",
+      "close_range_ai"
+    ],
+    "winner": 0,
+    "draw": false,
+    "ticks": 183,
+    "seconds": 6.1,
+    "health": [
+      3,
+      0
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      4.567112708769617,
+      0.03178894603777616
+    ],
+    "max_action_ms": [
+      26.11962496303022,
+      0.9405000018887222
+    ],
+    "final_state_hash": "6ea5559c1439c59e3f7aa6a258fcb154bbd5bf60db23e80f2b0a86ce6aa4eb6c",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "crossfire",
+    "seed": 100,
+    "controllers": [
+      "close_range_ai",
+      "sentinel_ai"
+    ],
+    "winner": 1,
+    "draw": false,
+    "ticks": 192,
+    "seconds": 6.4,
+    "health": [
+      0,
+      3
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.12285505423884993,
+      4.770176840186953
+    ],
+    "max_action_ms": [
+      17.86358404206112,
+      28.527791029773653
+    ],
+    "final_state_hash": "8d1bc9ac522b22088d30a2c1db66dc2030588ea25f060f32b78a994e83e290dc",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "crossfire",
+    "seed": 100,
+    "controllers": [
+      "sentinel_ai",
+      "direct_ai"
+    ],
+    "winner": 0,
+    "draw": false,
+    "ticks": 1748,
+    "seconds": 58.266666666666666,
+    "health": [
+      3,
+      0
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      1.5960906027058073,
+      0.013106789501720626
+    ],
+    "max_action_ms": [
+      24.404457944910973,
+      2.16058298246935
+    ],
+    "final_state_hash": "a47632f47b8f204bc0361ee3300cdc185c6d3ac5493a2b78adb85c83f8a0dde9",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "crossfire",
+    "seed": 100,
+    "controllers": [
+      "direct_ai",
+      "sentinel_ai"
+    ],
+    "winner": 1,
+    "draw": false,
+    "ticks": 1748,
+    "seconds": 58.266666666666666,
+    "health": [
+      0,
+      3
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.015036510322264288,
+      2.3348587236790204
+    ],
+    "max_action_ms": [
+      3.4545420203357935,
+      58.77320800209418
+    ],
+    "final_state_hash": "03a39b6a59cfa2c2fbcc8402bded6b3d1836ecf5a34902daaab4d69297237cd0",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "crossfire",
+    "seed": 100,
+    "controllers": [
+      "sentinel_ai",
+      "random_ai"
+    ],
+    "winner": 0,
+    "draw": false,
+    "ticks": 529,
+    "seconds": 17.633333333333333,
+    "health": [
+      3,
+      0
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      2.2142631853869035,
+      0.004673295694848765
+    ],
+    "max_action_ms": [
+      29.006124997977167,
+      0.029333983547985554
+    ],
+    "final_state_hash": "498d9c8215255c262499bd9e24f8ed94226a1744116dc36b681b8272fb5a0701",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "crossfire",
+    "seed": 100,
+    "controllers": [
+      "random_ai",
+      "sentinel_ai"
+    ],
+    "winner": 1,
+    "draw": false,
+    "ticks": 357,
+    "seconds": 11.9,
+    "health": [
+      0,
+      3
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.006259586962059934,
+      1.5373927406074495
+    ],
+    "max_action_ms": [
+      0.04499999340623617,
+      14.456708042416722
+    ],
+    "final_state_hash": "a33ebc4d72fd7b384ee42131156f6200de33423cb2e92e2680e4f78e25ca2b6d",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "crossfire",
+    "seed": 100,
+    "controllers": [
+      "sentinel_ai",
+      "reactive_defender_ai"
+    ],
+    "winner": 0,
+    "draw": false,
+    "ticks": 304,
+    "seconds": 10.133333333333333,
+    "health": [
+      3,
+      0
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.4771788387044676,
+      0.0044450379822305154
+    ],
+    "max_action_ms": [
+      12.659290980082005,
+      0.05158298881724477
+    ],
+    "final_state_hash": "e4db1fa72ae3a36a6399668f93e33ea9c5db2a76b76679b73b819e834da5d156",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "crossfire",
+    "seed": 100,
+    "controllers": [
+      "reactive_defender_ai",
+      "sentinel_ai"
+    ],
+    "winner": 1,
+    "draw": false,
+    "ticks": 304,
+    "seconds": 10.133333333333333,
+    "health": [
+      0,
+      3
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.00438243277082955,
+      0.4733469052696723
+    ],
+    "max_action_ms": [
+      0.02866698196157813,
+      19.08379199448973
+    ],
+    "final_state_hash": "502106e20672528a4fa5e8157d47ee5e66e06939dc8fee1b73603e0d7fa95fdc",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "crossfire",
+    "seed": 100,
+    "controllers": [
+      "sentinel_ai",
+      "template_ai"
+    ],
+    "winner": 0,
+    "draw": false,
+    "ticks": 118,
+    "seconds": 3.933333333333333,
+    "health": [
+      3,
+      0
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      5.597441418242435,
+      0.006639474600364091
+    ],
+    "max_action_ms": [
+      24.38983303727582,
+      0.03708299482241273
+    ],
+    "final_state_hash": "cfa95f80258e524ae177a7c09794ca77f2300d58b12aa0bdec941c990e6c622a",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "crossfire",
+    "seed": 100,
+    "controllers": [
+      "template_ai",
+      "sentinel_ai"
+    ],
+    "winner": 1,
+    "draw": false,
+    "ticks": 118,
+    "seconds": 3.933333333333333,
+    "health": [
+      0,
+      3
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.017817761113677742,
+      8.527076958039364
+    ],
+    "max_action_ms": [
+      1.162333006504923,
+      35.80841701477766
+    ],
+    "final_state_hash": "c791d4bb01fa92ee6ba66302dd29cae5dfcc5d44b5f90b0e237bd47bbdf7c0d6",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "channels",
+    "seed": 100,
+    "controllers": [
+      "sentinel_ai",
+      "bank_shot_ai"
+    ],
+    "winner": 0,
+    "draw": false,
+    "ticks": 285,
+    "seconds": 9.5,
+    "health": [
+      3,
+      0
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      3.120604547541262,
+      0.027410850018720356
+    ],
+    "max_action_ms": [
+      49.65104098664597,
+      3.296750015579164
+    ],
+    "final_state_hash": "8af22512fc86d7638f0e46594d95484ac0ebf51d11bded73fb6aa7b29f27f50f",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "channels",
+    "seed": 100,
+    "controllers": [
+      "bank_shot_ai",
+      "sentinel_ai"
+    ],
+    "winner": 1,
+    "draw": false,
+    "ticks": 285,
+    "seconds": 9.5,
+    "health": [
+      0,
+      3
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.0915802490341951,
+      3.441053271097572
+    ],
+    "max_action_ms": [
+      15.54033299908042,
+      34.583708038553596
+    ],
+    "final_state_hash": "05e8444bc6c075a9b04f339d878cc658bec98f0ae0a46eef01b267cf7b3b6175",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "channels",
+    "seed": 100,
+    "controllers": [
+      "sentinel_ai",
+      "close_range_ai"
+    ],
+    "winner": 0,
+    "draw": false,
+    "ticks": 75,
+    "seconds": 2.5,
+    "health": [
+      3,
+      0
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      3.228156120361139,
+      0.07382993198310335
+    ],
+    "max_action_ms": [
+      16.937209002207965,
+      2.966541040223092
+    ],
+    "final_state_hash": "ab283af57b00df4b270c83fd049751d142af95dda114501e39456c39e2ada60c",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "channels",
+    "seed": 100,
+    "controllers": [
+      "close_range_ai",
+      "sentinel_ai"
+    ],
+    "winner": 1,
+    "draw": false,
+    "ticks": 75,
+    "seconds": 2.5,
+    "health": [
+      0,
+      3
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.05397882855807742,
+      2.3465766819814844
+    ],
+    "max_action_ms": [
+      2.4723749957047403,
+      14.952292025554925
+    ],
+    "final_state_hash": "de6ddf552eec9c618be9d9d760638bb5d25ff5e2542f1f4d18ac428daf3fdffe",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "channels",
+    "seed": 100,
+    "controllers": [
+      "sentinel_ai",
+      "direct_ai"
+    ],
+    "winner": 0,
+    "draw": false,
+    "ticks": 1209,
+    "seconds": 40.3,
+    "health": [
+      3,
+      0
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      1.976410949135136,
+      0.025058186472824186
+    ],
+    "max_action_ms": [
+      83.89750000787899,
+      6.942917010746896
+    ],
+    "final_state_hash": "208fe17fe985680bce37a1e53665b246bb7aa390dbc52f0017619715232e8b7f",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "channels",
+    "seed": 100,
+    "controllers": [
+      "direct_ai",
+      "sentinel_ai"
+    ],
+    "winner": 1,
+    "draw": false,
+    "ticks": 1209,
+    "seconds": 40.3,
+    "health": [
+      0,
+      3
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.015052461440500096,
+      1.3812943497950765
+    ],
+    "max_action_ms": [
+      3.4844159963540733,
+      43.53937495034188
+    ],
+    "final_state_hash": "6b60539687691e8b8421e05d2066f040d5e479951581d12e7bb8015788f6cb2f",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "channels",
+    "seed": 100,
+    "controllers": [
+      "sentinel_ai",
+      "random_ai"
+    ],
+    "winner": 0,
+    "draw": false,
+    "ticks": 445,
+    "seconds": 14.833333333333334,
+    "health": [
+      3,
+      0
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      3.600101589403126,
+      0.018930448261037302
+    ],
+    "max_action_ms": [
+      89.3666660413146,
+      4.798209003638476
+    ],
+    "final_state_hash": "ae44ec6caac88d2d45876c16dfa6b1ad0d8f1ea3a581e7a97aea0528e1e2a589",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "channels",
+    "seed": 100,
+    "controllers": [
+      "random_ai",
+      "sentinel_ai"
+    ],
+    "winner": 1,
+    "draw": false,
+    "ticks": 369,
+    "seconds": 12.3,
+    "health": [
+      0,
+      3
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.006635852383959503,
+      2.2365090277596176
+    ],
+    "max_action_ms": [
+      0.1109589939005673,
+      35.94500001054257
+    ],
+    "final_state_hash": "e5dd9046d497434af8d4710cb1043b4b60c15cdcefff0f9b126979768ebebef3",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "channels",
+    "seed": 100,
+    "controllers": [
+      "sentinel_ai",
+      "reactive_defender_ai"
+    ],
+    "winner": 0,
+    "draw": false,
+    "ticks": 304,
+    "seconds": 10.133333333333333,
+    "health": [
+      3,
+      0
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.858493286949325,
+      0.005036879883846268
+    ],
+    "max_action_ms": [
+      53.79162495955825,
+      0.1022080541588366
+    ],
+    "final_state_hash": "52860151e4f33bb97fba826aad101d40326a35b4603a977751f1ac8234cd368c",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "channels",
+    "seed": 100,
+    "controllers": [
+      "reactive_defender_ai",
+      "sentinel_ai"
+    ],
+    "winner": 1,
+    "draw": false,
+    "ticks": 304,
+    "seconds": 10.133333333333333,
+    "health": [
+      0,
+      3
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.05690818120216902,
+      1.1390183424641454
+    ],
+    "max_action_ms": [
+      12.316332955379039,
+      37.36274997936562
+    ],
+    "final_state_hash": "bac05c5cc71604f5bd418f132964f4d04e67773d5ce92477221022147e17f4f3",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "channels",
+    "seed": 100,
+    "controllers": [
+      "sentinel_ai",
+      "template_ai"
+    ],
+    "winner": 0,
+    "draw": false,
+    "ticks": 71,
+    "seconds": 2.3666666666666667,
+    "health": [
+      3,
+      0
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      10.616219986203902,
+      0.005756364643416354
+    ],
+    "max_action_ms": [
+      54.561750032007694,
+      0.014833000022917986
+    ],
+    "final_state_hash": "e2d596c68963de0e01218d80b2bf77dbce882aea443b4140d37e52ce052a3105",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  },
+  {
+    "map_id": "channels",
+    "seed": 100,
+    "controllers": [
+      "template_ai",
+      "sentinel_ai"
+    ],
+    "winner": 1,
+    "draw": false,
+    "ticks": 71,
+    "seconds": 2.3666666666666667,
+    "health": [
+      0,
+      3
+    ],
+    "faults": [
+      0,
+      0
+    ],
+    "mean_action_ms": [
+      0.007621419261878645,
+      8.315386143217886
+    ],
+    "max_action_ms": [
+      0.029999995604157448,
+      46.619999979157
+    ],
+    "final_state_hash": "ad5fa5f8bc8c9aca70c5d26eb5a8a3a0b95a7d64bafbd5172baee838c946d6e1",
+    "forfeit_player": null,
+    "invalid": false,
+    "errors": [
+      [],
+      []
+    ]
+  }
+]

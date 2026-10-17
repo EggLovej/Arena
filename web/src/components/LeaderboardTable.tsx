@@ -32,7 +32,7 @@ export function LeaderboardTable({ table, gameId, limit }: { table: Table; gameI
           {entries.map((entry, index) => (
             <tr key={entry.bot}>
               <td className="numeric rank">{index + 1}</td>
-              <td>
+              <td className="bot-column">
                 <Link href={`/games/${gameId}/bots#${entry.bot}`} className="bot-cell">
                   <BotAvatar game={gameId} id={entry.bot} kind={entry.kind} size={28} />
                   <BotName name={entry.name} />
