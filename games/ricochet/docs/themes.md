@@ -56,9 +56,9 @@ For a reproducible comparison, run `PYTHONPATH=src .venv/bin/python scripts/capt
 Choose **Theme: Robot League** in the menu, or launch:
 
 ```sh
-uv run --no-sync ricochet --theme robot-league
-uv run --no-sync ricochet match --theme robot-league --p1 human --p2 bank_shot_ai
-uv run --no-sync ricochet replay results/match.json --theme robot-league
+ricochet --theme robot-league
+ricochet match --theme robot-league --p1 human --p2 bank_shot_ai
+ricochet replay results/match.json --theme robot-league
 ```
 
 `BaseStyle` owns HUD and footer layout for both themes, including health lights, full-width energy bars and centered title/timer. Robot League supplies its own palette, and its `display/styles/robot_league.py` style supplies concrete tiles, metal rails, hazard paint, lights, beveled steel walls, soft shadows and tracked machines. The chassis turns with movement; the turret aims independently. Shields, recoil, hits, destroyed tanks, replay controls and analysis mode remain supported.

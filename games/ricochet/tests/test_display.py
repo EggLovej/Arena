@@ -240,8 +240,9 @@ def test_robot_league_shares_neon_hud_and_loads_transparent_chassis():
         style.hud(surface, snapshot, ("One", "Two"))
         frames.append(pygame.image.tobytes(surface, "RGB"))
     assert frames[0] == frames[1]
-    assert material("chassis").get_at((0, 0)).a <= 2
-    assert material("chassis").get_at((627, 627)).a > 250
+    chassis = material("chassis")
+    assert chassis.get_at((0, 0)).a <= 2
+    assert chassis.get_at(chassis.get_rect().center).a > 250
     assert material("concrete").get_width() > 0
     assert material("steel").get_width() > 0
     pygame.display.quit()

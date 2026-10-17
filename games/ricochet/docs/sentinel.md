@@ -27,13 +27,11 @@ The evaluator uses the repository's `play_fixtures`, matches every other discove
 For the existing full round robin:
 
 ```sh
-uv run --no-sync ricochet auto-tournament --rounds 10 --seed 2000 --workers 4
+ricochet auto-tournament --rounds 10 --seed 2000 --workers 4
 ```
-
-See [the incremental experiment journal](sentinel_notes.md) for results, rejected ideas and limitations.
 
 ## Final results
 
 Against all six existing bots from both seats, Sentinel won **36/36 authored-map games**. On six fresh generated maps it scored **212 wins, 4 draws, 0 losses** across 216 games: 70/2/0 with default shields, 71/1/0 with expensive shields and 71/1/0 with shields disabled. Sentinel itself never requested a shield. Every draw was against Bank Shot.
 
-The final holdout and source hashes are in [the validation report](verification_data/sentinel/heldout_report.json), with full match records beside it. These results establish a strong scripted baseline against the current pool, not an optimal policy. Mean action time averaged 2.65–3.84ms per match across the parallel suites, with occasional calls up to 102ms under load.
+These results establish a strong scripted baseline against the current pool, not an optimal policy. Mean action time averaged 2.65–3.84ms per match across the parallel suites, with occasional calls up to 102ms under load.

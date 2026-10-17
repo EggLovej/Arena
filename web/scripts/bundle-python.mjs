@@ -19,7 +19,7 @@ const OUTPUT = path.join(WEB, "public", "play");
 
 const TEXT = new Set([".py", ".json"]);
 const SKIPPED = new Set([".md", ".ipynb", ".txt", ".png", ".jpg", ".pyc"]);
-const SKIPPED_PARTS = new Set(["tests", "scripts", "runs", "colab", "__pycache__", ".venv"]);
+const SKIPPED_PARTS = new Set(["tests", "scripts", "runs", "colab", "docs", "__pycache__", ".venv"]);
 
 /** Files under a folder of the repository, relative to the repository: the ones git tracks or would
  * (so local training output it ignores stays out), else all of them. */

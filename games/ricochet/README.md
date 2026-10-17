@@ -6,11 +6,11 @@ A deterministic two-player tank duel for human play, scripted bots and local rei
 
 ## Install and play
 
-Python 3.11+ and [uv](https://docs.astral.sh/uv/) are required. From this directory:
+Python 3.11+ is required. From this directory:
 
 ```bash
-uv sync --all-extras --no-editable
-uv run --no-sync ricochet
+pip install -e ".[display]"
+ricochet
 ```
 
 The menu supports mouse or keyboard selection. WASD moves, mouse aims, left mouse fires, and Space/right mouse shields. F1 toggles analysis overlays, M mutes, +/- adjusts volume, and Escape returns to the menu. The scoreboard is outside the playable arena and mouse aiming respects window scaling.
@@ -18,21 +18,19 @@ The menu supports mouse or keyboard selection. WASD moves, mouse aims, left mous
 Dependency extras are `display` (Pygame), `training` (NumPy/Gymnasium/PettingZoo), `learn` (PPO/PyTorch), and `dev` (pytest/Ruff). A core-only installation can run scripted headless matches without any of these libraries:
 
 ```bash
-uv sync --no-editable
-uv run --no-sync ricochet match --headless --p1 direct_ai --p2 bank_shot_ai
+pip install -e .
+ricochet match --headless --p1 direct_ai --p2 bank_shot_ai
 ```
-
-**Local macOS installation note:** this checkout's `.venv` has repeatedly acquired hidden flags on `.pth` files, which Python 3.12 ignores. The wheel-based `--no-editable` workflow above avoids relying on those files. After changing source code, rebuild with `uv sync --all-extras --no-editable --reinstall-package ricochet-ai`. Normal editable development (`uv sync --all-extras`) works in a clean environment outside this affected folder; a fresh editable installation was verified separately. The source-test command below explicitly exercises the working tree.
 
 ## Bots, matches and recordings
 
 Copy `ais/template_ai.py`, subclass `BaseController` and implement `act(observation)`; `create_controller()` returns an instance. The controller receives an immutable complete observation; rules are available as `self.rules`. `ricochet.bot` offers shared helpers (threats, line of sight, path finding, lead aiming). See [AI API](docs/ai_api.md).
 
 ```bash
-uv run --no-sync ricochet match --headless --record replays/example.json
-uv run --no-sync ricochet replay replays/example.json --headless
-uv run --no-sync ricochet replay replays/example.json
-uv run --no-sync ricochet tournament --bots all --maps all --seeds 0,1,2
+ricochet match --headless --record replays/example.json
+ricochet replay replays/example.json --headless
+ricochet replay replays/example.json
+ricochet tournament --bots all --maps all --seeds 0,1,2
 ```
 
 ### Generated maps and automatic tournaments
@@ -40,10 +38,10 @@ uv run --no-sync ricochet tournament --bots all --maps all --seeds 0,1,2
 `generated:SEED` works anywhere a map name does. Each seed deterministically builds a mirror- or half-turn-symmetric arena, then shifts every free wall edge and both spawns by up to 16 px, so maps are nearly but not exactly symmetric. A map is accepted only if it is playable: walls at least 24 px thick, every gap closed or wide enough for a tank, room around the spawns, and the tanks able to reach each other.
 
 ```bash
-uv run --no-sync ricochet match --map generated:42 --p1 human --p2 bank_shot_ai
-uv run --no-sync ricochet generate-map --seed 42 --output maps/arena_42.json  # Keep one for the menu.
-uv run --no-sync ricochet auto-tournament                      # All bots, 100 rounds per pairing.
-uv run --no-sync ricochet auto-tournament --bots direct_ai bank_shot_ai --rounds 20 --seed 1000
+ricochet match --map generated:42 --p1 human --p2 bank_shot_ai
+ricochet generate-map --seed 42 --output maps/arena_42.json  # Keep one for the menu.
+ricochet auto-tournament                      # All bots, 100 rounds per pairing.
+ricochet auto-tournament --bots direct_ai bank_shot_ai --rounds 20 --seed 1000
 ```
 
 In the automatic tournament, round `r` of every pairing uses map and match seed `seed + r` and is played from both seats. Every pairing therefore meets the same maps, and the slight asymmetry cannot favor either bot. Games run in parallel processes (`--workers`, default: all CPUs), and the results do not depend on the worker count. Output is the usual standings, a head-to-head score matrix, and JSON/CSV under `results/auto_tournament.*`. Tune the generator through `GeneratorConfig` in `ricochet/game/mapgen.py`.
@@ -52,12 +50,12 @@ Replay controls: Space pauses, `.` advances a tick, Left/Right seek five seconds
 
 ## Train and evaluate
 
-Install all extras first. Training runs require a **new output directory**:
+Install all extras first (`pip install -e ".[display,learn,dev]"`). Training runs require a **new output directory**:
 
 ```bash
-uv run --no-sync ricochet train --output runs/my_smoke --smoke
-uv run --no-sync ricochet evaluate runs/my_smoke/latest.zip --quick
-uv run --no-sync ricochet match --p1 human --p2 checkpoint:runs/my_smoke/latest.zip
+ricochet train --output runs/my_smoke --smoke
+ricochet evaluate runs/my_smoke/latest.zip --quick
+ricochet match --p1 human --p2 checkpoint:runs/my_smoke/latest.zip
 ```
 
 The smoke command trains for 8,192 transitions. It verifies the pipeline; it does not establish a strong policy. `runs/*/best.zip` checkpoints also appear automatically in the menu.
@@ -65,8 +63,8 @@ The smoke command trains for 8,192 transitions. It verifies the pipeline; it doe
 For a longer, explicitly launched three-seed experiment:
 
 ```bash
-uv run --no-sync ricochet train --config configs/ppo_three_seeds.json --output runs/ppo_experiment
-uv run --no-sync ricochet evaluate runs/ppo_experiment/seed_0/best.zip --suite test --output results/generalization.json
+ricochet train --config configs/ppo_three_seeds.json --output runs/ppo_experiment
+ricochet evaluate runs/ppo_experiment/seed_0/best.zip --suite test --output results/generalization.json
 ```
 
 Resume into a new directory with `train --resume PATH --output NEW_DIRECTORY`. Optimizer, model and step counters persist; episodes restart. See [training and evaluation](docs/training.md) for configuration, checkpoint lineage, frozen opponents and evaluation boundaries.
@@ -75,17 +73,15 @@ Resume into a new directory with `train --resume PATH --output NEW_DIRECTORY`. O
 
 - [Rules v2](docs/rules.md): shield costs, collision ordering and outcomes.
 - [Architecture](docs/architecture.md): module boundaries, reusable contracts and state capture.
-- [Verification report](docs/verification.md): tests, measurements and balance limitations.
-- [Development journal](docs/development_notes.md): incremental decisions and rejected alternatives.
 
 ```bash
-PYTHONPATH=src uv run --no-sync pytest
-uv run --no-sync ruff check .
-uv run --no-sync ricochet benchmark
-uv run --no-sync ricochet balance --output results/shield_comparison.json
+pytest
+ruff check .
+ricochet benchmark
+ricochet balance --output results/shield_comparison.json
 ```
 
-Bots and checkpoints are trusted local code. This release has no browser, network multiplayer or public upload service.
+Bots and checkpoints are trusted local code. This release has no network multiplayer or public upload service.
 
 ### Visual themes
 
@@ -93,4 +89,4 @@ Neon Circuit is the default. Use the menu's **Theme** selector to switch between
 
 ### Strong scripted opponent
 
-Select **Sentinel** in the menu, or run `uv run --no-sync ricochet match --p1 human --p2 sentinel_ai`. It uses analytical interception, validated ricochet shots, obstacle navigation and predictive dodging, with shields disabled. See [design and evaluation](docs/sentinel.md) and [the incremental experiment journal](docs/sentinel_notes.md).
+Select **Sentinel** in the menu, or run `ricochet match --p1 human --p2 sentinel_ai`. It uses analytical interception, validated ricochet shots, obstacle navigation and predictive dodging, with shields disabled. See [design and evaluation](docs/sentinel.md).
