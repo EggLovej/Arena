@@ -50,10 +50,11 @@ THEME = json.loads(THEME_FILE.read_text())
 HIDDEN = {"atlas_ai"}
 # Bots that use a neural network.
 NEURAL = {"neural_ai", "beast_ai"}
-# Map groups a bot leaves out of tournaments. Atlas Clean's search takes over half a
-# second a move on the large maps, so it would run out of its match time there.
+# Map groups a bot leaves out of tournaments. On the large maps Atlas Clean's search
+# takes over half a second a move, and the networks spend over 15 minutes on one match
+# (they were trained on maps of at most 30 bases and three-minute matches).
 LARGE_MAPS = "Large maps"
-SITS_OUT = {"atlas_clean_ai": (LARGE_MAPS,)}
+SITS_OUT = {name: (LARGE_MAPS,) for name in ("atlas_clean_ai", "neural_ai", "beast_ai")}
 # What the website says about each bot. A bot not listed here is described by the
 # first paragraph of its module's docstring.
 BLURBS = {
