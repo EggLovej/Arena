@@ -22,7 +22,9 @@ function totals(snapshot: Snapshot): Record<string, { units: number; bases: numb
 
 export const graphite: GameView = {
   Board: GraphiteBoard,
+  genre: "Real-time strategy",
   cardMap: "crossroads",
+  accent: "#d3a42f", // the paper theme's highlight gold
   stats(_board, snapshot) {
     const result: Record<string, SeatStat[]> = {};
     for (const [seat, { units, bases }] of Object.entries(totals(snapshot))) {

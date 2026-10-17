@@ -98,7 +98,8 @@ once merged, the Tournament workflow rates it.
    and `games/graphite/arena_game.py` a real one.
 3. Add a board for it to the website: `web/src/games/<id>/` with a component that
    draws one snapshot, registered in `web/src/games/index.ts` (see
-   `web/src/games/types.ts`). The replay player, match lists, leaderboards and
-   bot pages are shared.
+   `web/src/games/types.ts`), plus a genre for the game list. The game list,
+   overview, replay player, match lists, leaderboards and bot pages are shared.
+   The game list follows the order in `web/src/games/index.ts`.
 4. Run `python -m arena tournament <id>` and commit `web/public/data`, or let the
    Tournament workflow do it after merging.

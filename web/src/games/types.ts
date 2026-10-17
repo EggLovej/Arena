@@ -25,6 +25,10 @@ export type GameView = {
   /** One number per seat for the chart under a replay: how well each side is doing. */
   strength: (board: unknown, snapshot: Snapshot) => Record<string, number>;
   strengthLabel: string;
-  /** The map drawn on the game's card on the home page (the first map if not given). */
+  /** A few words under the game's name in the game list, for example "Real-time strategy". */
+  genre: string;
+  /** The map drawn beside the game's name in the game list (the first map if not given). */
   cardMap?: string;
+  /** The glow around the game's board on its overview (the site's accent if not given). */
+  accent?: string;
 };
