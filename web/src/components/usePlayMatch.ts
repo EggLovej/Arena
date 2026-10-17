@@ -10,7 +10,8 @@ import { applyDelta } from "@/lib/frames.ts";
 import { PYODIDE_URL, type MatchStart, type MatchUpdate, type Outcome, type WorkerMessage } from "@/lib/play.ts";
 import type { Snapshot } from "@/lib/types.ts";
 
-export type Phase = "loading" | "ready" | "starting" | "countdown" | "playing" | "paused" | "over" | "failed";
+// "broken": Python could not load, so no match can start; "failed": a match stopped with an error.
+export type Phase = "loading" | "broken" | "ready" | "starting" | "countdown" | "playing" | "paused" | "over" | "failed";
 
 export type MatchState = {
   board: unknown;
@@ -34,24 +35,23 @@ export function usePlayMatch(gameId: string, tickSeconds: number) {
   const [refusal, setRefusal] = useState<{ reason: string; at: number } | null>(null);
   const [match, setMatch] = useState<MatchState | null>(null);
   const loaded = useRef(false);
-  const waiting = useRef<Setup | null>(null); // a match asked for before Python was ready
-  const expecting = useRef(false); // a match was asked for and not left since
+  const broken = useRef(false);
+  const waiting = useRef<object | null>(null); // a match asked for before Python was ready
+  // The match the page shows, numbered; messages about any other (one left, or replaced) are ignored.
+  const current = useRef(0);
 
   const send = useCallback((message: object) => worker.current?.postMessage(message), []);
 
   const begin = useCallback(
     (setup: Setup) => {
+      if (broken.current) return;
       setMatch(null);
       setError(null);
       setRefusal(null);
-      expecting.current = true;
-      if (!loaded.current) {
-        waiting.current = setup;
-        setPhase("starting");
-        return;
-      }
       setPhase("starting");
-      send({ type: "start", ...setup, tickSeconds });
+      const message = { type: "start", id: (current.current += 1), ...setup, tickSeconds };
+      if (loaded.current) send(message);
+      else waiting.current = message;
     },
     [send, tickSeconds],
   );
@@ -65,15 +65,18 @@ export function usePlayMatch(gameId: string, tickSeconds: number) {
       else if (message.type === "loaded") {
         loaded.current = true;
         if (waiting.current) {
-          created.postMessage({ type: "start", ...waiting.current, tickSeconds });
+          created.postMessage(waiting.current);
           waiting.current = null;
         } else setPhase("ready");
+      } else if (message.type === "error" && message.id === undefined) {
+        breakDown(message.message);
+      } else if (message.id !== current.current) {
+        return; // about a match the person has left
       } else if (message.type === "started") {
-        if (!expecting.current) return; // left while it was being set up; it stays paused
         setMatch(fromStart(message.start));
         setPhase("countdown");
       } else if (message.type === "tick") {
-        setMatch((current) => (current ? withUpdate(current, message.update, message.pace) : current));
+        setMatch((state) => (state ? withUpdate(state, message.update, message.pace) : state));
         if (message.update.outcome) setPhase("over");
         const refused = Object.values(message.update.refused)[0];
         if (refused) setRefusal({ reason: refused, at: performance.now() });
@@ -83,15 +86,22 @@ export function usePlayMatch(gameId: string, tickSeconds: number) {
         setPhase("failed");
       }
     };
-    created.onerror = (event) => {
-      setError(event.message || "The game could not run in this browser.");
-      setPhase("failed");
+    // Python did not load, or the worker itself failed: no match can be played until the page is reloaded.
+    const breakDown = (reason: string) => {
+      broken.current = true;
+      waiting.current = null;
+      current.current += 1;
+      setMatch(null);
+      setError(reason);
+      setPhase("broken");
     };
+    created.onerror = (event) => breakDown(event.message || "The game could not run in this browser.");
     created.postMessage({ type: "load", pyodideUrl: PYODIDE_URL, bundleUrl: `/play/${gameId}/`, gameId });
     return () => {
       created.terminate();
       worker.current = null;
       loaded.current = false;
+      broken.current = false;
     };
   }, [gameId, tickSeconds]);
 
@@ -116,10 +126,10 @@ export function usePlayMatch(gameId: string, tickSeconds: number) {
     }, [send]),
     leave: useCallback(() => {
       send({ type: "pause" });
-      expecting.current = false;
+      current.current += 1;
       waiting.current = null;
       setMatch(null);
-      setPhase(loaded.current ? "ready" : "loading");
+      setPhase(broken.current ? "broken" : loaded.current ? "ready" : "loading");
     }, [send]),
     speed: useCallback((value: number) => send({ type: "speed", speed: value }), [send]),
     command: useCallback((seat: string, data: unknown) => send({ type: "command", seat, data }), [send]),

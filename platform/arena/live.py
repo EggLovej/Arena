@@ -129,12 +129,15 @@ class LiveMatch:
         return None
 
     def think(self) -> None:
-        """Every bot chooses its action for the coming tick, from the position as it stands."""
+        """The bots acting in the coming tick choose their actions, from the position as it stands."""
 
         if self._planned is not None or self.finished():
             return
         planned = {}
-        for seat, bot in self.bots.items():
+        for seat in self.match.acting():
+            if seat not in self.bots:
+                continue
+            bot = self.bots[seat]
             report = self.reports[seat]
             report.moves += 1
             action = None
@@ -160,7 +163,10 @@ class LiveMatch:
         actions = dict(self._planned)
         self._planned = None
         problems = {}
-        for seat, person in self.people.items():
+        for seat in self.match.acting():  # a person whose turn it is not keeps their commands for later
+            person = self.people.get(seat)
+            if person is None:
+                continue
             try:
                 actions[seat] = self._checked(person.act(self.match.observe(seat)), self.reports[seat])
             except Exception as error:  # a bug in the game's Person: the person loses this tick, not the match

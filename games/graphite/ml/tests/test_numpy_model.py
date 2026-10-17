@@ -1,8 +1,11 @@
 import os
+import pickle
 import subprocess
 import sys
 import tempfile
 import unittest
+import zipfile
+from collections import OrderedDict
 from pathlib import Path
 
 import numpy as np
@@ -52,6 +55,32 @@ class ReadCheckpointTests(unittest.TestCase):
             torch.save({"format_version": 1, "danger": Game}, path)
             with self.assertRaises(Exception):
                 read_checkpoint(path)
+
+    def test_refuses_a_tensor_that_reaches_outside_its_numbers(self):
+        def tensor_file(folder, offset, size, stride):
+            storage = object()
+
+            class Tensor:
+                def __reduce__(self):
+                    return torch._utils._rebuild_tensor_v2, (storage, offset, size, stride, False, OrderedDict())
+
+            class Pickler(pickle.Pickler):
+                def persistent_id(self, value):
+                    return ("storage", torch.FloatStorage, "0", "cpu", 2) if value is storage else None
+
+            path = Path(folder) / "tensor.pt"
+            with zipfile.ZipFile(path, "w") as archive:
+                with archive.open("tensor/data.pkl", "w") as file:
+                    Pickler(file, protocol=2).dump({"format_version": 1, "weight": Tensor()})
+                archive.writestr("tensor/byteorder", "little")
+                archive.writestr("tensor/data/0", np.array([1.5, 2.5], dtype=np.float32).tobytes())
+            return path
+
+        with tempfile.TemporaryDirectory() as folder:
+            np.testing.assert_array_equal(read_checkpoint(tensor_file(folder, 1, (1,), (1,)))["weight"], [2.5])
+            for offset, size, stride in [(0, (3,), (1,)), (2, (1,), (1,)), (0, (2,), (5,)), (-1, (1,), (1,))]:
+                with self.subTest(offset=offset, size=size, stride=stride), self.assertRaises(ValueError):
+                    read_checkpoint(tensor_file(folder, offset, size, stride))
 
 
 class NumpyModelTests(unittest.TestCase):

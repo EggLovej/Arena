@@ -4,9 +4,11 @@
 // (games/graphite/human_controller.py): click one of your bases, then a base next to
 // it, and half its units go there. Shift-click the second base instead, or turn on
 // Stream, and from then on everything that base has goes there, tick after tick, until
-// you shift-click it again. The commands go to WebPerson in games/graphite/arena_game.py.
+// you shift-click it again. With a keyboard, Tab moves between the bases and Enter (or
+// Shift+Enter) does what a click (or Shift-click) would. The commands go to WebPerson in
+// games/graphite/arena_game.py.
 
-import { useEffect, useRef, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent as KeyPress, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
 
 import type { PlayControlsProps } from "../types.ts";
@@ -68,10 +70,9 @@ export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, s
     return best;
   };
 
-  const click = (event: MouseEvent) => {
+  // What a click on a base (or beside every base, for null) does: Graphite's own window's rules.
+  const choose = (clicked: string | null, stream: boolean) => {
     if (!active) return;
-    const stream = event.shiftKey || streaming;
-    const clicked = baseAt(event);
     if (clicked === null) {
       setSelected(null);
       return;
@@ -94,6 +95,21 @@ export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, s
     } else setSelected(mine(clicked) ? clicked : null);
   };
 
+  const click = (event: MouseEvent) => choose(baseAt(event), event.shiftKey || streaming);
+
+  const press = (id: string) => (event: KeyPress) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    choose(id, event.shiftKey || streaming);
+  };
+
+  const describe = (id: string) => {
+    const [owner, units] = bases[id] ?? ["", 0];
+    const whose = owner === seat ? "yours" : owner ? `${owner}'s` : "nobody's";
+    const role = id === source ? ", selected" : source && neighbours[source]?.has(id) ? ", next to the selected base" : "";
+    return `${id.replaceAll("_", " ")}: ${whose}, ${units} units${streams[id] ? `, streaming to ${streams[id].replaceAll("_", " ")}` : ""}${role}`;
+  };
+
   const [x0, y0, width, height] = viewBox(board, false);
   const pointer = hovered && (source ? neighbours[source]?.has(hovered) || mine(hovered) : mine(hovered) || streams[hovered]);
 
@@ -113,7 +129,7 @@ export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, s
         onMouseMove={(event) => setHovered(baseAt(event))}
         onMouseLeave={() => setHovered(null)}
         role="application"
-        aria-label="The board: click one of your bases, then a base next to it, to send half its units"
+        aria-label="The board: pick one of your bases, then a base next to it, to send half its units"
       >
         <defs>
           <marker id="stream-head" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
@@ -157,6 +173,21 @@ export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, s
             <circle cx={byId[source].x} cy={byId[source].y} r={radii[source] + 9} fill="none" stroke={theme.colors.highlight ?? "#ffd54a"} strokeWidth={4} />
           </g>
         )}
+        {board.bases.map((base) => (
+          <circle
+            key={`key-${base.id}`}
+            className="play-base-key"
+            cx={base.x}
+            cy={base.y}
+            r={radii[base.id] + 13}
+            stroke={ink}
+            tabIndex={active ? 0 : -1}
+            role="button"
+            aria-label={describe(base.id)}
+            onKeyDown={press(base.id)}
+            onMouseDown={(event) => event.preventDefault()} // a click does not take the keyboard's focus, so Space still pauses
+          />
+        ))}
       </svg>
       {tools &&
         createPortal(

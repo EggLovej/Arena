@@ -55,6 +55,29 @@ def test_commands_are_queued_one_a_tick_and_checked(race):
     assert live.step()["refused"] == {"red": "7 is not 1, 2 or 3"}
 
 
+def test_only_the_seats_whose_turn_it_is_choose_and_play(race):
+    live = LiveMatch(race, "short", {"red": PERSON, "blue": "steady"}, seed=1)
+    match = live.match
+    match.acting = lambda: (match.seats[match.tick % 2],)  # Race made turn-based: red, blue, red, ...
+    played = []
+    step = match.step
+
+    def taking_turns(actions):
+        played.append(sorted(actions))
+        return step({seat: actions.get(seat) for seat in match.seats})
+
+    match.step = taking_turns
+    live.command("red", 2)
+    live.command("red", 1)
+    waiting = []
+    for _ in range(4):
+        live.think()
+        waiting.append(live.step()["people"]["red"]["waiting"])
+    assert played == [["red"], ["blue"], ["red"], ["blue"]]
+    assert waiting == [1, 1, 0, 0]  # red's second command waits for red's next turn
+    assert live.reports["blue"].moves == 2
+
+
 def test_bots_that_break_are_reported_and_the_match_goes_on(race):
     live = LiveMatch(race, "long", {"red": PERSON, "blue": "broken", "green": "missing"}, seed=2)
     updates = play_out(live, lambda live: live.command("red", 1))

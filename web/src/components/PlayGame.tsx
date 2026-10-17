@@ -55,7 +55,7 @@ export function PlayGame({ game, ratings, thinking }: Props) {
     live.speed(speed);
   };
 
-  const inMatch = setup !== null && !["loading", "ready"].includes(live.phase) && !(live.phase === "failed" && !live.match);
+  const inMatch = setup !== null && !["loading", "broken", "ready"].includes(live.phase) && !(live.phase === "failed" && !live.match);
   if (!inMatch) {
     const slow = map.seats.filter((seat) => seat !== choice.seat && (thinking[lineup[seat]] ?? 0) > SLOW_MS).map((seat) => names[lineup[seat]]);
     return (
@@ -108,16 +108,23 @@ export function PlayGame({ game, ratings, thinking }: Props) {
                 </span>
               </label>
             ))}
-          <button type="submit" className="button-primary play-start">
+          <button type="submit" className="button-primary play-start" disabled={live.phase === "broken"}>
             Play
           </button>
           <p className="small play-status" aria-live="polite">
             {live.phase === "loading"
               ? `${live.progress}… The first time, the browser fetches about 15 MB of Python; after that it is quick.`
-              : live.phase === "failed"
+              : live.phase === "broken"
                 ? `This browser could not run the game: ${live.error}`
-                : "Ready."}
+                : live.phase === "failed"
+                  ? `The game could not start: ${live.error}`
+                  : "Ready."}
           </p>
+          {live.phase === "broken" && (
+            <button type="button" className="play-reload" onClick={() => window.location.reload()}>
+              Reload the page to try again
+            </button>
+          )}
           {slow.length > 0 && (
             <p className="small">
               {slow.join(" and ")} {slow.length === 1 ? "thinks" : "think"} hard about every move. In a browser the game may slow down to
@@ -191,8 +198,11 @@ function Match({
   // 3, 2, 1, then the clock starts.
   const [count, setCount] = useState(3);
   useEffect(() => {
-    if (phase !== "countdown") return;
-    setCount(3);
+    // Wound back while there is no countdown, so the next one (after "Play again") starts at 3.
+    if (phase !== "countdown") {
+      setCount(3);
+      return;
+    }
     const timer = setInterval(() => setCount((value) => value - 1), 600);
     return () => clearInterval(timer);
   }, [phase]);
@@ -204,7 +214,8 @@ function Match({
   const { pause, resume } = live;
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key !== " " || event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) return;
+      // A focused button, link or field keeps its own use of the space bar.
+      if (event.key !== " " || (event.target instanceof Element && event.target.closest("button, a, input, select, textarea, [role=button]"))) return;
       event.preventDefault();
       if (phase === "playing") pause();
       else if (phase === "paused") resume();
@@ -337,7 +348,7 @@ function Match({
         </label>
         <span className="play-tools" ref={setTools} />
         <button type="button" onClick={live.leave}>
-          {outcome ? "New game" : "Give up"}
+          {outcome || phase === "failed" ? "New game" : "Give up"}
         </button>
         <span className="play-notes" aria-live="polite">
           {refusal ? (
@@ -347,6 +358,7 @@ function Match({
           ) : null}
         </span>
       </div>
+      {phase === "failed" && <p className="notice">The game stopped because of an error: {live.error}</p>}
       {brokenBots.map(([seat, error]) => (
         <p key={seat} className="notice small">
           {names[setup.lineup[seat]]} ({seatInfo[seat]?.name ?? seat}) stopped working and sits the rest out: {error}

@@ -105,8 +105,10 @@ def read_checkpoint(path: str | Path) -> dict:
 
 
 def _rebuild_tensor(storage, offset, size, stride, requires_grad=False, hooks=None, metadata=None):
+    # np.ndarray refuses a shape, offset or strides that reach outside the storage.
     item = storage.itemsize
-    return np.lib.stride_tricks.as_strided(storage[offset:], shape=size, strides=[step * item for step in stride]).copy()
+    view = np.ndarray(tuple(size), dtype=storage.dtype, buffer=storage, offset=offset * item, strides=tuple(step * item for step in stride))
+    return view.copy()
 
 
 _STORAGE_TYPES = {

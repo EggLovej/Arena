@@ -1769,6 +1769,15 @@ tbody tr + tr th {
   padding: 0.5rem 2rem;
 }
 
+.play-start:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.play-reload {
+  justify-self: start;
+}
+
 .play-status {
   margin: 0;
 }
@@ -1822,6 +1831,18 @@ tbody tr + tr th {
 
 .play-tools {
   display: contents;
+}
+
+/* Invisible until a base has the keyboard's focus. */
+.play-base-key {
+  fill: transparent;
+  stroke-width: 0;
+  outline: none;
+}
+
+.play-base-key:focus-visible {
+  stroke-width: 3;
+  stroke-dasharray: 6 4;
 }
 
 .play-switch.is-on {

@@ -50,6 +50,7 @@ export const graphite: GameView = {
       "Click one of your bases, then a base next to it: half its units go there.",
       "Shift-click the second base instead (or turn Stream on) to send it everything the first base has, every tick, until you shift-click the first base again.",
       "You send one fleet a tick, like the bots. Right-click or Escape lets go of a selected base.",
+      "With a keyboard, Tab moves between the bases and Enter acts as a click (Shift+Enter as a Shift-click).",
     ],
     map: "crossroads",
   },

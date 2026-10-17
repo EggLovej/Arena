@@ -29,13 +29,14 @@ export type MatchUpdate = {
   people: Record<string, unknown>;
 };
 
+/** `id` is the page's id for the match a message is about; a load error has none. */
 export type WorkerMessage =
   | { type: "progress"; text: string }
   | { type: "loaded"; seconds: number }
-  | { type: "started"; start: MatchStart }
-  | { type: "tick"; update: MatchUpdate; pace: number }
-  | { type: "refused"; reason: string }
-  | { type: "error"; message: string };
+  | { type: "started"; id: number; start: MatchStart }
+  | { type: "tick"; id: number; update: MatchUpdate; pace: number }
+  | { type: "refused"; id: number; reason: string }
+  | { type: "error"; id?: number; message: string };
 
 /**
  * Where to draw the match between ticks, so fleets glide: the last tick played plus the
