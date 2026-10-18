@@ -7,8 +7,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { applyDelta } from "@/lib/frames.ts";
-import { PYODIDE_URL, type MatchStart, type MatchUpdate, type Outcome, type WorkerMessage } from "@/lib/play.ts";
-import type { Snapshot } from "@/lib/types.ts";
+import { PYODIDE_URL, type MatchStart, type MatchUpdate, type WorkerMessage } from "@/lib/play.ts";
+import type { Outcome, Snapshot } from "@/lib/types.ts";
 
 // "broken": Python could not load, so no match can start; "failed": a match stopped with an error.
 export type Phase = "loading" | "broken" | "ready" | "starting" | "countdown" | "playing" | "paused" | "over" | "failed";
@@ -19,7 +19,6 @@ export type MatchState = {
   tick: number;
   playedAt: number; // performance.now() when the tick arrived
   people: Record<string, unknown>;
-  thinking: Record<string, number>;
   errors: Record<string, string>;
   outcome: Outcome | null;
   pace: number; // 1 when the game keeps time; lower when it waits for the bots
@@ -112,10 +111,6 @@ export function usePlayMatch(gameId: string, tickSeconds: number) {
     refusal,
     match,
     start: begin,
-    go: useCallback(() => {
-      send({ type: "resume" });
-      setPhase("playing");
-    }, [send]),
     pause: useCallback(() => {
       send({ type: "pause" });
       setPhase("paused");
@@ -143,7 +138,6 @@ function fromStart(start: MatchStart): MatchState {
     tick: start.tick,
     playedAt: performance.now(),
     people: start.people,
-    thinking: {},
     errors: {},
     outcome: null,
     pace: 1,
@@ -157,7 +151,6 @@ function withUpdate(state: MatchState, update: MatchUpdate, pace: number): Match
     tick: update.tick,
     playedAt: performance.now(),
     people: update.people,
-    thinking: update.thinking_ms,
     errors: update.errors,
     outcome: update.outcome,
     pace,

@@ -12,7 +12,7 @@ const leaderboard = {
 function row(map: string, ...bots: string[]): MatchRow {
   const seats = ["red", "blue", "green"];
   const lineup = Object.fromEntries(bots.map((bot, index) => [seats[index], bot]));
-  return { id: `${map}.${bots.join(".")}.0`, map, lineup, ranking: [["red"]], reason: "elimination", ticks: 100, replay: true };
+  return { id: `${map}.${bots.join(".")}.0`, map, lineup, ranking: [["red"]], ticks: 100, replay: true };
 }
 
 test("strong lineups first, each map and each set of bots once, with the largest maps included", () => {

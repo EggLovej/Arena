@@ -197,7 +197,7 @@ function Match({
 }) {
   const view = gameView(game.id);
   const play = view.play!;
-  const { phase, match } = live;
+  const { phase, match, pause, resume } = live;
   const seatInfo = Object.fromEntries(game.seats.map((seat) => [seat.id, seat]));
   const seats = Object.keys(setup.lineup);
   const person = seats.find((seat) => setup.lineup[seat] === PERSON) ?? null; // null while watching bots
@@ -233,12 +233,10 @@ function Match({
     const timer = setInterval(() => setCount((value) => value - 1), 600);
     return () => clearInterval(timer);
   }, [phase]);
-  const { go } = live;
   useEffect(() => {
-    if (phase === "countdown" && count <= 0) go();
-  }, [phase, count, go]);
+    if (phase === "countdown" && count <= 0) resume();
+  }, [phase, count, resume]);
 
-  const { pause, resume } = live;
   const pauseKey = play.pauseKey ?? " ";
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {

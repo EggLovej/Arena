@@ -26,5 +26,5 @@ test("a null entry removes it and leaves the earlier snapshot alone", () => {
 });
 
 test("a replay without a first keyframe is refused", () => {
-  assert.throws(() => decodeFrames({ keyframe_every: 3, count: 2, keyframes: {}, deltas: [{}] }));
+  assert.throws(() => decodeFrames({ count: 2, keyframes: {}, deltas: [{}] }));
 });
