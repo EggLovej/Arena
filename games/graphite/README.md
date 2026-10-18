@@ -164,8 +164,6 @@ window too big for the screen is shrunk to fit.
 - `ais/`: one-file agents
 - `maps/`: dynamically selectable JSON maps
 - `tests/`: rule, loading, generality, and replay tests
-- `atlas_model/`: inference-only copy of the ML network that Atlas AI uses to
-  forecast opponents
 - `ml/`: the learned agent, its training and evaluation (see `ml/README.md`)
 
 The visual system follows the warm Field Notes Atlas direction. Base counts,

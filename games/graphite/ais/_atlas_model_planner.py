@@ -5,14 +5,15 @@ The learned network predicts enemy actions. Our continuation policies remain
 explicit tactical policies; leaf evaluation uses game strength, not its value
 head. Shared random draws help compare policies. No global optimality is claimed.
 """
+from dataclasses import replace
 from pathlib import Path
 from math import sqrt
 from ais._atlas_sim import Simulation
-from ais.atlas_ai import policy as ordinary_policy, CONFIGS
+from ais.atlas_clean_ai import STYLES, policy as ordinary_policy
 
 CANDIDATES = [
-    dict(CONFIGS[0]), dict(CONFIGS[3]), dict(CONFIGS[5]),
-    dict(CONFIGS[6], campaign=True), dict(CONFIGS[8], campaign=True),
+    dict(STYLES[0]), dict(STYLES[3]), dict(STYLES[5]),
+    dict(STYLES[6], campaign=True), dict(STYLES[8], campaign=True),
     dict(horizon=50., reserve=2., buffer=1., holding=.15, costscale=3.,
          enemy=8., expansion=4., saving=True, ffa=True, surge=.3, rally=2., overwhelm=1., campaign=True),
 ]
@@ -53,23 +54,19 @@ CANDIDATES.extend([{'horizon': 50.0,
   'rally': 1.0,
   'overwhelm': 1.5}])
 _MODEL = None
-_CHECKPOINT_BYTES = None
 CHECKPOINT_INFO = None
 
 def configure_checkpoint(path=None):
-    """Pin an independently read public checkpoint for the new match."""
-    global _MODEL, _CHECKPOINT_BYTES, CHECKPOINT_INFO
+    """Pick the public checkpoint for the new match; the network is loaded again when the file changed."""
+    global _MODEL, CHECKPOINT_INFO
     import os, hashlib
     root=Path(__file__).resolve().parent.parent
     default=root/'ml/runs/latest.pt'
     if not default.exists():default=root/'checkpoints/neural_ai.pt'
-    if not default.exists():default=root/'atlas_model/opponent.pt'
     selected=Path(path or os.environ.get('ATLAS_OPPONENT_CHECKPOINT',os.environ.get('NEURAL_AI_CHECKPOINT',str(default))))
-    data=selected.read_bytes()
-    digest=hashlib.sha256(data).hexdigest()
+    digest=hashlib.sha256(selected.read_bytes()).hexdigest()
     if CHECKPOINT_INFO is None or digest!=CHECKPOINT_INFO['sha256']:
         _MODEL=None
-    _CHECKPOINT_BYTES=data
     CHECKPOINT_INFO=dict(path=str(selected.resolve()),sha256=digest)
     return dict(CHECKPOINT_INFO)
 
@@ -85,30 +82,25 @@ def model():
     global _MODEL
     if _MODEL is None:
         import torch
-        from io import BytesIO
-        from atlas_model.checkpoint import FORMAT_VERSION, _current_encoding
-        from atlas_model.models import build_model
+        from ml.models.checkpoint import load_checkpoint
         torch.set_num_threads(1)
-        if _CHECKPOINT_BYTES is None:configure_checkpoint()
-        contents=torch.load(BytesIO(_CHECKPOINT_BYTES),map_location='cpu',weights_only=True)
-        if contents.get('format_version')!=FORMAT_VERSION:
-            raise ValueError('Unsupported Atlas opponent checkpoint format')
-        if contents['encoding']!=_current_encoding():
-            raise ValueError('Atlas opponent checkpoint encoding does not match its inference runtime')
+        if CHECKPOINT_INFO is None:configure_checkpoint()
         with torch.random.fork_rng(devices=[]):
-            _MODEL=build_model(contents['model_name'],**contents['model_config']).to(device='cpu',dtype=torch.float32)
-            _MODEL.load_state_dict(contents['weights'])
-            _MODEL.eval()
+            _MODEL=load_checkpoint(CHECKPOINT_INFO['path']).model.eval()
     return _MODEL
 
-def predict(views, generator=None, actions=True, uniforms=None):
+def known(amounts):
+    """Only the amount options the network was trained with. ml lists more, which it never picks."""
+    return amounts[...,:model().config.amount_options]
+
+def predict(views, generator=None, uniforms=None):
     import torch
-    from atlas_model.encoding.action_encoder import legal_actions, decode_action
-    from atlas_model.encoding.state_encoder import encode_state, layout_for
-    from atlas_model.models import make_input
-    from atlas_model.models.policy import choose, to_choices
+    from ml.encoding.action_encoder import legal_actions, decode_action
+    from ml.encoding.state_encoder import encode_state, layout_for
+    from ml.models import make_input
+    from ml.models.policy import choose, to_choices
     layouts=[layout_for(v) for v in views]
-    from atlas_model.encoding.forecast import build_timelines
+    from ml.encoding.forecast import build_timelines
     worlds={}; timelines=[]
     for v in views:
         key=(id(v.bases),id(v.fleets),v.seconds_per_tick)
@@ -118,7 +110,7 @@ def predict(views, generator=None, actions=True, uniforms=None):
     inputs=make_input([encode_state(v,l,t) for v,l,t in zip(views,layouts,timelines)],legal)
     with torch.inference_mode():
         output=model()(inputs)
-        if not actions:return output.value.tolist()
+        output=replace(output,amount_logits=known(output.amount_logits))
         if uniforms is None:
             route,amount=choose(output,generator=generator)
         else:
@@ -168,13 +160,10 @@ def select(state, opponents=None):
             elif alive=={state.player_id}:terminal[i]=1.
     nonterminal=[i for i in range(len(simulations)) if i not in terminal]
     values=dict(terminal)
-    if nonterminal:
-        predicted=[0.] * len(nonterminal)
-        for i,v in zip(nonterminal,predicted):
-            # Learned value with a small material/production tie-breaker.
-            sim=simulations[i]
-            heuristic=sim.value(state.player_id)
-            values[i]=.99*heuristic/(100+abs(heuristic))
+    for i in nonterminal:
+        # Material and production, squashed below the terminal values.
+        heuristic=simulations[i].value(state.player_id)
+        values[i]=.99*heuristic/(100+abs(heuristic))
     scores=[]
     for c in range(len(CANDIDATES)):
         vals=[values[c*SAMPLES+j] for j in range(SAMPLES)]
@@ -192,16 +181,17 @@ def evidence(state, action, predictions):
     """
     import torch
     from math import log
-    from atlas_model.encoding.action_encoder import legal_actions
-    from atlas_model.encoding.state_encoder import encode_state, layout_for
-    from atlas_model.models import make_input
+    from ml.encoding.action_encoder import legal_actions
+    from ml.encoding.state_encoder import encode_state, layout_for
+    from ml.models import make_input
     layout=layout_for(state)
-    from atlas_model.encoding.forecast import build_timelines
+    from ml.encoding.forecast import build_timelines
     timelines=build_timelines(state)
     legal=legal_actions(state,layout,timelines)
+    units=known(legal.units)
     if action is not None:
         i,j=layout.index[action.source_id],layout.index[action.target_id]
-        matching=(legal.units[i,j]==action.units) & legal.allowed[i,j]
+        matching=(units[i,j]==action.units) & known(legal.allowed)[i,j]
         if not matching.any():return None
     with torch.inference_mode():
         out=model()(make_input([encode_state(state,layout,timelines)],[legal]))
@@ -209,9 +199,9 @@ def evidence(state, action, predictions):
         if action is None:
             probability=float(routes[0])
         else:
-            amounts=torch.softmax(out.amount_logits[0,i,j],dim=0)
+            amounts=torch.softmax(known(out.amount_logits[0,i,j]),dim=0)
             probability=float(routes[1+i*len(layout.base_ids)+j]*amounts[torch.from_numpy(matching)].sum())
-    distinct=1+sum(len(set(int(u) for u in legal.units[i,j] if u>0))
+    distinct=1+sum(len(set(int(u) for u in units[i,j] if u>0))
                    for i in range(len(layout.base_ids)) for j in range(len(layout.base_ids)))
     generic=.9*sum(a==action for a in predictions)/max(1,len(predictions))+.1/distinct
     return max(-8.,min(8.,log(max(1e-12,probability)/generic)))

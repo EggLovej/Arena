@@ -45,7 +45,7 @@ from ais._atlas_sim import Simulation
 
 
 # Atlas's ten policy styles, from aggressive (low reserves, full commitment) to
-# patient (reserves, saving up for valuable targets). Copied from Atlas.
+# patient (reserves, saving up for valuable targets).
 STYLES = [
     dict(reserve=0.1, buffer=0.0, saving=False, holding=0.0, costscale=20.0, surge=1.0, rally=1.0, overwhelm=2.0, enemy=3.0),
     dict(reserve=0.0, buffer=0.0, saving=False, holding=0.0, costscale=20.0, surge=1.0, rally=1.0, enemy=3.0),

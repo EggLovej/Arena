@@ -33,7 +33,7 @@ class LearnedPlanningTests(unittest.TestCase):
             self.assertFalse(game.step(dict(zip(game.players,actions))))
 
     def test_impossible_encoded_amount_rules_out_learned_hypothesis(self):
-        from atlas_model.encoding.action_encoder import legal_actions
+        from ml.encoding.action_encoder import legal_actions
         state=Game(load_map('triangle')).view_for(RED)
         legal=legal_actions(state)
         for i,source in enumerate(state.bases):

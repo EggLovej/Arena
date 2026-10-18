@@ -53,7 +53,7 @@ class NoCopiesTests(unittest.TestCase):
         ).stdout.split()
         ais_modules = {name for name in loaded if name.startswith("ais")}
         self.assertEqual(ais_modules, {"ais", "ais._atlas_policy", "ais._atlas_sim", "ais.atlas_clean_ai"})
-        self.assertFalse({"torch", "numpy", "atlas_model"} & set(loaded))
+        self.assertFalse({"torch", "numpy"} & set(loaded))
 
 
 class PlayTests(unittest.TestCase):
