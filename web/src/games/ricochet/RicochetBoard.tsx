@@ -1,9 +1,13 @@
-// Ricochet's arena in the browser, in its default Neon Circuit look (the
-// "neon" style in games/ricochet/src/ricochet/display/styles): a midnight grid,
-// violet-edged walls, ringed tanks with their barrels, health above and energy
-// below, glowing shots and trails.
+// Ricochet's arena in the browser, drawn in the style of the chosen theme as the
+// game's own window draws it (games/ricochet/src/ricochet/display/styles): the
+// style draws the floor, walls, tanks and shots; every theme shows the shield,
+// a hit's flash, health above each tank and energy below it the same way.
+
+import { useId, useMemo, type ReactNode } from "react";
 
 import type { BoardProps } from "../types.ts";
+import { neon } from "./neon.tsx";
+import { robotLeague } from "./robotLeague.tsx";
 
 export type RicochetBoardData = {
   name: string;
@@ -16,9 +20,22 @@ export type RicochetBoardData = {
   energy: number;
 };
 
-type Theme = Record<"background" | "panel" | "text" | "muted" | "accent" | "energy" | "inactive" | "shield", string> & {
+/** One of the game's themes (ricochet.themes): its colours, and the style that draws it. */
+export type Theme = Record<"background" | "panel" | "text" | "muted" | "accent" | "energy" | "inactive" | "shield", string> & {
+  style: string;
   players: Record<string, string>;
 };
+
+/** How a style draws. Tanks and shots are drawn round the origin, and tanks aim `aim` degrees from the x axis. */
+export type Style = {
+  /** The floor, its edge and the walls: what never moves. `id` makes the ids of its patterns unique to the board. */
+  arena: (board: RicochetBoardData, theme: Theme, compact: boolean, id: string) => ReactNode;
+  tank: (color: string, theme: Theme, radius: number, aim: number) => ReactNode;
+  wreck: (color: string, theme: Theme, radius: number, aim: number) => ReactNode;
+  shot: (color: string, theme: Theme, radius: number, bounced: boolean) => ReactNode;
+};
+
+const STYLES: Record<string, Style> = { neon, "robot-league": robotLeague };
 
 // [x, y, aim in degrees]
 export type TankState = [number, number, number];
@@ -27,7 +44,6 @@ export type StatusState = [number, number, number, number];
 // [seat, x, y, x speed, y speed (pixels a second), tick it was at x and y, bounced (1 or 0)]
 type ShotState = [string, number, number, number, number, number, number];
 
-const GRID = 40;
 const TRAIL_SECONDS = 0.07;
 const FLASH_TICKS = 9; // how long a tank glows white after a hit
 
@@ -47,6 +63,10 @@ function tankAt(now: TankState, next: TankState | undefined, fraction: number): 
 export function RicochetBoard({ board: rawBoard, snapshot, next, tick, tickSeconds, theme: rawTheme, seats, compact = false }: BoardProps) {
   const board = rawBoard as RicochetBoardData;
   const theme = rawTheme as Theme;
+  const style = STYLES[theme.style] ?? neon; // a style the site can't draw yet looks like the default
+  const id = useId();
+  // Drawn once rather than every frame of a match.
+  const arena = useMemo(() => style.arena(board, theme, compact, id), [style, board, theme, compact, id]);
   const { width, height, tank_radius: radius, shot_radius: shotRadius } = board;
   const tanks = (snapshot.tanks ?? {}) as Record<string, TankState>;
   const nextTanks = (next?.tanks ?? {}) as Record<string, TankState>;
@@ -55,43 +75,16 @@ export function RicochetBoard({ board: rawBoard, snapshot, next, tick, tickSecon
   const whole = Math.floor(tick);
   const fraction = tick - whole;
   const color = (seat: string) => theme.players[seat] ?? seats.find((entry) => entry.id === seat)?.color ?? theme.text;
-  const id = compact ? "ricochet-compact" : "ricochet";
 
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
       role="img"
       aria-label={`${board.name} arena`}
-      // A preview fills its frame, the arena's floor colour round the edges where the shapes differ.
+      // A preview fills its frame, the theme's background round the edges where the shapes differ.
       style={{ display: "block", width: "100%", height: compact ? "100%" : "auto", background: theme.background }}
     >
-      <defs>
-        <pattern id={`${id}-grid`} width={GRID} height={GRID} patternUnits="userSpaceOnUse">
-          <path d={`M ${GRID} 0 L 0 0 0 ${GRID}`} fill="none" stroke={theme.inactive} strokeWidth={1} opacity={0.55} />
-        </pattern>
-        <radialGradient id={`${id}-floor`} cx="50%" cy="50%" r="70%">
-          <stop offset="0%" stopColor={theme.accent} stopOpacity={0.08} />
-          <stop offset="100%" stopColor={theme.accent} stopOpacity={0} />
-        </radialGradient>
-      </defs>
-
-      <rect width={width} height={height} fill={theme.background} />
-      <rect width={width} height={height} fill={`url(#${id}-grid)`} />
-      <rect width={width} height={height} fill={`url(#${id}-floor)`} />
-
-      {/* The arena's edge, which shots bounce off like any wall. */}
-      <rect x={3} y={3} width={width - 6} height={height - 6} fill="none" stroke={theme.accent} strokeWidth={10} opacity={0.18} />
-      <rect x={2} y={2} width={width - 4} height={height - 4} fill="none" stroke={theme.accent} strokeWidth={compact ? 6 : 3} />
-
-      {board.walls.map(([x, y, w, h], index) => (
-        <g key={index}>
-          <rect x={x - 3} y={y - 3} width={w + 6} height={h + 6} rx={3} fill="none" stroke={theme.accent} strokeWidth={6} opacity={0.22} />
-          <rect x={x} y={y} width={w} height={h} fill={theme.panel} stroke={theme.accent} strokeWidth={compact ? 5 : 2.5} />
-          {!compact && w > 24 && h > 24 && (
-            <rect x={x + 6} y={y + 6} width={w - 12} height={h - 12} fill="none" stroke={theme.accent} strokeWidth={1} opacity={0.35} />
-          )}
-        </g>
-      ))}
+      {arena}
 
       {!compact &&
         Object.entries(shots).map(([key, shot]) => {
@@ -104,8 +97,7 @@ export function RicochetBoard({ board: rawBoard, snapshot, next, tick, tickSecon
           return (
             <g key={`shot-${key}`}>
               <line x1={tailX} y1={tailY} x2={x} y2={y} stroke={fill} strokeWidth={3} strokeLinecap="round" opacity={0.45} />
-              <circle cx={x} cy={y} r={shotRadius * 2.4} fill={fill} opacity={0.22} />
-              <circle cx={x} cy={y} r={shotRadius} fill={shot[6] ? theme.text : fill} stroke={fill} strokeWidth={1.5} />
+              <g transform={`translate(${x} ${y})`}>{style.shot(fill, theme, shotRadius, shot[6] === 1)}</g>
             </g>
           );
         })}
@@ -125,23 +117,16 @@ export function RicochetBoard({ board: rawBoard, snapshot, next, tick, tickSecon
         }
         if (health <= 0) {
           return (
-            <g key={seat} transform={`translate(${x} ${y})`} opacity={0.75}>
-              <circle r={radius} fill={theme.panel} stroke={theme.inactive} strokeWidth={3} />
-              <path d={`M ${-radius * 0.55} ${-radius * 0.55} L ${radius * 0.55} ${radius * 0.55} M ${radius * 0.55} ${-radius * 0.55} L ${-radius * 0.55} ${radius * 0.55}`} stroke={fill} strokeWidth={3} strokeLinecap="round" />
+            <g key={seat} transform={`translate(${x} ${y})`}>
+              {style.wreck(fill, theme, radius, aim)}
             </g>
           );
         }
         const flash = hit >= 0 && whole - hit < FLASH_TICKS ? 1 - (tick - hit) / FLASH_TICKS : 0;
         return (
           <g key={seat} transform={`translate(${x} ${y})`}>
-            <circle r={radius * 1.7} fill={fill} opacity={0.14} />
             {shield ? <circle r={radius + 9} fill={theme.shield} fillOpacity={0.14} stroke={theme.shield} strokeWidth={2.5} /> : null}
-            <g transform={`rotate(${aim})`}>
-              <rect x={radius * 0.2} y={-3.5} width={radius * 1.5} height={7} rx={2} fill={fill} />
-            </g>
-            <circle r={radius} fill={theme.background} stroke={fill} strokeWidth={3} />
-            <circle r={radius * 0.62} fill="none" stroke={fill} strokeWidth={2.5} strokeDasharray="7 4" />
-            <circle r={radius * 0.28} fill={fill} />
+            {style.tank(fill, theme, radius, aim)}
             {flash > 0 && <circle r={radius + 2} fill={theme.text} opacity={0.75 * flash} />}
             <rect x={-radius} y={radius + 7} width={radius * 2} height={4} rx={2} fill={theme.muted} opacity={0.35} />
             <rect x={-radius} y={radius + 7} width={(radius * 2 * Math.min(energy, board.energy)) / board.energy} height={4} rx={2} fill={theme.energy} />

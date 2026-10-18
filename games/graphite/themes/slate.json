@@ -1,0 +1,32 @@
+{
+  "id": "slate",
+  "name": "Slate",
+  "description": "Chalk on a dark slate board, with coloured-chalk factions.",
+  "colors": {
+    "ink": "#e9e6dc",
+    "paper": "#29302e",
+    "paper_light": "#333b38",
+    "paper_dark": "#4a5551",
+    "muted": "#a7afab",
+    "disabled": "#6e7874",
+    "highlight": "#f2d16b",
+    "white": "#ffffff"
+  },
+  "players": {
+    "red": {
+      "fill": "#cf4a40",
+      "dark": "#9a352e"
+    },
+    "blue": {
+      "fill": "#3f78cf",
+      "dark": "#2c5596"
+    },
+    "green": {
+      "fill": "#3d9466",
+      "dark": "#2a6a48"
+    }
+  },
+  "neutral": {
+    "fill": "#4a5551"
+  }
+}

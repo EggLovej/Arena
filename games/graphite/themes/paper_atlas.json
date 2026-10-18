@@ -2,6 +2,7 @@
   "id": "paper_atlas",
   "name": "Paper Atlas",
   "description": "Warm field-notes paper, ink lines and brush-stroke factions.",
+  "texture": "/games/graphite/paper.jpg",
   "colors": {
     "ink": "#2a2825",
     "paper": "#efe7d6",

@@ -12,7 +12,7 @@ export type BoardProps = {
   tick: number; // may have a fraction, so moving things move smoothly between ticks
   next?: Snapshot; // the tick after, when there is one, to move between the two
   tickSeconds: number;
-  theme: unknown; // the game's theme JSON
+  theme: unknown; // one of the game's themes from its game.json (Game.themes): the one chosen
   seats: Seat[];
   compact?: boolean; // a small preview: shapes only, no labels, filling its frame
 };

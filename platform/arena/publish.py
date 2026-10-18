@@ -1,7 +1,7 @@
 """The JSON files the website reads, written to ``web/public/data/``.
 
     games.json                    the games' ids
-    <game>/game.json              rules, theme, seats, maps (with their layout) and bots
+    <game>/game.json              rules, themes, seats, maps (with their layout) and bots
     <game>/results.json           every match of the last tournament, in full: the source of the two below
     <game>/leaderboard.json       one table per match size, and how the tournament ran
     <game>/matches.json           every match of the last tournament, slimmed for the match list
@@ -49,7 +49,7 @@ def publish_game(game: Game, output: Path) -> None:
         "max_ticks": info.max_ticks,
         "rating_anchor": list(info.rating_anchor) if info.rating_anchor else None,
         "rules": (games_directory() / info.id / "RULES.md").read_text(),
-        "theme": game.theme(),
+        "themes": list(game.themes()),
         "maps": maps,
         "bots": [asdict(bot) for bot in game.bots()],
     }
