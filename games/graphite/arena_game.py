@@ -243,8 +243,8 @@ class GraphiteGame:
         for name in ("source_id", "target_id"):
             if not isinstance(getattr(action, name), str):
                 raise TypeError(f"{name} must be a base id (a string), got {type(getattr(action, name)).__name__}")
-        if not isinstance(action.units, (int, float)) or isinstance(action.units, bool):
-            raise TypeError(f"units must be a number, got {type(action.units).__name__}")
+        if not isinstance(action.units, int) or isinstance(action.units, bool):
+            raise TypeError(f"units must be a whole number, got {type(action.units).__name__}")
         return [action.source_id, action.target_id, action.units]
 
     def action_from_json(self, data: list) -> SendAction:

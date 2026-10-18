@@ -23,7 +23,7 @@ def test_the_neural_bots_play_their_committed_networks_the_same_way_twice(graphi
     assert first.replay["actions"] == second.replay["actions"]
 
 
-def test_an_action_naming_bases_by_anything_but_their_id_is_refused(graphite):
+def test_an_action_must_name_bases_by_id_and_send_whole_units(graphite):
     from game_types import SendAction
 
     assert graphite.action_to_json(SendAction("north", "center", 3)) == ["north", "center", 3]
@@ -31,6 +31,8 @@ def test_an_action_naming_bases_by_anything_but_their_id_is_refused(graphite):
         graphite.action_to_json(SendAction(["north"], "center", 3))
     with pytest.raises(TypeError, match="target_id must be a base id"):
         graphite.action_to_json(SendAction("north", 7, 3))
+    with pytest.raises(TypeError, match="units must be a whole number"):
+        graphite.action_to_json(SendAction("north", "center", 3.0))
 
 
 def fleets_of(live: LiveMatch, seat: str) -> list:

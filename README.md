@@ -116,7 +116,10 @@ in the Build Step** on (the default).
 ## Adding a bot to Graphite
 
 Add `games/graphite/ais/<name>.py` with a `choose_action(state)` function (see
-`ais/careful_ai.py`). Its docstring's first paragraph describes
+`ais/careful_ai.py`), which the game's own window plays. It may also define a
+`create_bot()` returning an object with `reset(context)` and `act(state)`,
+which the Arena then plays instead (`ais/neural_ai.py` does, to draw its moves
+from the match's seed). Its docstring's first paragraph describes
 it on the site unless `BLURBS` in `arena_game.py` has a line for it. A bot may
 think for up to two minutes on a move and half an hour over a match
 (`move_time_limit` and `match_time_limit` in the game's `GameInfo`); one that
