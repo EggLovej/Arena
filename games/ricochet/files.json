@@ -3,7 +3,6 @@
   "bots": [
     "ais",
     "src/ricochet/__init__.py",
-    "src/ricochet/api.py",
     "src/ricochet/bot.py",
     "src/ricochet/resources.py",
     "src/ricochet/runtime/__init__.py",
