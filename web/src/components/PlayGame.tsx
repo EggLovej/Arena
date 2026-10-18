@@ -5,7 +5,7 @@
 // result. The game brings its board and the controls that lie over it (GameView.play);
 // Python runs the match in a worker (usePlayMatch).
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type ReactNode, type RefObject } from "react";
 
 import { gameView } from "@/games/index.ts";
 import { describeOutcome, formatClock, listNames } from "@/lib/format.ts";
@@ -280,20 +280,17 @@ function Match({
   }, [live.refusal]);
   const refusal = live.refusal && performance.now() - live.refusal.at < 2500 ? live.refusal.reason : null;
 
+  // The frame stays while the next match is set out ("Play again"), so full screen, or the cover over the page, holds.
+  const frame = (content: ReactNode) => (
+    <div className={`play${full === "page" ? " is-full" : ""}`} ref={area} style={{ "--seat": person ? seatInfo[person]?.color : undefined } as CSSProperties}>
+      {content}
+    </div>
+  );
   if (!match) {
-    return (
+    return frame(
       <div className="play-loading" aria-live="polite">
-        {phase === "failed" ? (
-          <>
-            <p>The game could not start: {live.error}</p>
-            <button type="button" onClick={live.leave}>
-              Back
-            </button>
-          </>
-        ) : (
-          <p>{live.progress}…</p>
-        )}
-      </div>
+        {live.progress}…
+      </div>,
     );
   }
 
@@ -304,8 +301,8 @@ function Match({
   const outcome = match.outcome;
   const brokenBots = Object.entries(match.errors).filter(([seat]) => seat !== person);
 
-  return (
-    <div className={`play${full === "page" ? " is-full" : ""}`} ref={area} style={{ "--seat": person ? seatInfo[person]?.color : undefined } as CSSProperties}>
+  return frame(
+    <>
       <div className="scoreboard" style={{ "--seats": seats.length } as CSSProperties}>
         {seats.map((seat) => {
           const out = outcome !== null && outcome.ranking.findIndex((group) => group.includes(seat)) > 0;
@@ -423,7 +420,7 @@ function Match({
           ))}
         <li>{keyName(pauseKey)} pauses and carries on. F switches full screen on and off.</li>
       </ul>
-    </div>
+    </>,
   );
 }
 

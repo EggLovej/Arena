@@ -1981,6 +1981,12 @@ tbody tr + tr th {
   max-height: none;
 }
 
+/* The next match being set out ("Play again") fills the screen meanwhile. */
+.play:fullscreen .play-loading,
+.play.is-full .play-loading {
+  grid-row: span 2;
+}
+
 .play:fullscreen .play-help,
 .play.is-full .play-help {
   display: none;
