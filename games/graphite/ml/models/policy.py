@@ -67,17 +67,6 @@ def log_probability(output: ModelOutput, route: Tensor, amount: Tensor) -> Tenso
     return route_part + torch.where(route == 0, 0.0, amount_part)
 
 
-def capture_logit(output: ModelOutput, route: Tensor, amount: Tensor) -> Tensor:
-    """The capture output for each given send: above 0, the target is likely ours once it lands. [batch]
-
-    Meaningless for waiting (route 0); callers leave those out.
-    """
-
-    per_route = output.capture_logits.flatten(start_dim=1, end_dim=2)
-    pair = (route - 1).clamp(min=0)
-    return per_route[torch.arange(len(route), device=route.device), pair].gather(1, amount[:, None])[:, 0]
-
-
 def entropy(output: ModelOutput) -> Tensor:
     """How undecided the model is: 0 when certain, larger the more evenly it spreads. [batch]"""
 

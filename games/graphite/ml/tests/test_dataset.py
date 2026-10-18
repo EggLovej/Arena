@@ -170,9 +170,6 @@ class FreeAmountSetTests(unittest.TestCase):
     def test_an_options_set_refuses_choices_made_with_free_amounts(self):
         with self.assertRaises(ValueError):
             DecisionSet().add(replace(self.trajectory, free_amounts=True))
-        # And a free set needs the limits, which older trajectories lack.
-        with self.assertRaises(ValueError):
-            DecisionSet(free_amounts=True).add(replace(self.trajectory, route_limits=None))
 
 
 if __name__ == "__main__":

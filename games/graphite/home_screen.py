@@ -3,8 +3,8 @@
 Step 1 works like a fighting game's stage select: hovering a tile shows a large
 preview of that map. Step 2 works like a character select: click a colour card,
 then click the human or AI portrait that should play it. Each AI shows its
-estimated rating (ELO, strategic AI = 1000) when ``ais/ratings.json`` has one;
-``python -m ml bot-ratings`` writes that file.
+estimated rating (ELO, strategic AI = 1000) when ``ais/ratings.json`` has one.
+The ratings there date from 2026-10-13; the Arena's leaderboard keeps them current.
 """
 
 import json

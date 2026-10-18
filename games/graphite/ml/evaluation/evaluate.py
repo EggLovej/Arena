@@ -15,10 +15,6 @@ From the game directory:
     .venv/bin/python -m ml evaluate --candidate untrained
     .venv/bin/python -m ml evaluate --candidate ml/runs/demo/random.pt --opponents strategic_ai
     .venv/bin/python -m ml evaluate --candidate strategic_ai --quick
-
-Every game the candidate loses to ``aggressive_ai`` (or to the opponents named
-with ``--save-losses-against``) is saved to ``ml/runs/losses/``, to be played
-again with ``python -m ml rematch`` or watched with ``python -m ml watch``.
 """
 
 import argparse
@@ -30,7 +26,6 @@ import zlib
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from multiprocessing import Pool
-from pathlib import Path
 
 from game import Game
 from game_types import BLUE, RED, MapDefinition
@@ -45,8 +40,6 @@ from ml.play.players import UNTRAINED, Controller, load_player
 FIRST_EVALUATION_SEED = 900_000
 DEFAULT_GENERATED_MAPS = 30
 DEFAULT_OPPONENTS = ("aggressive_ai", "careful_ai", "strategic_ai")
-# A strong player should never lose to these; such a loss is saved for a closer look.
-DEFAULT_SAVE_LOSSES_AGAINST = ("aggressive_ai",)
 MATCH_SECONDS = 180.0
 TRAINING = "network in training"  # how ``evaluate_model`` names the network it measures
 
@@ -67,7 +60,6 @@ class MatchResult:
     plan: MatchPlan
     outcome: str  # "win", "draw", or "loss", from the candidate's side
     seconds: float  # game time when the match ended
-    saved_to: str = ""  # the saved game's file, if it was saved (see ml/evaluation/saved_games.py)
 
 
 @dataclass(frozen=True)
@@ -140,15 +132,11 @@ def evaluate(
     max_seconds: float = MATCH_SECONDS,
     on_progress: Callable[[list[MatchResult], int], None] | None = None,
     skip_generated: int = 0,
-    save_losses_against: Iterable[str] = (),
-    save_directory: str | Path | None = None,
 ) -> Evaluation:
     """Play every pairing and return the results.
 
     ``on_progress`` is called after each finished game with the results so far
-    and the total number of games. Games the candidate loses against an
-    opponent in ``save_losses_against`` are saved to ``save_directory``
-    (default ``ml/runs/losses/``).
+    and the total number of games.
     """
 
     plans = [
@@ -158,8 +146,7 @@ def evaluate(
         for seat in (RED, BLUE)
         for repeat in range(repeats)
     ]
-    saving = (tuple(save_losses_against), str(save_directory) if save_directory else None)
-    jobs = [(plan, candidate, greedy, max_seconds, saving) for plan in plans]
+    jobs = [(plan, candidate, greedy, max_seconds) for plan in plans]
     if workers is None:
         workers = max(1, (os.cpu_count() or 2) - 2)
 
@@ -252,21 +239,13 @@ def play_match(
     red: Controller,
     blue: Controller,
     max_seconds: float = MATCH_SECONDS,
-    moves: list | None = None,
 ) -> Game:
-    """Play one match to the end. Every move made is appended to ``moves`` as (tick, seat, source, target, units)."""
+    """Play one match to the end."""
 
     game = Game(definition)
     max_ticks = round(max_seconds / game.seconds_per_tick)
     while not game.is_finished() and game.tick < max_ticks:
-        actions = {RED: red(game.view_for(RED)), BLUE: blue(game.view_for(BLUE))}
-        if moves is not None:
-            moves.extend(
-                (game.tick, seat, action.source_id, action.target_id, action.units)
-                for seat, action in actions.items()
-                if action is not None
-            )
-        game.step(actions)
+        game.step({RED: red(game.view_for(RED)), BLUE: blue(game.view_for(BLUE))})
     return game
 
 
@@ -287,7 +266,7 @@ def _prepare_worker() -> None:
 
 
 def _play(job: tuple) -> MatchResult:
-    plan, candidate, greedy, max_seconds, (save_losses_against, save_directory) = job
+    plan, candidate, greedy, max_seconds = job
     if plan.map_set == "bundled":
         definition = load_map(plan.map_key)
     else:
@@ -299,19 +278,8 @@ def _play(job: tuple) -> MatchResult:
         plan.candidate_seat: load_player(candidate, greedy, seed),
         -plan.candidate_seat: load_player(plan.opponent, greedy, seed + 1),
     }
-    moves: list = []
-    game = play_match(definition, players[RED], players[BLUE], max_seconds, moves)
-    outcome = outcome_for(game, plan.candidate_seat)
-    saved_to = ""
-    if outcome == "loss" and plan.opponent in save_losses_against:
-        from ml.evaluation.saved_games import LOSSES_DIRECTORY, SavedGame
-
-        saved = SavedGame(
-            candidate, plan.opponent, plan.candidate_seat, f"{plan.map_set} {plan.map_key}", definition,
-            seed, max_seconds, outcome, game.time_seconds, moves, greedy,
-        )
-        saved_to = str(saved.save(save_directory or LOSSES_DIRECTORY))
-    return MatchResult(plan, outcome, game.time_seconds, saved_to)
+    game = play_match(definition, players[RED], players[BLUE], max_seconds)
+    return MatchResult(plan, outcome_for(game, plan.candidate_seat), game.time_seconds)
 
 
 def _print_progress(results: list[MatchResult], total: int, started: float) -> None:
@@ -344,13 +312,6 @@ def parse_args():
     parser.add_argument("--quick", action="store_true", help="Generated maps only, and just 8 of them")
     parser.add_argument("--workers", type=int)
     parser.add_argument("--max-seconds", type=float, default=MATCH_SECONDS)
-    parser.add_argument(
-        "--save-losses-against",
-        nargs="*",
-        default=list(DEFAULT_SAVE_LOSSES_AGAINST),
-        metavar="NAME",
-        help="Save every game the candidate loses to these opponents (default: aggressive_ai; none: leave empty)",
-    )
     return parser.parse_args()
 
 
@@ -378,14 +339,8 @@ def main() -> None:
         args.max_seconds,
         on_progress=lambda results, total: _print_progress(results, total, started),
         skip_generated=args.skip_generated,
-        save_losses_against=args.save_losses_against,
     )
     print("\n" + evaluation.table())
-    saved = sorted(result.saved_to for result in evaluation.results if result.saved_to)
-    if saved:
-        print(f"\n{len(saved)} lost games saved, to play again (python -m ml rematch FILE) or watch (python -m ml watch FILE):")
-        for path in saved:
-            print(f"  {path}")
 
 
 if __name__ == "__main__":

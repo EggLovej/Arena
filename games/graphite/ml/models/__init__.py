@@ -11,14 +11,11 @@ It can then be selected by name wherever a model is built.
 
 from ml.models.graph_transformer import GraphTransformer, GraphTransformerConfig
 from ml.models.interface import ModelInput, ModelOutput, PolicyValueModel, Scores, make_input
-from ml.models.judge import GraphJudge, GraphJudgeConfig
 
 
 # name -> (model class, config class)
 MODELS = {
     "graph_transformer": (GraphTransformer, GraphTransformerConfig),
-    # Judges positions only (who will win); see ml/models/judge.py.
-    "graph_judge": (GraphJudge, GraphJudgeConfig),
 }
 DEFAULT_MODEL = "graph_transformer"
 

@@ -1,12 +1,12 @@
 """Beast: whichever player is currently our strongest, playable in the game as "Beast AI".
 
 The choice is one small file, ``ml/runs/beast.json``: the player's name (any
-name the evaluator understands: a checkpoint, ``value:``, ``lookahead:``,
-or an AI file), when it became Beast, and why. Every time an
-evaluation shows a new strongest player, Beast is moved to it:
+name the evaluator understands: a checkpoint, ``network:``, or an AI file),
+when it became Beast, and why. Every time an evaluation shows a new strongest
+player, Beast is moved to it:
 
     .venv/bin/python -m ml beast                      show who Beast is
-    .venv/bin/python -m ml beast set "lookahead:ml/runs/x/latest.pt?judge=ml/runs/j/best.pt" \\
+    .venv/bin/python -m ml beast set "network:ml/runs/x/latest.pt?temperature=0.2" \\
         --why "beat the old Beast 60% over 100 games"
 
 ``ais/beast_ai.py`` reads the file at the start of every match. The

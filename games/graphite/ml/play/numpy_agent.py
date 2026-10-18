@@ -6,9 +6,6 @@ visitor's browser, where PyTorch cannot run, so this is how people play
 against Instinct and Apex there. It makes its choices exactly as
 ``NeuralAgent`` does (ml/play/numpy_model.py has the network), drawing
 them from its own random numbers.
-
-Only ``network:`` players play without PyTorch; the look-ahead players
-(``lookahead:``, ``value:``) need it.
 """
 
 import numpy as np
@@ -16,7 +13,7 @@ import numpy as np
 from ml.encoding.action_encoder import LegalActions, SendChoice
 from ml.encoding.state_encoder import EncodedState
 from ml.play.numpy_model import NumpyModel, choose
-from ml.play.players import NETWORK, NetworkAgent, NetworkSettings, parse_name
+from ml.play.players import NetworkAgent
 
 
 class NumpyAgent(NetworkAgent):
@@ -31,12 +28,3 @@ class NumpyAgent(NetworkAgent):
 
     def decide(self, state: EncodedState, legal: LegalActions) -> SendChoice | None:
         return choose(self.model(state, legal), self.greedy, self.generator, self.temperature)
-
-
-def network_player(name: str, seed: int | None = None) -> NumpyAgent:
-    """The player a ``network:PATH?temperature=...`` name stands for, as ``ml.play.players`` builds it."""
-
-    if not name.startswith(NETWORK):
-        raise ValueError(f"'{name}' needs PyTorch: without it, only network: players play")
-    path, settings = parse_name(name.removeprefix(NETWORK), NetworkSettings)
-    return NumpyAgent.from_init(path, seed=seed, temperature=settings.temperature)

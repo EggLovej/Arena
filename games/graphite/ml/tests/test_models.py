@@ -253,7 +253,6 @@ class ModelTests(unittest.TestCase):
         for settings in (
             {"name": "no_such_model"},
             {"amounts": "any"},
-            {"amounts": "free", "capture_head": True},
             {"route_layers": 0},
             {"feature_set": "v9"},
         ):

@@ -13,8 +13,7 @@ How a position flows through it:
    ``route_layers``) turns that into a route score and a score for each
    amount option, or, with ``amounts="free"``, a few curves over every whole
    number of units (ml/models/amounts.py). Only routes that can be used right now are scored; that is
-   a handful out of hundreds of base pairs. With ``capture_head``, the same
-   layer also says, per amount, whether the fleet would leave the target ours.
+   a handful out of hundreds of base pairs.
 4. The descriptions are averaged into one summary of the position, which
    gives the score for waiting and the value (who is winning).
 
@@ -59,10 +58,6 @@ class GraphTransformerConfig:
     route_features: int = COLUMNS_BEFORE_V2["route_features"]
     global_features: int = len(GLOBAL_FEATURES)
     amount_options: int = len(AMOUNT_OPTIONS)
-    # An extra output per route and amount: will the target be ours right after the fleet
-    # lands? Learned from what happened in the games (``Scores.capture``). Off for every
-    # model saved before it existed.
-    capture_head: bool = False
     # How the amount is chosen: "options" (the AMOUNT_OPTIONS) or "free" (any whole number of
     # units, from ``amount_curves`` curves per route; added 2026-10-08).
     amounts: str = "options"
@@ -87,8 +82,6 @@ class GraphTransformer(PolicyValueModel):
             raise ValueError("route_layers must be at least 1")
         if config.amounts not in ("options", "free"):
             raise ValueError(f"amounts must be 'options' or 'free', not '{config.amounts}'")
-        if config.amounts == "free" and config.capture_head:
-            raise ValueError("the capture output is per amount option, so it needs amounts='options'")
         # Per route, after its score: one score per amount option, or each curve's parameters.
         self.amount_outputs = (
             config.amount_options if config.amounts == "options" else config.amount_curves * free_amounts.PARAMETERS
@@ -119,7 +112,6 @@ class GraphTransformer(PolicyValueModel):
             *(module for _ in range(config.route_layers - 1) for module in (nn.Linear(width, width), nn.ReLU()))
         )
         self.route_out = nn.Linear(width, 1 + self.amount_outputs)
-        self.capture_out = nn.Linear(width, config.amount_options) if config.capture_head else None
         wait_final = nn.Linear(width, 1)
         value_final = nn.Linear(width, 1)
         self.wait_out = nn.Sequential(nn.Linear(width, width), nn.ReLU(), wait_final)
@@ -174,11 +166,6 @@ class GraphTransformer(PolicyValueModel):
         route = described.new_zeros(batch + 1, bases, bases, 1 + self.amount_outputs)
         route[position, source, target] = self.route_out(judged)
         route, described = route[:batch], described[:batch]
-        capture = None
-        if self.capture_out is not None:
-            capture = described.new_zeros(batch + 1, bases, bases, config.amount_options)
-            capture[position, source, target] = self.capture_out(judged)
-            capture = capture[:batch]
 
         # Average over real bases only, so padding never changes the answer.
         real = inputs.base_mask[:, :, None].float()
@@ -190,7 +177,6 @@ class GraphTransformer(PolicyValueModel):
             route=route[..., 0],
             amount=None if free else route[..., 1:],
             value=self.value_out(summary)[:, 0],
-            capture=capture,
             amount_curves=route[..., 1:].unflatten(-1, (config.amount_curves, free_amounts.PARAMETERS)) if free else None,
         )
 

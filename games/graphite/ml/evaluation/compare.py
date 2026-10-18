@@ -24,13 +24,14 @@ the checkpoint's history).
         --rounds 0 50 100 150 --panel strategic_ai ml/runs/overnight_scratch/round_0300.pt
 
 Results land in ``ml/runs/compare_NAME/``: a table, the raw numbers, and a
-``metrics.jsonl`` the monitor can draw (``--run compare_NAME``).
+``metrics.jsonl`` that ``ml tensorboard --run compare_NAME`` draws.
 """
 
 import argparse
 import json
 import math
 import statistics
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -39,12 +40,11 @@ from game_types import BLUE, RED
 
 import ml.training.runlog
 from ml.evaluation.evaluate import evaluation_maps
-from ml.judge.progress import ProgressBlock, bar, duration
 from ml.map_generator import generate_map
 from ml.models.checkpoint import load_checkpoint
-from ml.play.players import is_network_player, min_send_gap
+from ml.play.players import NETWORK, min_send_gap
 from ml.play.rollout import Matchup, RolloutPool, Seat
-from ml.training.runlog import read_metrics
+from ml.training.runlog import format_duration, read_metrics
 
 
 REFERENCE = "strategic_ai"
@@ -155,7 +155,7 @@ def compare(
     ]
     report = {
         "name": name,
-        # Which run folder each group/label is, so ml lineage can find the ratings of a run.
+        # Which run folder each group/label is.
         "runs": {f"{group}/{label}": str(folder) for (group, label), folder in runs.items()},
         "rounds": rounds,
         "panel": panel,
@@ -221,20 +221,38 @@ def fit_ratings(
 
 
 class _LiveBoard:
-    """Wins, draws, and losses of every match so far, one line per match, updated after every game."""
+    """Wins, draws, and losses of every match so far, one line per match, updated after every game.
+
+    In a terminal the board is rewritten in place; written to a log, it is printed whole every
+    30 seconds, and once more at the end.
+    """
 
     def __init__(self, pairings: list[tuple[str, str]], games_per_match: int):
         self.pairings = pairings
         self.games_per_match = games_per_match
         self.tally = {pairing: [0, 0, 0] for pairing in pairings}  # wins, draws, losses of the first
         self.started = time.monotonic()
-        self.block = ProgressBlock("Matches (score of the left side)")
-        self.block.show(self.lines())
+        self.shown = 0  # lines of the board on screen
+        self.logged = -float("inf")
+        print("\n=== Matches (score of the left side) ===", flush=True)
+        self.show()
 
     def add(self, first: str, second: str, seat: int, winner: int | None) -> None:
         tally = self.tally[(first, second)]
         tally[1 if winner is None else 0 if winner == seat else 2] += 1
-        self.block.show(self.lines())
+        self.show()
+
+    def show(self, final: bool = False) -> None:
+        lines = self.lines()
+        if sys.stdout.isatty():
+            if self.shown:
+                sys.stdout.write(f"\x1b[{self.shown}F")  # back to the board's first line, to write over it
+            sys.stdout.writelines("\x1b[2K" + line + "\n" for line in lines)
+            self.shown = 0 if final else len(lines)
+        elif final or time.monotonic() - self.logged >= 30:
+            sys.stdout.write("\n".join(lines) + "\n\n")
+            self.logged = time.monotonic()
+        sys.stdout.flush()
 
     def lines(self) -> list[str]:
         width = max(len(first) for first, _ in self.pairings)
@@ -243,19 +261,20 @@ class _LiveBoard:
         for (first, second), (wins, draws, losses) in self.tally.items():
             played = wins + draws + losses
             score = f"{(wins + draws / 2) / played:6.1%}" if played else "      "
+            filled = round(10 * played / self.games_per_match)
             lines.append(
-                f"{first:<{width}}  vs {_short(second):<{opponent_width}}  {bar(played, self.games_per_match, 10)} "
+                f"{first:<{width}}  vs {_short(second):<{opponent_width}}  [{'#' * filled}{'-' * (10 - filled)}] "
                 f"{played:3d}/{self.games_per_match}  {wins:3d} W {draws:2d} D {losses:3d} L  {score}"
             )
         done = sum(sum(tally) for tally in self.tally.values())
         total = len(self.pairings) * self.games_per_match
         spent = time.monotonic() - self.started
-        left = f", about {duration(spent / done * (total - done))} left" if done else ""
-        lines.append(f"{done:,}/{total:,} games, {duration(spent)} so far{left}")
+        left = f", about {format_duration(spent / done * (total - done))} left" if done else ""
+        lines.append(f"{done:,}/{total:,} games, {format_duration(spent)} so far{left}")
         return lines
 
     def done(self) -> None:
-        self.block.finish(self.lines())
+        self.show(final=True)
 
 
 def _short(player: str) -> str:
@@ -266,9 +285,9 @@ def _short(player: str) -> str:
 
 
 def _is_checkpoint(player: str) -> bool:
-    """A panel entry that is a checkpoint, not a player built on one (``lookahead:...?judge=x.pt``)."""
+    """A panel entry that is a checkpoint, not a ``network:`` player built on one."""
 
-    return player.endswith(".pt") and not is_network_player(player)
+    return player.endswith(".pt") and not player.startswith(NETWORK)
 
 
 def describe(report: dict) -> str:
@@ -361,7 +380,7 @@ def _score(results: dict, first: str, second: str) -> float:
 
 
 def _write_chart_data(folder: Path, rows: list[dict]) -> None:
-    """One line per round, so the monitor can draw rating against round for each group."""
+    """One line per round, so TensorBoard can draw rating against round for each group."""
 
     lines = []
     for round_number in sorted({row["round"] for row in rows}):

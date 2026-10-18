@@ -116,7 +116,7 @@ def train_imitation(
             scores, best_score = match_scores(pool, model, settings)
             metrics.update(scores)
             summary += "  |  " + describe_scores(scores)
-        log.log(0, in_chart_order(metrics), summary)
+        log.log(0, metrics, summary)
 
         for epoch in range(1, settings.epochs + 1):
             move_loss, value_loss = learn_one_pass(
@@ -163,7 +163,7 @@ def train_imitation(
                 # Without matches to go by, the newest model counts as the best.
                 log.mark_best(path)
 
-            log.log(epoch, in_chart_order(metrics), summary)
+            log.log(epoch, metrics, summary)
 
     best = log.folder / "best.pt"
     log.say(f"Done. Best model: {best}")
@@ -295,13 +295,6 @@ def describe_scores(scores: dict[str, float]) -> str:
     return "score " + " ".join(
         f"{opponent.removesuffix('_ai')} {scores[f'score/vs {opponent}']:.0%}" for opponent in DEFAULT_OPPONENTS
     )
-
-
-def in_chart_order(metrics: dict[str, float]) -> dict[str, float]:
-    """The monitor draws charts in the order the groups first appear: results before losses."""
-
-    order = ("score", "wins", "agreement", "move loss", "value loss")
-    return dict(sorted(metrics.items(), key=lambda item: order.index(item[0].split("/")[0])))
 
 
 def losses(output: ModelOutput, batch) -> tuple[torch.Tensor, torch.Tensor]:

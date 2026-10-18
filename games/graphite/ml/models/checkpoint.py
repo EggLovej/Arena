@@ -129,8 +129,12 @@ def load_checkpoint(path: str | Path, device: torch.device | str = "cpu", data: 
     for table in current.keys() - contents["encoding"].keys():
         if table in config_names:
             config.setdefault(table, 0)
+    weights = contents["weights"]
+    # The capture output (removed 2026-10-18) never steered a move, so a network saved with one plays without it.
+    if config.pop("capture_head", False):
+        weights = {name: value for name, value in weights.items() if not name.startswith("capture_out.")}
     model = build_model(model_name, **config)
-    model.load_state_dict(contents["weights"])
+    model.load_state_dict(weights)
     return Checkpoint(
         model=model.to(device),
         model_name=model_name,

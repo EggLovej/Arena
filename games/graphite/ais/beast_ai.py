@@ -48,13 +48,13 @@ def _build(entry, seed=0):
     try:
         import torch  # noqa: F401
     except ModuleNotFoundError:
-        # Without PyTorch (as on the Arena website, which plays in the browser) a network:
-        # Beast plays through numpy; a look-ahead Beast cannot.
-        from ml.play.numpy_agent import network_player
+        # Without PyTorch (as on the Arena website, which plays in the browser) Beast plays through numpy.
+        from ml.play.numpy_agent import NumpyAgent
+        from ml.play.players import network_player
 
         if entry is None:
             raise ValueError("beast_ai: without PyTorch, Beast needs its file (checkpoints/beast.json)")
-        return network_player(entry["player"], seed=seed)
+        return network_player(entry["player"], NumpyAgent, seed)
     from ml.play.players import load_player
 
     if entry is None:

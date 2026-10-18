@@ -13,7 +13,7 @@ Every trainer reports through a ``RunLog``, so every run looks the same::
 recent run. That is the file the game's "Neural AI" plays, so a match started
 while training is running shows the current state.
 
-Metric names look like ``group/name``. The monitor draws one chart per group.
+Metric names look like ``group/name``; ``ml tensorboard`` draws one section of charts per group.
 """
 
 import json

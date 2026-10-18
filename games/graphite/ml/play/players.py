@@ -3,12 +3,10 @@
 Wherever a player is named (the evaluator, the rollouts and so every
 trainer, Beast), ``load_player`` turns the name into a player: an AI file in
 ``ais/``, a checkpoint path, ``untrained`` (``untrained:7`` picks the seed of
-its random weights), or a checkpoint behind one of these prefixes: a player
-that thinks before it moves (``value:``, ``lookahead:``), or the network on its
-own at a chosen temperature (``network:``). Settings can follow the path:
-``lookahead:PATH?mine=8&rule=nash&judge=PATH``, ``network:PATH?temperature=0.2``.
+its random weights), or a checkpoint at a chosen temperature,
+``network:PATH?temperature=0.2``.
 
-A network on its own plays through ``NetworkAgent``: with PyTorch as
+A network plays through ``NetworkAgent``: with PyTorch as
 ``NeuralAgent`` (ml/play/agent.py), without it as ``NumpyAgent``
 (ml/play/numpy_agent.py).
 """
@@ -118,8 +116,10 @@ def load_player(name: str, greedy: bool = False, seed: int | None = None) -> Con
     checkpoints, ``untrained`` and ``network:`` players.
     """
 
-    if is_network_player(name):
-        return network_player(name, seed, greedy)
+    if name.startswith(NETWORK):
+        from ml.play.agent import NeuralAgent
+
+        return network_player(name, NeuralAgent, seed, greedy)
     if name == UNTRAINED or name.startswith(UNTRAINED + ":") or name.endswith(".pt"):
         from ml.play.agent import NeuralAgent
 
@@ -161,52 +161,23 @@ def fresh_ai(name: str) -> Controller:
     return choose_action
 
 
-def _kinds() -> dict:
-    """Name prefix -> (settings class, a function building the player from a path, settings, seed and greedy)."""
+def network_player(name: str, agent: type[NetworkAgent], seed: int | None = None, greedy: bool = False):
+    """The player a ``network:PATH?key=value&...`` name stands for, played by ``agent``
+    (``NeuralAgent`` or ``NumpyAgent``): the path (see ``game_path``) with its ``NetworkSettings``,
+    each value read as its setting's type."""
 
-    from ml.play.agent import NeuralAgent
-    from ml.play.lookahead import PREFIX as LOOKAHEAD, LookaheadPlayer, LookaheadSettings
-    from ml.play.value_player import PREFIX as VALUE, ValuePlayer, ValueSettings
-
-    return {
-        VALUE: (ValueSettings, lambda path, settings, seed, greedy: ValuePlayer.from_init(path, settings)),
-        LOOKAHEAD: (LookaheadSettings, lambda path, settings, seed, greedy: LookaheadPlayer.from_init(path, settings)),
-        NETWORK: (
-            NetworkSettings,
-            lambda path, settings, seed, greedy: NeuralAgent.from_init(
-                path, greedy, seed, temperature=settings.temperature
-            ),
-        ),
-    }
-
-
-def is_network_player(name: str) -> bool:
-    return name.startswith(tuple(_kinds()))
-
-
-def network_player(name: str, seed: int | None = None, greedy: bool = False):
-    """The player a ``value:``, ``lookahead:`` or ``network:`` name stands for."""
-
-    for prefix, (settings_class, build) in _kinds().items():
-        if name.startswith(prefix):
-            path, settings = parse_name(name.removeprefix(prefix), settings_class)
-            return build(path, settings, seed, greedy)
-    raise ValueError(f"'{name}' is not a value:, lookahead: or network: player")
-
-
-def parse_name(text: str, settings_class):
-    """``PATH?key=value&...`` as the path (see ``game_path``) and a settings object, each value read
-    as its setting's type."""
-
-    path, _, options = text.partition("?")
-    defaults = {setting.name: setting.default for setting in fields(settings_class)}
+    if not name.startswith(NETWORK):
+        raise ValueError(f"'{name}' is not a network: player")
+    path, _, options = name.removeprefix(NETWORK).partition("?")
+    defaults = {setting.name: setting.default for setting in fields(NetworkSettings)}
     changes = {}
     for option in filter(None, options.split("&")):
         key, _, value = option.partition("=")
         if key not in defaults:
             raise ValueError(f"'{key}' is not a setting here. Settings: {', '.join(defaults)}")
         changes[key] = type(defaults[key])(value)
-    return game_path(path), settings_class(**changes)
+    settings = NetworkSettings(**changes)
+    return agent.from_init(game_path(path), greedy, seed, temperature=settings.temperature)
 
 
 def game_path(path: str) -> str:

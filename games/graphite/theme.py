@@ -22,7 +22,6 @@ def _rgb(hex_color: str) -> tuple[int, int, int]:
 _COLORS = THEME["colors"]
 _PLAYERS = THEME["players"]
 INK = _rgb(_COLORS["ink"])
-PAPER = _rgb(_COLORS["paper"])
 PAPER_LIGHT = _rgb(_COLORS["paper_light"])
 PAPER_DARK = _rgb(_COLORS["paper_dark"])
 MUTED = _rgb(_COLORS["muted"])

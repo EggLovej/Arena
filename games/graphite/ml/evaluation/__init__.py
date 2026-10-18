@@ -1,1 +1,1 @@
-"""Measuring players: evaluation matches, comparisons between runs, and settings sweeps."""
+"""Measuring players: evaluation matches and comparisons between runs."""
