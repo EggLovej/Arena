@@ -48,6 +48,7 @@ DEFAULT_OPPONENTS = ("aggressive_ai", "careful_ai", "strategic_ai")
 # A strong player should never lose to these; such a loss is saved for a closer look.
 DEFAULT_SAVE_LOSSES_AGAINST = ("aggressive_ai",)
 MATCH_SECONDS = 180.0
+TRAINING = "network in training"  # how ``evaluate_model`` names the network it measures
 
 
 @dataclass(frozen=True)
@@ -179,6 +180,47 @@ def evaluate(
     # Finishing order depends on timing; sort so the same run always reports the same list.
     results.sort(key=lambda result: repr(result.plan))
     return Evaluation(candidate, results)
+
+
+def evaluate_model(
+    pool,
+    model,
+    generated_maps: int,
+    opponents: Iterable[str] = DEFAULT_OPPONENTS,
+    models: dict | None = None,
+    min_send_gap: int = 0,
+    seed: int = 0,
+) -> Evaluation:
+    """``evaluate`` for a network in training, played by its trainer's ``RolloutPool``: both
+    seats on the first ``generated_maps`` evaluation maps against each opponent.
+
+    ``models`` holds the opponents that are networks, by name. Every network here plays under
+    ``min_send_gap``; the scripted AIs play as always. The same seed every time compares
+    rounds on equal luck.
+    """
+
+    from ml.play.rollout import Matchup, Seat  # here, as the rollouts import this module
+
+    networks = {TRAINING: model, **(models or {})}
+    plans = [
+        MatchPlan(map_set, map_key, seat, opponent, 0)
+        for opponent in opponents
+        for map_set, map_key in evaluation_maps(generated_maps, bundled_maps=False)
+        for seat in (RED, BLUE)
+    ]
+    matchups = []
+    for plan in plans:
+        seats = {
+            plan.candidate_seat: Seat(TRAINING, min_send_gap=min_send_gap),
+            -plan.candidate_seat: Seat(plan.opponent, min_send_gap=min_send_gap if plan.opponent in networks else 0),
+        }
+        matchups.append(Matchup(generate_map(int(plan.map_key)).definition, seats[RED], seats[BLUE]))
+
+    results = []
+    for plan, record in zip(plans, pool.play(matchups, networks, seed=seed)):
+        outcome = "draw" if record.winner is None else "win" if record.winner == plan.candidate_seat else "loss"
+        results.append(MatchResult(plan, outcome, record.ticks * 0.1))
+    return Evaluation(TRAINING, results)
 
 
 def evaluation_maps(

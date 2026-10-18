@@ -11,6 +11,7 @@ import torch
 import ml.training.runlog
 from game_types import RED
 from ml.encoding.state_encoder import BASE_FEATURES, GLOBAL_FEATURES, PAIR_FEATURES, UNITS_REFERENCE
+from ml.evaluation.evaluate import TRAINING
 from ml.map_generator import generate_map
 from ml.models.checkpoint import init_model, load_checkpoint, save_checkpoint
 from ml.models import amounts
@@ -245,7 +246,7 @@ class MatchupTests(unittest.TestCase):
         self.assertIn(START, {matchup.blue.player for matchup in pool.matchups})
         for matchup in pool.matchups:
             for seat in (matchup.red, matchup.blue):
-                self.assertEqual(seat.min_send_gap, 10 if seat.player in (SELF, START) else 0)
+                self.assertEqual(seat.min_send_gap, 10 if seat.player in (TRAINING, START) else 0)
 
     def test_training_maps_differ_from_round_to_round(self):
         rng = np.random.default_rng(0)

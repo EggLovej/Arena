@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest import mock
 
 import ml.training.runlog
-from ml.evaluation.compare import compare, describe
+from ml.evaluation.compare import compare, describe, fit_ratings
 from ml.play.rollout import Seat
 from ml.models.checkpoint import history_entry, init_model
 from ml.training.runlog import RunLog
@@ -125,6 +125,27 @@ class DescribeTests(unittest.TestCase):
         self.assertIn("1050 (1000-1100) at 1.1 h", text)
         self.assertIn("650 (600-700) at 0.0 h", text)
         self.assertIn("A against B: 40.0% of 100 games (-2.0 standard errors from even)", text)
+
+
+class RatingTests(unittest.TestCase):
+    def test_the_ratings_explain_every_result_at_once(self):
+        # 75% corresponds to about 191 points.
+        ratings = fit_ratings({("a", "b"): [750.0, 1000]})
+        self.assertAlmostEqual(ratings["a"] - ratings["b"], 191, delta=5)
+        # "c" never met "a", but beat "b", who drew with "a": so c rates above a.
+        ratings = fit_ratings({("a", "b"): [50.0, 100], ("c", "b"): [70.0, 100]})
+        self.assertGreater(ratings["c"], ratings["a"])
+        self.assertAlmostEqual(ratings["a"], ratings["b"], delta=15)
+
+    def test_the_anchors_average_one_thousand_and_a_perfect_record_stays_finite(self):
+        results = {("a", "b"): [70.0, 100], ("b", "c"): [60.0, 100], ("new", "a"): [80.0, 100]}
+        ratings = fit_ratings(results, anchors=("a", "b", "c"))
+        self.assertAlmostEqual((ratings["a"] + ratings["b"] + ratings["c"]) / 3, 1000, places=3)
+        self.assertGreater(ratings["new"], ratings["a"])
+        self.assertGreater(ratings["a"], ratings["b"])
+        self.assertGreater(ratings["b"], ratings["c"])
+        ratings = fit_ratings({("a", "b"): [20.0, 20]})
+        self.assertTrue(400 < ratings["a"] - ratings["b"] < 2000)
 
 
 if __name__ == "__main__":

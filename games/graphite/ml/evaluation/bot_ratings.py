@@ -30,13 +30,13 @@ from pathlib import Path
 from ais.neural_ai import TEMPERATURE
 from game_types import BLUE, RED
 
+from ml.evaluation.compare import fit_ratings
 from ml.map_generator import generate_map
 from ml.models.checkpoint import load_checkpoint
 from ml.play.agent import PREFIX as NETWORK, NetworkSettings
 from ml.play.beast import current as current_beast
 from ml.play.players import parse_name
 from ml.play.rollout import Matchup, RolloutPool, Seat
-from ml.training.league import fit_ratings
 
 
 RATINGS_FILE = Path(__file__).resolve().parents[2] / "ais" / "ratings.json"

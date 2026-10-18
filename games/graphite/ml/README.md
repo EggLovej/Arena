@@ -20,7 +20,7 @@ All commands run from the game directory through one entry point:
 
 | Command | What it does | Example |
 |---|---|---|
-| `train` | Train a network: `imitation`, `selfplay`, `league`, or `kickstart` (a new network learns to play like a trained one) | `-m ml train selfplay --run demo --init random --monitor` |
+| `train` | Train a network: `imitation`, `selfplay`, or `kickstart` (a new network learns to play like a trained one) | `-m ml train selfplay --run demo --init random --monitor` |
 | `monitor` | Live charts for a run (reads its log only) | `-m ml monitor --run demo` |
 | `tensorboard` | The same curves in TensorBoard, in the browser: several runs in one chart, smoothing, log scale, x-axis by round or hours (reads the logs only) | `-m ml tensorboard --run free_scratch --run free_old_entropy` |
 | `lineage` | One set of curves for a network trained over several runs, with linked ratings | `-m ml lineage ml/runs/shaping_entropy/round_0150.pt`, then `-m ml monitor --run lineage_shaping_entropy` |
@@ -60,7 +60,7 @@ Dependencies point downwards only (the full list of files is in `plan.md`):
 encoding/, map_generator/   what the network sees and can do, the maps it plays on
 models/                     the playing network, the judge, checkpoints
 play/                       networks as players: agent, rollouts, inference, move scoring, look-ahead, Beast
-training/                   trainers (imitation, selfplay, league, kickstart) and what they share
+training/                   trainers (imitation, selfplay, kickstart) and what they share
 judge/                      the judge loop (games, training, checks)
 evaluation/                 evaluate, compare, lineage, behaviour, sweeps, saved games
 scripts/                    long jobs as shell scripts; finished ones in scripts/done/
