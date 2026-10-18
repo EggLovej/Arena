@@ -11,71 +11,26 @@ Only ``network:`` players play without PyTorch; the look-ahead players
 (``lookahead:``, ``value:``) need it.
 """
 
-from pathlib import Path
-
 import numpy as np
 
-from game_types import GameView, SendAction
-
-from ml.encoding.action_encoder import decode_action, legal_actions
-from ml.encoding.state_encoder import encode_state, layout_for
+from ml.encoding.action_encoder import LegalActions, SendChoice
+from ml.encoding.state_encoder import EncodedState
 from ml.play.numpy_model import NumpyModel, choose
-from ml.play.players import NETWORK, NetworkSettings, parse_name
+from ml.play.players import NETWORK, NetworkAgent, NetworkSettings, parse_name
 
 
-class NumpyAgent:
-    def __init__(
-        self,
-        model: NumpyModel,
-        greedy: bool = False,
-        seed: int | None = None,
-        min_send_gap: int = 0,
-        temperature: float = 1.0,
-    ):
-        """The same settings as ``NeuralAgent``."""
-
-        self.model = model
-        self.greedy = greedy
-        self.temperature = temperature
-        self.min_send_gap = min_send_gap
-        self.last_send: dict[int, int] = {}  # by player: the tick of its last send
-        self.reseed(seed)
-
-    @classmethod
-    def from_init(
-        cls,
-        init: str | Path,
-        greedy: bool = False,
-        seed: int | None = None,
-        min_send_gap: int = 0,
-        temperature: float = 1.0,
-    ) -> "NumpyAgent":
+class NumpyAgent(NetworkAgent):
+    @staticmethod
+    def load(init, seed: int | None) -> NumpyModel:
         if str(init) == "random":
             raise ValueError("An untrained network needs PyTorch; without it, only a saved checkpoint plays")
-        return cls(NumpyModel.from_file(init), greedy, seed, min_send_gap, temperature)
+        return NumpyModel.from_file(init)
 
     def reseed(self, seed: int | None) -> None:
         self.generator = np.random.default_rng(seed)
 
-    def choose_action(self, state: GameView) -> SendAction | None:
-        last = self.last_send.get(state.player_id)
-        if last is not None and state.tick <= last:
-            del self.last_send[state.player_id]  # the clock went back: a new game has begun
-        elif last is not None and state.tick - last < self.min_send_gap:
-            return None
-
-        layout = layout_for(state)
-        legal = legal_actions(state, layout)
-        if not legal.allowed.any():
-            return None
-        output = self.model(encode_state(state, layout), legal)
-        choice = choose(output, self.greedy, self.generator, self.temperature)
-        action = decode_action(choice, legal, free=self.model.free_amounts)
-        if action is not None:
-            self.last_send[state.player_id] = state.tick
-        return action
-
-    __call__ = choose_action
+    def decide(self, state: EncodedState, legal: LegalActions) -> SendChoice | None:
+        return choose(self.model(state, legal), self.greedy, self.generator, self.temperature)
 
 
 def network_player(name: str, seed: int | None = None) -> NumpyAgent:

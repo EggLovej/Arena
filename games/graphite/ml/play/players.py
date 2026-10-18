@@ -7,6 +7,10 @@ its random weights), or a checkpoint behind one of these prefixes: a player
 that thinks before it moves (``value:``, ``lookahead:``), or the network on its
 own at a chosen temperature (``network:``). Settings can follow the path:
 ``lookahead:PATH?mine=8&rule=nash&judge=PATH``, ``network:PATH?temperature=0.2``.
+
+A network on its own plays through ``NetworkAgent``: with PyTorch as
+``NeuralAgent`` (ml/play/agent.py), without it as ``NumpyAgent``
+(ml/play/numpy_agent.py).
 """
 
 import sys
@@ -17,6 +21,8 @@ from pathlib import Path
 from game_types import GameView, SendAction
 from loading import load_ai
 
+from ml.encoding.action_encoder import decode_action, legal_actions
+from ml.encoding.state_encoder import encode_state, layout_for
 from ml.play.numpy_model import read_checkpoint
 
 
@@ -36,6 +42,72 @@ class NetworkSettings:
     def __post_init__(self):
         if self.temperature <= 0:
             raise ValueError(f"temperature must be above 0, not {self.temperature}")
+
+
+class NetworkAgent:
+    """A network playing on its own: GameView in, SendAction out.
+
+    Each decision: the state encoder gives what the network sees, the action
+    encoder which choices are legal, the network a score for every choice, the
+    policy one choice, and the action encoder turns it into a SendAction.
+    ``NeuralAgent`` and ``NumpyAgent`` only differ in how they read a network
+    (``load``), work it out (``decide``) and draw random numbers (``reseed``).
+    """
+
+    def __init__(
+        self,
+        model,
+        greedy: bool = False,
+        seed: int | None = None,
+        min_send_gap: int = 0,
+        temperature: float = 1.0,
+    ):
+        """``greedy`` always plays the most likely choice; otherwise choices are drawn by chance,
+        at ``temperature`` (below 1: the likelier choices more often still; see ``choose``).
+
+        With a ``min_send_gap``, each player this agent plays for waits that many ticks after
+        each of its sends (10: one send a second), as in training with ``--min-send-gap``.
+        """
+
+        self.model = model
+        self.greedy = greedy
+        self.temperature = temperature
+        self.min_send_gap = min_send_gap
+        self.last_send: dict[int, int] = {}  # by player: the tick of its last send
+        self.reseed(seed)
+
+    @classmethod
+    def from_init(
+        cls,
+        init: str | Path = "random",
+        greedy: bool = False,
+        seed: int | None = None,
+        min_send_gap: int = 0,
+        temperature: float = 1.0,
+    ):
+        """Build from "random" or a checkpoint path, as trainers do."""
+
+        return cls(cls.load(init, seed), greedy, seed, min_send_gap, temperature)
+
+    def choose_action(self, state: GameView) -> SendAction | None:
+        last = self.last_send.get(state.player_id)
+        if last is not None and state.tick <= last:
+            del self.last_send[state.player_id]  # the clock went back: a new game has begun
+        elif last is not None and state.tick - last < self.min_send_gap:
+            return None
+
+        layout = layout_for(state)
+        legal = legal_actions(state, layout)
+        if not legal.allowed.any():
+            # Waiting is the only option, so there is nothing to ask the model.
+            return None
+        choice = self.decide(encode_state(state, layout), legal)
+        action = decode_action(choice, legal, free=self.model.free_amounts)
+        if action is not None:
+            self.last_send[state.player_id] = state.tick
+        return action
+
+    __call__ = choose_action
 
 
 def load_player(name: str, greedy: bool = False, seed: int | None = None) -> Controller:
