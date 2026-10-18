@@ -102,9 +102,9 @@ export function GraphiteBoard({ board: rawBoard, snapshot, tick, tickSeconds, th
       viewBox={`${x0} ${y0} ${width} ${height}`}
       role="img"
       aria-label={`${board.name} map`}
-      style={{ fontFamily: FONT, display: "block", width: "100%", height: "auto" }}
+      // A preview fills its frame, with paper round the edges where the shapes differ.
+      style={{ fontFamily: FONT, display: "block", width: "100%", height: compact ? "100%" : "auto", background: paper }}
     >
-      <rect x={x0} y={y0} width={width} height={height} fill={paper} />
       <image
         href="/games/graphite/paper.jpg"
         x={0}

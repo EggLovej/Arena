@@ -14,6 +14,7 @@ import { createPortal } from "react-dom";
 import { typing } from "@/components/usePlayback.ts";
 
 import type { PlayControlsProps } from "../types.ts";
+import "./GraphiteControls.css";
 import { LARGE_MAP, baseRadii, formatRate, type BaseState, type GraphiteBoardData } from "./GraphiteBoard.tsx";
 
 type Theme = { colors: Record<string, string>; players: Record<string, { fill: string; dark: string }> };
@@ -147,7 +148,7 @@ export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, s
           return (
             <line
               key={`stream-${from}`}
-              className="play-stream"
+              className="graphite-stream"
               x1={a.x + ux * start}
               y1={a.y + uy * start}
               x2={a.x + ux * end}
@@ -160,7 +161,7 @@ export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, s
         })}
         {source &&
           [...(neighbours[source] ?? [])].map((id) => (
-            <circle key={`target-${id}`} className="play-target" cx={byId[id].x} cy={byId[id].y} r={radii[id] + ring.target} stroke={colour} />
+            <circle key={`target-${id}`} className="graphite-target" cx={byId[id].x} cy={byId[id].y} r={radii[id] + ring.target} stroke={colour} />
           ))}
         {hovered && active && hovered !== source && (source ? neighbours[source]?.has(hovered) : mine(hovered)) && (
           <circle cx={byId[hovered].x} cy={byId[hovered].y} r={radii[hovered] + ring.target} fill="none" stroke={ink} strokeWidth={3} opacity={0.5} />
@@ -174,7 +175,7 @@ export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, s
         {board.bases.map((base) => (
           <circle
             key={`key-${base.id}`}
-            className="play-base-key"
+            className="graphite-base-key"
             cx={base.x}
             cy={base.y}
             r={radii[base.id] + ring.key}

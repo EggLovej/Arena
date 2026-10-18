@@ -372,12 +372,6 @@ select:hover {
   height: 70px;
   border-radius: 5px;
   overflow: hidden;
-  background: #efe7d6;
-}
-
-.game-item-art svg {
-  width: 100% !important;
-  height: 100% !important;
 }
 
 .game-item-text {
@@ -777,7 +771,6 @@ select:hover {
   overflow: hidden;
   border: 1px solid color-mix(in oklab, var(--stage-accent) 45%, transparent);
   border-radius: 3px;
-  background: #efe7d6;
 }
 
 .stage-toggle {
@@ -1014,15 +1007,7 @@ select:hover {
 }
 
 .match-card-art {
-  background: #efe7d6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   min-height: 96px;
-}
-
-.match-card-art svg {
-  height: 100% !important;
 }
 
 .match-card-body {
@@ -1130,7 +1115,6 @@ select:hover {
   border-radius: var(--radius);
   overflow: hidden;
   border: 1px solid var(--border);
-  background: #efe7d6;
 }
 
 /* The whole board, the scoreboard and the controls fit on one screen. */
@@ -1576,15 +1560,7 @@ tbody tr + tr th {
 }
 
 .map-card-art {
-  background: #efe7d6;
   aspect-ratio: 5 / 4;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.map-card-art svg {
-  max-height: 100%;
 }
 
 .map-card-body {
@@ -1654,7 +1630,6 @@ tbody tr + tr th {
   border-radius: var(--radius);
   overflow: hidden;
   border: 1px solid var(--border);
-  background: #efe7d6;
 }
 
 .play-setup-fields {
@@ -1726,45 +1701,8 @@ tbody tr + tr th {
   touch-action: manipulation;
 }
 
-.play-target {
-  fill: none;
-  stroke-width: 3;
-  stroke-dasharray: 7 6;
-  opacity: 0.85;
-}
-
-.play-stream {
-  stroke-dasharray: 14 10;
-  stroke-linecap: round;
-  animation: play-stream-flow 0.6s linear infinite;
-}
-
-@keyframes play-stream-flow {
-  to {
-    stroke-dashoffset: -24;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .play-stream {
-    animation: none;
-  }
-}
-
 .play-tools {
   display: contents;
-}
-
-/* Invisible until a base has the keyboard's focus. */
-.play-base-key {
-  fill: transparent;
-  stroke-width: 0;
-  outline: none;
-}
-
-.play-base-key:focus-visible {
-  stroke-width: 3;
-  stroke-dasharray: 6 4;
 }
 
 .play-switch.is-on {

@@ -14,7 +14,7 @@ export type BoardProps = {
   tickSeconds: number;
   theme: unknown; // the game's theme JSON
   seats: Seat[];
-  compact?: boolean; // a small preview: shapes only, no labels
+  compact?: boolean; // a small preview: shapes only, no labels, filling its frame
 };
 
 export type SeatStat = { label: string; value: number };
@@ -47,6 +47,7 @@ export type PlayView = {
 };
 
 export type GameView = {
+  /** Draws one moment of a match, background and all: the frames around it are the site's and have none. */
   Board: ComponentType<BoardProps>;
   /** Numbers shown beside each seat in the scoreboard, for example units and bases. */
   stats: (board: unknown, snapshot: Snapshot) => Record<string, SeatStat[]>;

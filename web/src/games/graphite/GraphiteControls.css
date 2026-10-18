@@ -1,0 +1,39 @@
+/* Graphite's marks over the board while a person plays (GraphiteControls.tsx). */
+
+/* The bases the selected one can send to. */
+.graphite-target {
+  fill: none;
+  stroke-width: 3;
+  stroke-dasharray: 7 6;
+  opacity: 0.85;
+}
+
+.graphite-stream {
+  stroke-dasharray: 14 10;
+  stroke-linecap: round;
+  animation: graphite-stream-flow 0.6s linear infinite;
+}
+
+@keyframes graphite-stream-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .graphite-stream {
+    animation: none;
+  }
+}
+
+/* Invisible until a base has the keyboard's focus. */
+.graphite-base-key {
+  fill: transparent;
+  stroke-width: 0;
+  outline: none;
+}
+
+.graphite-base-key:focus-visible {
+  stroke-width: 3;
+  stroke-dasharray: 6 4;
+}
