@@ -6,6 +6,8 @@
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 
+import { Chevron } from "./Chevron.tsx";
+
 type Entry = { id: string; name: string; genre: string; art: ReactNode };
 
 export function GameExplorer({ games, previews }: { games: Entry[]; previews: Record<string, ReactNode> }) {
@@ -33,9 +35,7 @@ export function GameExplorer({ games, previews }: { games: Entry[]; previews: Re
                   <strong>{game.name}</strong>
                   <small>{game.genre}</small>
                 </span>
-                <svg className="game-item-open" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-                  <path d="M6 3 L11 8 L6 13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                <Chevron className="game-item-open" />
               </Link>
             </li>
           ))}

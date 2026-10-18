@@ -1,3 +1,5 @@
+"""Finding bots in ``ais/`` and loading them, each load a fresh module and controller."""
+
 from __future__ import annotations
 
 import importlib.util
@@ -6,7 +8,7 @@ import uuid
 from pathlib import Path
 from types import ModuleType
 
-from ricochet.api import Controller
+from ricochet.bot import Controller
 from ricochet.resources import contributor_directory
 
 

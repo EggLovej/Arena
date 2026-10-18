@@ -1,3 +1,10 @@
+"""The game engine: the whole match state, advanced one tick at a time.
+
+``GameEngine`` steps both players' actions together and hands each player a frozen
+observation. ``capture_state`` and ``restore_state`` turn the whole state into JSON and back,
+and ``state_hash`` fingerprints it, which is what replays check against.
+"""
+
 from __future__ import annotations
 
 import hashlib
@@ -27,7 +34,6 @@ from ricochet.game.types import (
     StepResult,
     TankView,
     Vec2,
-    create_noop_action,
     validate_action,
 )
 
@@ -108,31 +114,7 @@ class GameEngine:
         return self.tick * self.rules.dt
 
     def observation_for(self, player_id: int) -> GameObservation:
-        tanks = tuple(
-            TankView(
-                player_id=tank.player_id,
-                position=tank.position,
-                velocity=tank.velocity,
-                aim=tank.aim,
-                health=tank.health,
-                energy=tank.energy,
-                cooldown_remaining=tank.cooldown_remaining,
-                shield_active=tank.shield_active,
-                shield_ticks_remaining=tank.shield_ticks_remaining,
-            )
-            for tank in (self.tanks[player] for player in PLAYERS)
-        )
-        projectiles = tuple(
-            ProjectileView(
-                id=projectile.id,
-                owner_id=projectile.owner_id,
-                position=projectile.position,
-                velocity=projectile.velocity,
-                bounced=projectile.bounced,
-                remaining_lifetime=projectile.remaining_lifetime,
-            )
-            for projectile in sorted(self.projectiles, key=lambda item: item.id)
-        )
+        # The frozen views have the same fields as the mutable states.
         return GameObservation(
             player_id=player_id,
             tick=self.tick,
@@ -141,9 +123,12 @@ class GameEngine:
             map_id=self.map_definition.id,
             width=self.map_definition.width,
             height=self.map_definition.height,
-            tanks=tanks,
+            tanks=tuple(TankView(**vars(self.tanks[player])) for player in PLAYERS),
             walls=self.map_definition.walls,
-            projectiles=projectiles,
+            projectiles=tuple(
+                ProjectileView(**vars(projectile))
+                for projectile in sorted(self.projectiles, key=lambda item: item.id)
+            ),
         )
 
     def context_for(self, player_id: int) -> MatchContext:
@@ -161,10 +146,11 @@ class GameEngine:
         return self.observation_for(0), self.observation_for(1)
 
     def step(self, actions: dict[int, ControlAction]) -> StepResult:
+        """Advance one tick. A player missing from ``actions`` does nothing."""
         if self.terminated or self.timed_out:
             raise RuntimeError("cannot step a finished game")
         normalized = {
-            player_id: validate_action(actions.get(player_id, create_noop_action()))
+            player_id: validate_action(actions.get(player_id, ControlAction()))
             for player_id in PLAYERS
         }
         events: list[GameEvent] = []
@@ -282,7 +268,7 @@ class GameEngine:
             )
             if not can_fire:
                 continue
-            tank.energy -= self.rules.fire_energy
+            tank.energy = max(0.0, tank.energy - self.rules.fire_energy)
             tank.cooldown_remaining = self.rules.fire_cooldown_seconds
             projectile = _ProjectileState(
                 id=self._next_projectile_id,
@@ -475,9 +461,6 @@ class GameEngine:
             )
             for projectile in state["projectiles"]
         ]
-
-    def clone(self) -> GameEngine:
-        return GameEngine.from_state(self.capture_state(), self.verification)
 
     def state_hash(self) -> str:
         payload = json.dumps(self.capture_state(), separators=(",", ":"), sort_keys=True).encode()

@@ -1,7 +1,8 @@
 "use client";
 
-// What every replay on the site shares: loading one, and a clock that moves it
-// on with the screen's refresh.
+// What every match on the site shares, replayed or played: loading a replay, a
+// clock that moves it on with the screen's refresh, and telling the page's keys
+// from typing.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -49,4 +50,9 @@ export function useAnimationClock(running: boolean, advance: (seconds: number) =
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
   }, [running]);
+}
+
+/** Whether a key press is for a form field, or a shortcut with Ctrl, Cmd or Alt, so the page's own keys leave it alone. */
+export function typing(event: KeyboardEvent): boolean {
+  return event.ctrlKey || event.metaKey || event.altKey || (event.target instanceof Element && event.target.closest("input, select, textarea") !== null);
 }

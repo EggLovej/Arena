@@ -294,10 +294,6 @@ select:hover {
   gap: 1rem;
 }
 
-.section-title h2 {
-  margin-bottom: 0.8rem;
-}
-
 .small {
   font-size: 0.9rem;
   color: var(--muted);
@@ -376,12 +372,6 @@ select:hover {
   height: 70px;
   border-radius: 5px;
   overflow: hidden;
-  background: #efe7d6;
-}
-
-.game-item-art svg {
-  width: 100% !important;
-  height: 100% !important;
 }
 
 .game-item-text {
@@ -781,7 +771,6 @@ select:hover {
   overflow: hidden;
   border: 1px solid color-mix(in oklab, var(--stage-accent) 45%, transparent);
   border-radius: 3px;
-  background: #efe7d6;
 }
 
 .stage-toggle {
@@ -1012,87 +1001,21 @@ select:hover {
   gap: 0.8rem;
 }
 
-@media (max-width: 760px) {
-  :root {
-    --header: 56px;
-  }
+.match-card {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+}
 
-  .site-header-inner {
-    padding: 0 16px;
-  }
+.match-card-art {
+  min-height: 96px;
+}
 
-  .wordmark {
-    font-size: 1.35rem;
-  }
-
-  .site-footer {
-    padding-inline: 16px;
-  }
-
-  .page {
-    padding-inline: 16px;
-  }
-
-  .game-page-inner {
-    padding: 16px 16px 48px;
-  }
-
-  .explorer {
-    grid-template-columns: minmax(0, 1fr);
-    min-height: 0;
-  }
-
-  .game-list {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-    padding: 12px 16px;
-  }
-
-  .game-list h2,
-  .game-item-soon {
-    display: none;
-  }
-
-  /* Games wrap onto more rows rather than scrolling sideways out of sight. */
-  .game-list ul {
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  }
-
-  .game-item {
-    gap: 0.6rem;
-    padding: 0.4rem 0.6rem 0.4rem 0.4rem;
-  }
-
-  .game-item[aria-current]::before {
-    display: none;
-  }
-
-  .game-item-art {
-    width: 48px;
-    height: 36px;
-  }
-
-  .game-item-text strong {
-    font-size: 1.05rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  /* The preview below says what the game is. */
-  .game-item-text small {
-    display: none;
-  }
-
-  .explorer-main {
-    padding: 22px 16px 48px;
-  }
-
-  .button-play,
-  .button-watch {
-    flex: 1 1 100%;
-    justify-content: center;
-  }
+.match-card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.6rem 1rem;
 }
 
 /* Replay player */
@@ -1104,14 +1027,17 @@ select:hover {
   scroll-margin-top: 4.5rem; /* below the sticky header */
 }
 
-.replay-loading {
-  aspect-ratio: 5 / 4;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.replay-loading,
+.play-loading {
+  display: grid;
+  place-items: center;
   color: var(--muted);
   background: var(--surface-2);
   border-radius: var(--radius);
+}
+
+.replay-loading {
+  aspect-ratio: 5 / 4;
 }
 
 .scoreboard {
@@ -1189,7 +1115,6 @@ select:hover {
   border-radius: var(--radius);
   overflow: hidden;
   border: 1px solid var(--border);
-  background: #efe7d6;
 }
 
 /* The whole board, the scoreboard and the controls fit on one screen. */
@@ -1634,20 +1559,8 @@ tbody tr + tr th {
   font-size: 1.15rem;
 }
 
-.map-card {
-  overflow: hidden;
-}
-
 .map-card-art {
-  background: #efe7d6;
   aspect-ratio: 5 / 4;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.map-card-art svg {
-  max-height: 100%;
 }
 
 .map-card-body {
@@ -1671,38 +1584,6 @@ tbody tr + tr th {
 
 .prose li + li {
   margin-top: 0.35rem;
-}
-
-.match-card {
-  display: grid;
-  grid-template-columns: 120px minmax(0, 1fr);
-  overflow: hidden;
-  color: inherit;
-}
-
-.match-card:hover {
-  text-decoration: none;
-  border-color: var(--muted);
-}
-
-.match-card-art {
-  background: #efe7d6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 96px;
-}
-
-.match-card-art svg {
-  height: 100% !important;
-}
-
-.match-card-body {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.25rem;
-  padding: 0.6rem 1rem;
 }
 
 /* Marks a player as a computer player wherever its name appears. */
@@ -1749,7 +1630,6 @@ tbody tr + tr th {
   border-radius: var(--radius);
   overflow: hidden;
   border: 1px solid var(--border);
-  background: #efe7d6;
 }
 
 .play-setup-fields {
@@ -1805,12 +1685,7 @@ tbody tr + tr th {
 }
 
 .play-loading {
-  display: grid;
-  place-items: center;
   min-height: 320px;
-  background: var(--surface-2);
-  border-radius: var(--radius);
-  color: var(--muted);
 }
 
 .play-board {
@@ -1826,45 +1701,8 @@ tbody tr + tr th {
   touch-action: manipulation;
 }
 
-.play-target {
-  fill: none;
-  stroke-width: 3;
-  stroke-dasharray: 7 6;
-  opacity: 0.85;
-}
-
-.play-stream {
-  stroke-dasharray: 14 10;
-  stroke-linecap: round;
-  animation: play-stream-flow 0.6s linear infinite;
-}
-
-@keyframes play-stream-flow {
-  to {
-    stroke-dashoffset: -24;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .play-stream {
-    animation: none;
-  }
-}
-
 .play-tools {
   display: contents;
-}
-
-/* Invisible until a base has the keyboard's focus. */
-.play-base-key {
-  fill: transparent;
-  stroke-width: 0;
-  outline: none;
-}
-
-.play-base-key:focus-visible {
-  stroke-width: 3;
-  stroke-dasharray: 6 4;
 }
 
 .play-switch.is-on {
@@ -1981,12 +1819,101 @@ tbody tr + tr th {
   max-height: none;
 }
 
+/* The next match being set out ("Play again") fills the screen meanwhile. */
+.play:fullscreen .play-loading,
+.play.is-full .play-loading {
+  grid-row: span 2;
+}
+
 .play:fullscreen .play-help,
 .play.is-full .play-help {
   display: none;
 }
 
+/* Narrow screens */
+
 @media (max-width: 760px) {
+  :root {
+    --header: 56px;
+  }
+
+  .site-header-inner {
+    padding: 0 16px;
+  }
+
+  .wordmark {
+    font-size: 1.35rem;
+  }
+
+  .site-footer {
+    padding-inline: 16px;
+  }
+
+  .page {
+    padding-inline: 16px;
+  }
+
+  .game-page-inner {
+    padding: 16px 16px 48px;
+  }
+
+  .explorer {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .game-list {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+  }
+
+  .game-list h2,
+  .game-item-soon {
+    display: none;
+  }
+
+  /* Games wrap onto more rows rather than scrolling sideways out of sight. */
+  .game-list ul {
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  }
+
+  .game-item {
+    gap: 0.6rem;
+    padding: 0.4rem 0.6rem 0.4rem 0.4rem;
+  }
+
+  .game-item[aria-current]::before {
+    display: none;
+  }
+
+  .game-item-art {
+    width: 48px;
+    height: 36px;
+  }
+
+  .game-item-text strong {
+    font-size: 1.05rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The preview below says what the game is. */
+  .game-item-text small {
+    display: none;
+  }
+
+  .explorer-main {
+    padding: 22px 16px 48px;
+  }
+
+  .button-play,
+  .button-watch {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
   .play-setup {
     grid-template-columns: minmax(0, 1fr);
   }

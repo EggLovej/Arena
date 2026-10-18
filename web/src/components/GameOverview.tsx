@@ -10,6 +10,7 @@ import { botNames, getGame, getLeaderboard, getMatches } from "@/lib/data.ts";
 import { featuredMatches, liveMatch } from "@/lib/featured.ts";
 import type { GameData, MatchRow } from "@/lib/types.ts";
 
+import { Chevron } from "./Chevron.tsx";
 import { Ladder } from "./Ladder.tsx";
 import { LeaderboardTable } from "./LeaderboardTable.tsx";
 import { LiveMatch } from "./LiveMatch.tsx";
@@ -50,7 +51,7 @@ export function GamePreview({ gameId }: { gameId: string }) {
         </div>
         <Link href={`/games/${game.id}`} className="button button-ghost preview-open">
           Open {game.name}
-          <Arrow />
+          <Chevron />
         </Link>
       </div>
       <div className="overview">
@@ -191,13 +192,5 @@ function WatchButton({ game, live }: { game: GameData; live: MatchRow | undefine
       </svg>
       Watch a bot match
     </Link>
-  );
-}
-
-function Arrow() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-      <path d="M6 3 L11 8 L6 13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
   );
 }

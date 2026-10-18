@@ -41,7 +41,3 @@ Validation uses Classic/Crossfire, all five scripted opponents, both seats and c
 The final `test` suite uses held-out Channels and Close Range/Bank Shot/Reactive Defender across both seats and the same scenario schedule: 66 matches. Do not use this report to repeatedly choose checkpoints. Close Range is not a training opponent. `--quick` reduces evaluation to canonical starts against Direct and is only a pipeline check (four validation games or two test games).
 
 Repeated seeds with unchanged deterministic bots/maps do not supply independent statistical evidence. Reports preserve per-match outcomes, faults, damage, blocks, shield activations, energy expenditure and action latency. Results against these opponents do not establish optimality. Attention, recurrent networks, hybrid actions, action repeat and broader adversarial evaluation remain future controlled experiments.
-
-## Local performance
-
-`ricochet benchmark` reports core stepping with/without verification, scripted match speed and Gym throughput, without neural optimization. Hashing is disabled in the training path and observations/results are reused. Interpret timings as local measurements, not portable performance guarantees.

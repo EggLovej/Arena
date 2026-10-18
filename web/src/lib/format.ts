@@ -1,6 +1,6 @@
 // Small helpers for showing results and times the same way everywhere.
 
-import type { Seat } from "./types.ts";
+import type { Outcome, Seat } from "./types.ts";
 
 /** Game time as m:ss.s, for example 2:05.3. */
 export function formatClock(seconds: number): string {
@@ -28,7 +28,7 @@ export function listNames(names: string[]): string {
 
 /** One sentence about how a match ended, for example "Strategic (Red) won by elimination after 2 min 05 s." */
 export function describeOutcome(
-  outcome: { ranking: string[][]; reason: string; ticks: number },
+  outcome: Outcome,
   lineup: Record<string, string>,
   botNames: Record<string, string>,
   seats: Record<string, Seat>,

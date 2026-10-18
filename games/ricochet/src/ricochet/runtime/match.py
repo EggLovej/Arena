@@ -1,12 +1,17 @@
+"""Matches in Ricochet's own runtime: the Pygame client, the training environment and the CLI.
+
+The Arena plays its matches with its own runner, through ``arena_game.py``, and treats
+faults differently: see docs/ai_api.md.
+"""
+
 from __future__ import annotations
 
 import time
-from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from ricochet.api import Controller, create_noop_action, validate_action
+from ricochet.bot import Controller
 from ricochet.game.config import RulesConfig
 from ricochet.game.engine import GameEngine
 from ricochet.game.maps import load_map
@@ -14,9 +19,9 @@ from ricochet.game.types import (
     PLAYERS,
     ControlAction,
     GameObservation,
-    MapDefinition,
     MatchContext,
     StepResult,
+    validate_action,
 )
 from ricochet.runtime.loading import load_controller
 
@@ -58,7 +63,7 @@ class ControllerSlot:
 
     def act(self, observation: GameObservation) -> ControlAction:
         if self.failed:
-            return create_noop_action()
+            return ControlAction()
         stats = self.stats
         started = time.perf_counter()
         try:
@@ -66,7 +71,7 @@ class ControllerSlot:
         except Exception as error:  # Local plugins may fail in arbitrary ways.
             stats.faults += 1
             stats.errors.append(f"{type(error).__name__}: {error}")
-            return create_noop_action()
+            return ControlAction()
         finally:
             elapsed = time.perf_counter() - started
             stats.calls += 1
@@ -97,6 +102,8 @@ class MatchSummary:
 
 
 class MatchSession:
+    """An engine and two controller seats, stepped until the match ends or a seat forfeits."""
+
     def __init__(
         self,
         engine: GameEngine,
@@ -169,54 +176,30 @@ class MatchSession:
         )
 
 
-def resolve_map(map_id: str | MapDefinition, rules: RulesConfig) -> MapDefinition:
-    return map_id if isinstance(map_id, MapDefinition) else load_map(map_id, rules=rules)
-
-
-def create_session(
-    p1_name: str,
-    p2_name: str,
-    map_id: str | MapDefinition = "classic",
-    seed: int = 0,
-    rules: RulesConfig | None = None,
-    recorder: ReplayRecorder | None = None,
-) -> MatchSession:
-    active_rules = rules or RulesConfig()
-    # Per-tick state hashes are only needed to record a verifiable replay.
-    engine = GameEngine(
-        resolve_map(map_id, active_rules), active_rules, seed, verification=recorder is not None
-    )
-    return MatchSession(
-        engine,
-        (safe_load_controller(p1_name), safe_load_controller(p2_name)),
-        (p1_name, p2_name),
-        recorder,
-    )
-
-
 def run_headless(
     p1_name: str,
     p2_name: str,
-    map_id: str | MapDefinition = "classic",
+    map_id: str = "classic",
     seed: int = 0,
     rules: RulesConfig | None = None,
     record_path: Path | None = None,
-    on_step: Callable[[StepResult], None] | None = None,
 ) -> MatchSummary:
+    """Play one match between two named bots without a window, optionally recording a replay."""
     active_rules = rules or RulesConfig()
-    definition = resolve_map(map_id, active_rules)
+    definition = load_map(map_id, rules=active_rules)
     recorder = None
     if record_path is not None:
         from ricochet.runtime.replay import ReplayRecorder
 
         recorder = ReplayRecorder(definition.id, active_rules, seed, (p1_name, p2_name))
-    session = create_session(p1_name, p2_name, definition, seed, active_rules, recorder)
+    # Per-tick state hashes are only needed to record a verifiable replay.
+    engine = GameEngine(definition, active_rules, seed, verification=recorder is not None)
+    controllers = (safe_load_controller(p1_name), safe_load_controller(p2_name))
+    session = MatchSession(engine, controllers, (p1_name, p2_name), recorder)
     if recorder is not None:
-        recorder.initial_state_hash = session.engine.state_hash()
+        recorder.initial_state_hash = engine.state_hash()
     while not session.finished:
-        result = session.step()
-        if on_step is not None:
-            on_step(result)
+        session.step()
     summary = session.summary()
     if recorder is not None and record_path is not None:
         recorder.write(record_path, summary)
@@ -231,7 +214,7 @@ class FailedController:
         raise self.error
 
     def act(self, observation):
-        return create_noop_action()
+        return ControlAction()
 
 
 def safe_load_controller(name: str) -> Controller:

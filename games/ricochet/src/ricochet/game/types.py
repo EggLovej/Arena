@@ -1,10 +1,16 @@
+"""The game's value types: vectors, actions, maps, observations, events and step results.
+
+All are frozen, so nothing that receives one (a bot, the renderer, a replay) can change the
+game through it. Coordinates start at the arena's top-left corner, with +y pointing down.
+"""
+
 from __future__ import annotations
 
 import math
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from ricochet.game.config import RULES_VERSION, RulesConfig
+from ricochet.game.config import RulesConfig
 
 PLAYER_ONE = 0
 PLAYER_TWO = 1
@@ -51,6 +57,8 @@ class Vec2:
 
 @dataclass(frozen=True)
 class ControlAction:
+    """One player's choice for one tick. A zero ``aim`` keeps the tank's current aim."""
+
     move: Vec2 = Vec2(0.0, 0.0)
     aim: Vec2 = Vec2(0.0, 0.0)
     fire: bool = False
@@ -74,11 +82,8 @@ class ControlAction:
         )
 
 
-def create_noop_action() -> ControlAction:
-    return ControlAction()
-
-
 def validate_action(action: object) -> ControlAction:
+    """The action with both vectors shortened to length one at most; ValueError if malformed."""
     if not isinstance(action, ControlAction):
         raise ValueError("controller must return ControlAction")
     numbers = (action.move.x, action.move.y, action.aim.x, action.aim.y)
@@ -204,6 +209,8 @@ class ProjectileView:
 
 @dataclass(frozen=True)
 class GameObservation:
+    """Everything one player sees at the start of a tick: the whole game, nothing hidden."""
+
     player_id: int
     tick: int
     time_seconds: float
@@ -267,6 +274,8 @@ class GameEvent:
 
 @dataclass(frozen=True)
 class MatchContext:
+    """What a bot is told once, at the start of a match."""
+
     map_id: str
     player_id: int
     opponent_id: int
@@ -274,7 +283,6 @@ class MatchContext:
     ticks_per_second: int
     max_ticks: int
     rules: RulesConfig = RulesConfig()
-    rules_version: int = RULES_VERSION
 
 
 @dataclass(frozen=True)

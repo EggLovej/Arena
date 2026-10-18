@@ -19,9 +19,9 @@ type Theme = {
 };
 
 // [owner seat or "" for neutral, whole units]
-type BaseState = [string, number];
+export type BaseState = [string, number];
 // [owner seat, units, from base, to base, tick it left, travel time in seconds]
-type FleetState = [string, number, string, string, number, number];
+export type FleetState = [string, number, string, string, number, number];
 
 const FONT = '"DejaVu Sans Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif';
 
@@ -100,12 +100,11 @@ export function GraphiteBoard({ board: rawBoard, snapshot, tick, tickSeconds, th
   return (
     <svg
       viewBox={`${x0} ${y0} ${width} ${height}`}
-      className="graphite-board"
       role="img"
       aria-label={`${board.name} map`}
-      style={{ fontFamily: FONT, display: "block", width: "100%", height: "auto" }}
+      // A preview fills its frame, with paper round the edges where the shapes differ.
+      style={{ fontFamily: FONT, display: "block", width: "100%", height: compact ? "100%" : "auto", background: paper }}
     >
-      <rect x={x0} y={y0} width={width} height={height} fill={paper} />
       <image
         href="/games/graphite/paper.jpg"
         x={0}

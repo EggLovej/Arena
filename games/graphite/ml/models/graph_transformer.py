@@ -31,11 +31,9 @@ from torch.nn.functional import scaled_dot_product_attention
 from ml.encoding.action_encoder import AMOUNT_OPTIONS, JUST_ENOUGH
 from ml.models import amounts as free_amounts
 from ml.encoding.state_encoder import (
-    BASE_FEATURES,
     COLUMNS_BEFORE_V2,
     GLOBAL_FEATURES,
     PAIR_FEATURES,
-    ROUTE_FEATURES,
     feature_columns,
 )
 from ml.models.interface import ILLEGAL, ModelInput, PolicyValueModel, Scores, padded_route_list

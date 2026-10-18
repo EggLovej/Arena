@@ -8,6 +8,8 @@
 
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 
+import { typing } from "@/components/usePlayback.ts";
+
 import type { PlayControlsProps } from "../types.ts";
 import type { RicochetBoardData } from "./RicochetBoard.tsx";
 
@@ -25,10 +27,9 @@ const MOVES: Record<string, [number, number]> = {
   ArrowRight: [1, 0],
 };
 
-export function RicochetControls({ board: rawBoard, theme: rawTheme, seat, active, send }: PlayControlsProps) {
+export function RicochetControls({ board: rawBoard, theme: rawTheme, seat, active, send, layer, toBoard }: PlayControlsProps) {
   const board = rawBoard as RicochetBoardData;
   const theme = rawTheme as Theme;
-  const svg = useRef<SVGSVGElement>(null);
   const [target, setTarget] = useState<[number, number] | null>(null);
   const colour = theme.players[seat] ?? theme.text;
 
@@ -77,10 +78,9 @@ export function RicochetControls({ board: rawBoard, theme: rawTheme, seat, activ
 
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
-      if (event.ctrlKey || event.metaKey || event.altKey) return;
-      if (event.target instanceof Element && event.target.closest("input, select, textarea")) return;
+      if (typing(event)) return;
       if (!(event.code in MOVES) && event.code !== "Space") return;
-      // Keys are followed all along, so a key held through the countdown counts from "Go". While the
+      // Keys are followed all along, so a key held through the countdown counts from the start. While the
       // clock runs they are the game's: the arrows and Space do not scroll the page, and Space (the
       // shield) does not press a button that has the focus.
       if (latest.current.active) {
@@ -113,9 +113,8 @@ export function RicochetControls({ board: rawBoard, theme: rawTheme, seat, activ
 
   // Every pointer event says where it is and which buttons are down; a finger fires while it touches.
   const point = (event: PointerEvent) => {
-    const matrix = svg.current?.getScreenCTM();
-    if (!matrix) return;
-    const at = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
+    const at = toBoard(event);
+    if (!at) return;
     const aimed: [number, number] = [Math.round(Math.min(board.width, Math.max(0, at.x))), Math.round(Math.min(board.height, Math.max(0, at.y)))];
     const touching = event.type !== "pointerup" && event.type !== "pointercancel";
     held.current = {
@@ -129,9 +128,7 @@ export function RicochetControls({ board: rawBoard, theme: rawTheme, seat, activ
 
   return (
     <svg
-      ref={svg}
-      viewBox={`0 0 ${board.width} ${board.height}`}
-      className="play-controls-layer"
+      {...layer}
       style={{ cursor: active ? "none" : "default", touchAction: "none" }}
       onPointerMove={point}
       onPointerDown={(event) => {

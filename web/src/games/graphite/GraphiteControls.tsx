@@ -11,19 +11,20 @@
 import { useEffect, useRef, useState, type KeyboardEvent as KeyPress, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
 
-import type { PlayControlsProps } from "../types.ts";
-import { LARGE_MAP, baseRadii, formatRate, viewBox, type GraphiteBoardData } from "./GraphiteBoard.tsx";
+import { typing } from "@/components/usePlayback.ts";
 
-type BaseState = [string, number];
+import type { PlayControlsProps } from "../types.ts";
+import "./GraphiteControls.css";
+import { LARGE_MAP, baseRadii, formatRate, type BaseState, type GraphiteBoardData } from "./GraphiteBoard.tsx";
+
 type Theme = { colors: Record<string, string>; players: Record<string, { fill: string; dark: string }> };
 
 // How far outside a base's circle a click still counts, in map units: a finger is less precise than a mouse.
 const MARGIN = { mouse: 6, touch: 16 };
 
-export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, seat, person, active, send, tools }: PlayControlsProps) {
+export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, seat, person, active, send, tools, layer, toBoard }: PlayControlsProps) {
   const board = rawBoard as GraphiteBoardData;
   const theme = rawTheme as Theme;
-  const svg = useRef<SVGSVGElement>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const [streaming, setStreaming] = useState(false); // the Stream switch, for screens without a Shift key
@@ -49,17 +50,15 @@ export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, s
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSelected(null);
+      if (event.key === "Escape" && !typing(event)) setSelected(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   const baseAt = (event: MouseEvent): string | null => {
-    const element = svg.current;
-    const matrix = element?.getScreenCTM();
-    if (!element || !matrix) return null;
-    const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
+    const point = toBoard(event);
+    if (!point) return null;
     const margin = touch.current ? MARGIN.touch : MARGIN.mouse;
     let best: string | null = null;
     let nearest = Infinity;
@@ -113,15 +112,12 @@ export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, s
     return `${id.replaceAll("_", " ")}: ${whose}, ${units} units${streams[id] ? `, streaming to ${streams[id].replaceAll("_", " ")}` : ""}${role}`;
   };
 
-  const [x0, y0, width, height] = viewBox(board, false);
   const pointer = hovered && (source ? neighbours[source]?.has(hovered) || mine(hovered) : mine(hovered) || streams[hovered]);
 
   return (
     <>
       <svg
-        ref={svg}
-        viewBox={`${x0} ${y0} ${width} ${height}`}
-        className="play-controls-layer"
+        {...layer}
         style={{ cursor: active && pointer ? "pointer" : "default" }}
         onPointerDown={(event) => (touch.current = event.pointerType !== "mouse")}
         onClick={click}
@@ -152,7 +148,7 @@ export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, s
           return (
             <line
               key={`stream-${from}`}
-              className="play-stream"
+              className="graphite-stream"
               x1={a.x + ux * start}
               y1={a.y + uy * start}
               x2={a.x + ux * end}
@@ -165,7 +161,7 @@ export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, s
         })}
         {source &&
           [...(neighbours[source] ?? [])].map((id) => (
-            <circle key={`target-${id}`} className="play-target" cx={byId[id].x} cy={byId[id].y} r={radii[id] + ring.target} stroke={colour} />
+            <circle key={`target-${id}`} className="graphite-target" cx={byId[id].x} cy={byId[id].y} r={radii[id] + ring.target} stroke={colour} />
           ))}
         {hovered && active && hovered !== source && (source ? neighbours[source]?.has(hovered) : mine(hovered)) && (
           <circle cx={byId[hovered].x} cy={byId[hovered].y} r={radii[hovered] + ring.target} fill="none" stroke={ink} strokeWidth={3} opacity={0.5} />
@@ -179,7 +175,7 @@ export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, s
         {board.bases.map((base) => (
           <circle
             key={`key-${base.id}`}
-            className="play-base-key"
+            className="graphite-base-key"
             cx={base.x}
             cy={base.y}
             r={radii[base.id] + ring.key}

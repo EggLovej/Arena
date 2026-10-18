@@ -1,4 +1,5 @@
-// The shapes of the JSON files in public/data, written by platform/arena/publish.py.
+// The shapes of the JSON files in public/data, written by platform/arena/publish.py:
+// the fields the site reads.
 
 export type Seat = { id: string; name: string; color: string };
 
@@ -21,7 +22,6 @@ export type BotEntry = {
   name: string;
   description: string;
   kind: string;
-  leaderboard: boolean;
   seat_counts: number[] | null;
   sits_out?: string[]; // map groups the bot leaves out of tournaments
 };
@@ -40,14 +40,8 @@ export type GameData = {
   bots: BotEntry[];
 };
 
-export type GameSummary = {
-  id: string;
-  name: string;
-  tagline: string;
-  seats: string[];
-  maps: number;
-  bots: number;
-};
+/** An entry in games.json; the rest is in each game's own game.json. */
+export type GameSummary = { id: string };
 
 export type Standing = {
   bot: string;
@@ -60,11 +54,9 @@ export type Standing = {
   draws: number;
   losses: number;
   score: number;
-  average_place: number;
   errors: number;
   refused: number;
   think_ms_mean: number;
-  think_ms_max: number;
   by_map: Record<string, { score: number; games: number }>;
 };
 
@@ -78,15 +70,8 @@ export type Table = {
 };
 
 export type Leaderboard = {
-  game: string;
   updated: string;
-  inputs: string;
-  fingerprint: string;
-  settings: { bots: string[] | null; maps: string[] | null; rounds: number };
   matches: number;
-  replays: number;
-  cpu_seconds: number;
-  wall_seconds: number;
   tables: Record<string, Table>;
 };
 
@@ -95,43 +80,24 @@ export type MatchRow = {
   map: string;
   lineup: Record<string, string>;
   ranking: string[][];
-  reason: string;
   ticks: number;
   replay: boolean;
 };
 
 export type Frames = {
-  keyframe_every: number;
   count: number;
   keyframes: Record<string, Snapshot>;
   deltas: Delta[];
 };
 
-export type SeatReport = {
-  bot: string;
-  moves: number;
-  errors: number;
-  refused: number;
-  think_ms_mean: number;
-  think_ms_max: number;
-  first_error: string;
-};
+/** How a match ended: the seats from first place down (seats that tie share a group), why, and after how many ticks. */
+export type Outcome = { ranking: string[][]; reason: string; ticks: number };
 
 export type Replay = {
-  format: "arena-replay";
-  version: number;
-  game: string;
-  fingerprint: string;
-  match_id: string;
-  map: string;
-  seed: number;
   tick_seconds: number;
-  max_ticks: number;
   seats: { seat: string; bot: string }[];
   board: unknown;
   frames: Frames;
   actions: [number, string, unknown][];
-  hashes: Record<string, string>;
-  outcome: { ranking: string[][]; reason: string; ticks: number };
-  reports: Record<string, SeatReport>;
+  outcome: Outcome;
 };

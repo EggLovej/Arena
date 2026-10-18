@@ -27,7 +27,6 @@ import argparse
 from collections import Counter
 from unittest import mock
 
-import numpy as np
 import torch
 
 import ais.strategic_ai as strategic

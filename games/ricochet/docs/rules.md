@@ -1,6 +1,6 @@
-# Rules v2
+# Rules v2 in detail
 
-A match has two tanks, each starting with three health and 100 energy. The deterministic simulation runs at 30 ticks/second and ends after 90 seconds. Elimination determines the winner; simultaneous destruction or the clock expiring is a draw. All are terminal game outcomes.
+[RULES.md](../RULES.md) states the rules for players, and the Arena's website shows it. This page adds what the engine does exactly. Its numbers are the defaults in `RulesConfig` (`src/ricochet/game/config.py`).
 
 Each tick: regenerate energy and prepare shields/aim; propose both tanks' movement; resolve their overlap; fire; sweep projectiles; apply simultaneous damage; determine the result. Inputs are collected from the same pre-tick state. The order of keys in the action dictionary is irrelevant.
 
@@ -14,8 +14,6 @@ Each tick: regenerate energy and prepare shields/aim; propose both tanks' moveme
 - After commitment, holding costs 1.2 energy/tick. Release or insufficient energy ends the shield. Reactivation pays again. No extra activation delay or cooldown exists.
 - Shielding blocks shots in every direction, prevents firing and reduces movement speed to 60%. Regeneration continues.
 
-`RulesConfig.preset("legacy_shield")` has no activation charge or minimum commitment beyond the current tick. It exists for controlled comparisons and still uses corrected v2 physics.
-
 ## Geometry
 
 Tanks are circles of radius 18 and projectiles have radius 4. Shots spawn at the tank center and move at 420 units/second; the visual muzzle does not move the collision origin. The projectile ignores its owner until its first bounce. It can then hit its owner, including immediately when the owner shoots into a nearby wall.
@@ -26,6 +24,8 @@ The current tank movement is axis-separated sliding. This is a deliberately simp
 
 ## Outcomes and faults
 
-Three invalid actions/exceptions forfeit a controller. Import/factory/reset errors count as immediate startup failure. When both controllers fail, the match is invalid and excluded from standings, rather than counted as a competitive draw. Controllers are local trusted Python: latency is measured but no hard process timeout is imposed.
+Elimination decides the winner; both tanks destroyed in the same tick, or the clock running out, is a draw.
+
+What a bot's faults cost depends on what runs the match. In the Arena, as RULES.md says, an error or anything that isn't an action does nothing that tick and play goes on. In the standalone game (the `ricochet` command, its window and the training code), three invalid actions or exceptions forfeit, an import, factory or reset error forfeits at once, and when both controllers fail the match is invalid rather than a draw. See [faults and time limits](ai_api.md#faults-and-time-limits).
 
 Gym terminal rewards are +1/-1/0. Damage shaping is -0.1 per learner health lost and +0.1 for actual enemy health removed by learner-owned shots. Self-hits only receive the negative term. The game clock produces `terminated=True`, `truncated=False`; an optional external `max_episode_steps` cutoff can truncate a still-running game.

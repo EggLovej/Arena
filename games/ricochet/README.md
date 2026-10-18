@@ -6,7 +6,7 @@ A deterministic two-player tank duel for human play, scripted bots and local rei
 
 ## Install and play
 
-Python 3.11+ is required. From this directory:
+Ricochet needs Python 3.12 or newer, like the rest of the Arena. From this directory:
 
 ```bash
 pip install -e ".[display]"
@@ -30,23 +30,24 @@ Copy `ais/template_ai.py`, subclass `BaseController` and implement `act(observat
 ricochet match --headless --record replays/example.json
 ricochet replay replays/example.json --headless
 ricochet replay replays/example.json
-ricochet tournament --bots all --maps all --seeds 0,1,2
 ```
 
-### Generated maps and automatic tournaments
+### On the Arena's leaderboard
 
-`generated:SEED` works anywhere a map name does. Each seed deterministically builds a mirror- or half-turn-symmetric arena, then shifts every free wall edge and both spawns by up to 16 px, so maps are nearly but not exactly symmetric. A map is accepted only if it is playable: walls at least 24 px thick, every gap closed or wide enough for a tank, room around the spawns, and the tanks able to reach each other.
+Every bot in `ais/` plays in the Arena's tournaments and on its website, except those `HIDDEN` in `arena_game.py` (the template). The site describes a bot by its line in `BLURBS` there, or else by the first paragraph of its module docstring. Open a pull request with the new file; once it is merged, the Tournament workflow plays it against every other bot on every map, from both seats, and rates it (see the [Arena's README](../../README.md)). `python -m arena tournament ricochet`, from the repository root, plays the same tournament locally.
+
+The Arena runs bots differently from the `ricochet` command: there, an error is a no-op for that tick rather than a step toward forfeiting, and a bot may think for up to two minutes on one move. See [faults and time limits](docs/ai_api.md#faults-and-time-limits).
+
+### Generated maps
+
+`generated:SEED` works anywhere a map name does. Each seed deterministically builds a mirror- or half-turn-symmetric arena, then shifts every free wall edge and both spawns by up to 16 px, so maps are nearly but not exactly symmetric. A map is accepted only if it is playable: walls at least 24 px thick, every gap closed or wide enough for a tank, room around the spawns, and the tanks able to reach each other. `GeneratorConfig` in `ricochet/game/mapgen.py` tunes the generator.
 
 ```bash
 ricochet match --map generated:42 --p1 human --p2 bank_shot_ai
 ricochet generate-map --seed 42 --output maps/arena_42.json  # Keep one for the menu.
-ricochet auto-tournament                      # All bots, 100 rounds per pairing.
-ricochet auto-tournament --bots direct_ai bank_shot_ai --rounds 20 --seed 1000
 ```
 
-In the automatic tournament, round `r` of every pairing uses map and match seed `seed + r` and is played from both seats. Every pairing therefore meets the same maps, and the slight asymmetry cannot favor either bot. Games run in parallel processes (`--workers`, default: all CPUs), and the results do not depend on the worker count. Output is the usual standings, a head-to-head score matrix, and JSON/CSV under `results/auto_tournament.*`. Tune the generator through `GeneratorConfig` in `ricochet/game/mapgen.py`.
-
-Replay controls: Space pauses, `.` advances a tick, Left/Right seek five seconds, Up/Down change speed, Home restarts, and Escape exits. V2 replays embed the original map, rules and state. V1 recordings require the old `afc5ee0` revision because the physics changed.
+Replay controls: Space pauses, `.` advances a tick, Left/Right seek five seconds, Up/Down change speed, Home restarts, and Escape exits. A replay embeds the original map, rules and state, so it plays back without the map files.
 
 ## Train and evaluate
 
@@ -71,14 +72,13 @@ Resume into a new directory with `train --resume PATH --output NEW_DIRECTORY`. O
 
 ## Rules, architecture and checks
 
-- [Rules v2](docs/rules.md): shield costs, collision ordering and outcomes.
-- [Architecture](docs/architecture.md): module boundaries, reusable contracts and state capture.
+- [Rules](RULES.md): the rules as the Arena's website shows them.
+- [Rules in detail](docs/rules.md): shield costs, collision ordering, outcomes and faults.
+- [Architecture](docs/architecture.md): module boundaries, state capture, replays and what the Arena uses.
 
 ```bash
 pytest
 ruff check .
-ricochet benchmark
-ricochet balance --output results/shield_comparison.json
 ```
 
 Bots and checkpoints are trusted local code. This release has no network multiplayer or public upload service.
@@ -89,4 +89,4 @@ Neon Circuit is the default. Use the menu's **Theme** selector to switch between
 
 ### Strong scripted opponent
 
-Select **Sentinel** in the menu, or run `ricochet match --p1 human --p2 sentinel_ai`. It uses analytical interception, validated ricochet shots, obstacle navigation and predictive dodging, with shields disabled. See [design and evaluation](docs/sentinel.md).
+Select **Sentinel** in the menu, or run `ricochet match --p1 human --p2 sentinel_ai`. It uses analytical interception, validated ricochet shots, obstacle navigation and predictive dodging, and never raises its shield. See [design and evaluation](docs/sentinel.md).

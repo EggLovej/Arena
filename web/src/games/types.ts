@@ -2,7 +2,7 @@
 // match, and a few numbers per seat for the scoreboard. Everything else (the
 // replay player, match lists, leaderboards, bot cards, rules) is shared.
 
-import type { ComponentType } from "react";
+import type { ComponentType, SVGProps } from "react";
 
 import type { Seat, Snapshot } from "@/lib/types.ts";
 
@@ -14,7 +14,7 @@ export type BoardProps = {
   tickSeconds: number;
   theme: unknown; // the game's theme JSON
   seats: Seat[];
-  compact?: boolean; // a small preview: shapes only, no labels
+  compact?: boolean; // a small preview: shapes only, no labels, filling its frame
 };
 
 export type SeatStat = { label: string; value: number };
@@ -28,12 +28,16 @@ export type PlayControlsProps = {
   active: boolean; // false while paused, counting down or over: nothing to send then
   send: (command: unknown) => void; // a command for the game's Person (platform/arena/live.py)
   tools: HTMLElement | null; // a place in the row under the board for the game's own buttons (fill it with a portal)
+  layer: SVGProps<SVGSVGElement>; // spread on the controls' <svg>: lays it exactly over the board, in the board's units
+  toBoard: (event: { clientX: number; clientY: number }) => DOMPoint | null; // where a pointer is, in the board's units
 };
 
 /** What a game adds so that people can play it on the site (the play page is shared). */
 export type PlayView = {
-  /** Lies over the board while a person plays: takes their clicks and shows their selection and orders. */
+  /** Lies over the board while a person plays (an <svg> given `layer`): takes their clicks and shows their selection and orders. */
   Controls: ComponentType<PlayControlsProps>;
+  /** The board's viewBox in a match, as its Board draws it, so the page can lay the controls over it. */
+  viewBox: (board: unknown) => [number, number, number, number];
   /** How to play, one short line each. */
   help: string[];
   /** The map the play page starts on (the first map if not given). */
@@ -43,6 +47,7 @@ export type PlayView = {
 };
 
 export type GameView = {
+  /** Draws one moment of a match, background and all: the frames around it are the site's and have none. */
   Board: ComponentType<BoardProps>;
   /** Numbers shown beside each seat in the scoreboard, for example units and bases. */
   stats: (board: unknown, snapshot: Snapshot) => Record<string, SeatStat[]>;

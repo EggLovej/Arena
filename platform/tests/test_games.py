@@ -30,9 +30,9 @@ def test_maps_bots_and_seats(game):
 
 
 def test_a_match_replays_exactly(game):
-    anchor = game.info.rating_anchor[0]
+    bot = (game.info.rating_anchor or [game.bots()[0].id])[0]
     map_info = game.maps()[0]
-    record = play_match(game, map_info.id, {seat: anchor for seat in map_info.seats}, seed=4)
+    record = play_match(game, map_info.id, {seat: bot for seat in map_info.seats}, seed=4)
     assert not any(report.errors for report in record.seats.values())
     assert verify(game, record.replay) == []
 
