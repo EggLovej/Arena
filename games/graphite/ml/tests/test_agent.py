@@ -116,6 +116,7 @@ class NeuralAgentTests(unittest.TestCase):
         self.assertFalse(keeps_memory("strategic_ai"))
         self.assertIs(fresh_ai("strategic_ai"), fresh_ai("strategic_ai"))
         self.assertFalse(keeps_memory("value:ml/runs/latest.pt"))
+        self.assertFalse(keeps_memory("untrained"))
 
 
 class NeuralAiFileTests(unittest.TestCase):

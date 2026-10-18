@@ -146,7 +146,7 @@ def keeps_memory(name: str) -> bool:
     memory. Its plain ``choose_action`` is meant for one match at a time.
     """
 
-    if not name.removesuffix(".py").isidentifier():
+    if name == UNTRAINED or not name.removesuffix(".py").isidentifier():
         return False
     choose_action = load_ai(name)
     return callable(getattr(sys.modules[choose_action.__module__], "new_player", None))
