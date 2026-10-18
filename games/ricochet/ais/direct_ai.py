@@ -24,7 +24,7 @@ class DirectController(BaseController):
             offset = nearest.position - me.position
             approach = nearest.velocity.dot(offset)
             if offset.length() < 100 and approach < 0:
-                shield = me.energy > 18
+                shield = me.energy >= self.rules.shield_upfront_cost
                 dodge = Vec2(-nearest.velocity.y, nearest.velocity.x).normalized()
         if dodge.length() > 0:
             movement = dodge * self.strafe_sign

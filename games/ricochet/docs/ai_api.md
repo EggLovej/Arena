@@ -39,7 +39,7 @@ Modules using dataclasses and postponed annotations are supported. Put match sta
 
 `GameObservation` contains time/arena dimensions, both tanks, every wall and all projectiles. Frozen nested values prevent accidental edits. Tank fields include position, velocity, aim, health, energy, firing cooldown, shield activity and remaining prepaid shield ticks. Projectile fields include ID, owner, position, velocity, bounce status and remaining lifetime. Coordinates start at the top-left, +X right, +Y down.
 
-Actions contain movement XY, aim XY, fire and shield. Vectors must be finite and are limited to length one; nonzero aim is normalized by the engine. A zero aim keeps the previous aim. Boolean fire/shield flags must be actual booleans. Shield takes priority over firing and remains active for its prepaid commitment. See [rules](rules.md).
+Actions contain movement XY, aim XY, fire and shield. Vectors must be finite and are limited to length one; nonzero aim is normalized by the engine. A zero aim keeps the previous aim. Boolean fire/shield flags must be actual booleans. Shield takes priority over firing and remains active for its prepaid commitment; raising it takes `rules.shield_upfront_cost` energy. See [rules](rules.md).
 
 ## Faults and time limits
 

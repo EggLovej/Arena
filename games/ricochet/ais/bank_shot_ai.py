@@ -33,7 +33,7 @@ class BankShotController(BaseController):
             if projectile.velocity.dot(offset) < 0 and offset.length() < 115:
                 danger = projectile
                 break
-        shield = danger is not None and me.energy > 20
+        shield = danger is not None and me.energy >= self.rules.shield_upfront_cost
         direction = direct.normalized()
         strafe = Vec2(-direction.y, direction.x) * self.strafe_sign
         edge_push = Vec2(0, 0)
