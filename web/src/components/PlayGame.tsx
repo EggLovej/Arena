@@ -458,7 +458,7 @@ function useStoredChoice(game: GameData, preferredMap: string | undefined) {
     } catch {
       // Nothing saved, or no storage here: the defaults stand.
     }
-    // ?watch, as the Watch tab links here: set up a match between bots.
+    // ?watch, as the Watch page's text links here: set up a match between bots.
     if (new URLSearchParams(window.location.search).has("watch")) setChoice((now) => ({ ...now, watch: true }));
   }, [key]); // once, when the page opens
   const update = (next: Choice) => {

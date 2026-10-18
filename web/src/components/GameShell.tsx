@@ -11,9 +11,8 @@ import { GameTabs } from "./GameTabs.tsx";
 
 export function GameShell({ gameId, children }: { gameId: string; children: ReactNode }) {
   const game = getGame(gameId);
-  const { look, accent } = gameView(gameId);
+  const { look } = gameView(gameId);
   const style: Record<string, string> = {};
-  if (accent) style["--stage-accent"] = accent;
   if (look) {
     style.colorScheme = look.scheme;
     for (const [name, value] of Object.entries(look.colors)) style[`--${name}`] = value;
