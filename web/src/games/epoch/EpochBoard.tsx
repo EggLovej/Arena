@@ -43,40 +43,36 @@ export const SPRITES = "/games/epoch/sprites.svg";
 export const SIZES: Record<Role, [number, number]> = { melee: [48, 48], ranged: [48, 48], heavy: [80, 64], super: [64, 64] };
 const FOOT = HEIGHT - 26; // the ground the army marches on
 const BASE_FOOT = HEIGHT - 40;
-// The turret ledges on a base, from its bottom centre facing right, lowest first.
-const LEDGES = [
-  [40, -40],
-  [40, -80],
-  [40, -120],
-  [40, -160],
-];
+const PANEL = 150; // the width of the age, hit points and queue shown beside each base
+const LEDGE = 36; // turret ledges are this far apart on a base, the first this far up, 40 in front of its middle
 // Where shots leave each shooter, from the bottom centre of its sprite facing right, and what they look like.
 type Look = "rock" | "boulder" | "bolt" | "laser";
 const SHOTS: Record<string, [number, number, Look]> = {
   slinger: [20, -28, "rock"],
   crossbowman: [16, -33, "bolt"],
   catapult: [6, -60, "boulder"],
-  musketeer: [20, -30, "bolt"],
-  cannon: [36, -24, "boulder"],
-  gunner: [20, -28, "bolt"],
-  tank: [38, -40, "boulder"],
+  musketeer: [18, -31, "bolt"],
+  cannon: [33, -24, "boulder"],
+  gunner: [19, -21, "bolt"],
+  tank: [33, -28, "boulder"],
   laser_trooper: [17, -31, "laser"],
   mech: [31, -40, "laser"],
+  super_soldier: [26, -38, "laser"],
   rock_thrower: [8, -32, "rock"],
-  sling_nest: [12, -26, "rock"],
-  boulder_catapult: [6, -34, "boulder"],
-  arrow_tower: [17, -22, "bolt"],
-  ballista: [18, -20, "bolt"],
-  oil_cauldron: [16, -24, "boulder"],
-  small_cannon: [18, -18, "boulder"],
-  large_cannon: [19, -20, "boulder"],
-  mortar: [10, -30, "boulder"],
-  machine_gun: [19, -20, "bolt"],
-  rocket_launcher: [18, -24, "bolt"],
-  twin_gun: [19, -22, "bolt"],
+  sling_nest: [-2, -28, "rock"],
+  boulder_catapult: [2, -30, "boulder"],
+  arrow_tower: [16, -12, "bolt"],
+  ballista: [17, -19, "bolt"],
+  oil_cauldron: [11, -16, "boulder"],
+  small_cannon: [13, -15, "boulder"],
+  large_cannon: [18, -19, "boulder"],
+  mortar: [8, -20, "boulder"],
+  machine_gun: [19, -15, "bolt"],
+  rocket_launcher: [14, -21, "bolt"],
+  twin_gun: [18, -17, "bolt"],
   laser_turret: [19, -18, "laser"],
-  plasma_cannon: [19, -20, "laser"],
-  ion_ray: [19, -22, "laser"],
+  plasma_cannon: [12, -15, "laser"],
+  ion_ray: [12, -24, "laser"],
 };
 const STEP = 0.2; // seconds each walking frame, and a strike, is shown
 const FLIGHT = 0.25; // seconds a shot is drawn flying
@@ -203,13 +199,13 @@ export function EpochBoard({ board: rawBoard, snapshot, next, tick, tickSeconds,
         const flip = flipped(seat);
         const max = board.ages[age].base_hp;
         const queue = queues[seat] ?? [0];
-        const corner = flip ? length - baseLength - 116 : baseLength + 4; // in the sky just beyond the base, clear of its turrets
+        const corner = flip ? length - baseLength - 4 - PANEL : baseLength + 4; // in the sky just beyond the base, clear of its turrets
         return (
           <g key={seat}>
             <Sprite id={`base_${board.ages[age].id}`} x={onScreen(seat, baseLength / 2)} y={BASE_FOOT} size={[120, 150]} flip={flip} color={color(seat)} />
-            {LEDGES.slice(0, places).map(([dx, dy], slot) => {
+            {Array.from({ length: places }, (_, slot) => {
               const turret = turrets[`${seat}-${slot}`];
-              const [x, y] = [baseLength / 2 + dx, BASE_FOOT + dy];
+              const [x, y] = [baseLength / 2 + 40, BASE_FOOT - LEDGE * (slot + 1)];
               if (!turret) return null;
               const fired = ago(turret[1]);
               return (
@@ -223,12 +219,12 @@ export function EpochBoard({ board: rawBoard, snapshot, next, tick, tickSeconds,
               <g transform={`translate(${corner} 76)`}>
                 <g fontSize={13} fontWeight={700} fill={theme.ink} stroke={theme.panel} strokeWidth={3} paintOrder="stroke">
                   <text y={12}>{board.ages[age].name}</text>
-                  <text x={112} y={12} textAnchor="end">
+                  <text x={PANEL} y={12} textAnchor="end">
                     {Math.max(0, hp)}
                   </text>
                 </g>
-                <rect y={18} width={112} height={8} rx={4} fill={theme.panel} stroke={theme.ink} strokeWidth={1} />
-                <rect y={18} width={(112 * Math.max(0, hp)) / max} height={8} rx={4} fill={color(seat)} />
+                <rect y={18} width={PANEL} height={8} rx={4} fill={theme.panel} stroke={theme.ink} strokeWidth={1} />
+                <rect y={18} width={(PANEL * Math.max(0, hp)) / max} height={8} rx={4} fill={color(seat)} />
                 {(queue.slice(1) as string[]).map((id, index) => (
                   <Sprite key={index} id={`${id}-walk-1`} x={index * 24 + 11} y={56} size={[22, 22]} flip={flip} color={color(seat)} />
                 ))}
