@@ -31,7 +31,7 @@ function MapCards({ game, maps, seatNames }: { game: GameData; maps: MapEntry[];
   return (
     <div className="map-cards">
       {maps.map((map) => (
-        <Link key={map.id} href={`/games/${id}/watch?map=${map.id}`} className="card map-card game-card">
+        <Link key={map.id} href={`/games/${id}/watch?map=${map.id}`} className="card game-card">
           <div className="map-card-art">
             <MapPreview game={game} map={map} />
           </div>

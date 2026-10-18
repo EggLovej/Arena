@@ -12,9 +12,8 @@ import { useEffect, useRef, useState, type KeyboardEvent as KeyPress, type Mouse
 import { createPortal } from "react-dom";
 
 import type { PlayControlsProps } from "../types.ts";
-import { LARGE_MAP, baseRadii, formatRate, viewBox, type GraphiteBoardData } from "./GraphiteBoard.tsx";
+import { LARGE_MAP, baseRadii, formatRate, viewBox, type BaseState, type GraphiteBoardData } from "./GraphiteBoard.tsx";
 
-type BaseState = [string, number];
 type Theme = { colors: Record<string, string>; players: Record<string, { fill: string; dark: string }> };
 
 // How far outside a base's circle a click still counts, in map units: a finger is less precise than a mouse.

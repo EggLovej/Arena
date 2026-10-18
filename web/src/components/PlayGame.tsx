@@ -342,9 +342,9 @@ function Match({
             tools={tools}
           />
         )}
-        {phase === "countdown" && (
+        {phase === "countdown" && count > 0 && (
           <div className="play-overlay play-countdown" aria-live="assertive">
-            {count > 0 ? count : "Go"}
+            {count}
           </div>
         )}
         {phase === "paused" && (
