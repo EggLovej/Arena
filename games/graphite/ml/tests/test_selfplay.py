@@ -9,6 +9,7 @@ import torch
 
 import ml.training.runlog
 from game_types import RED
+from ml.encoding.action_encoder import LIMITS
 from ml.encoding.state_encoder import BASE_FEATURES, GLOBAL_FEATURES, PAIR_FEATURES, UNITS_REFERENCE
 from ml.evaluation.evaluate import TRAINING
 from ml.map_generator import generate_map
@@ -25,8 +26,8 @@ from ml.training.selfplay import (
     SelfPlaySettings,
     adapted_learning_rate,
     behaviour,
+    distance_from_front,
     entropy_bonus,
-    front_potential,
     hint_weight,
     judge_moves,
     judged_decisions,
@@ -60,6 +61,8 @@ def fake_trajectory(ticks, values, outcome, units_share=0.5, production_share=0.
         target=empty,
         amount=empty,
         tick=np.array(ticks, dtype=np.int32),
+        units=empty,
+        route_limits=np.zeros((count, 2, len(LIMITS)), dtype=np.int32),
         log_probability=np.zeros(count, dtype=np.float32),
         value=np.array(values, dtype=np.float32),
     )
@@ -149,39 +152,6 @@ def line_trajectory(units, incoming):
     pairs[..., PAIR_FEATURES.index("shortest_path_time")] = [[0, 2, 3], [2, 0, 1], [3, 1, 0]]
     trajectory = fake_trajectory(list(range(count)), [0.0] * count, "draw")
     return replace(trajectory, base_ids=("a", "b", "c"), base_features=features, pair_features=pairs)
-
-
-class PotentialTests(unittest.TestCase):
-    def test_units_count_by_their_distance_to_the_nearest_enemy_base(self):
-        trajectory = line_trajectory(
-            # 10 at A (3 s from C) and 10 at B (1 s); then A's 10 on their way to B; then attacking C.
-            units=[[10, 10, 0], [0, 10, 0], [0, 0, 0]],
-            incoming=[[0, 0, 0], [0, 10, 0], [0, 0, 20]],
-        )
-        # The longest shortest path is 3 s: (10 x 3 + 10 x 1) / (20 x 3), then (20 x 1) / (20 x 3), then 0.
-        np.testing.assert_allclose(front_potential(trajectory), [-40 / 60, -20 / 60, 0.0], atol=1e-4)
-
-    def test_moves_are_credited_with_the_change_in_production_share(self):
-        settings = SelfPlaySettings(discount=1.0, lookahead=0.0, production_potential=0.5)
-        trajectory = fake_trajectory([0, 5, 9], [0, 0, 0], "draw")
-        trajectory.global_features[:, GLOBAL_FEATURES.index("my_production_share")] = [0.4, 0.6, 0.6]
-        advantage, _ = judge_moves(trajectory, 10, settings)
-        # From 0.4 to 0.6 is +0.2 x 2 x 0.5; holding it earns nothing; at the end the potential is given back.
-        np.testing.assert_allclose(advantage, [0.2, 0.0, -0.5 * (2 * 0.6 - 1)], atol=1e-6)
-
-    def test_the_front_potential_credits_sending_units_forward(self):
-        settings = SelfPlaySettings(discount=1.0, lookahead=0.0, front_potential=1.0)
-        trajectory = line_trajectory(units=[[10, 10, 0], [0, 10, 0], [0, 10, 0]], incoming=[[0, 0, 0], [0, 10, 0], [0, 10, 0]])
-        advantage, _ = judge_moves(trajectory, 10, settings)
-        self.assertAlmostEqual(advantage[0], -20 / 60 - -40 / 60, places=4)
-        self.assertAlmostEqual(advantage[1], 0.0, places=6)
-
-    def test_both_are_off_by_default(self):
-        trajectory = fake_trajectory([0, 5, 9], [0.1, 0.2, 0.3], "win")
-        trajectory.global_features[:, GLOBAL_FEATURES.index("my_production_share")] = [0.1, 0.9, 0.5]
-        plain, _ = judge_moves(trajectory, 10, SelfPlaySettings())
-        off, _ = judge_moves(trajectory, 10, SelfPlaySettings(production_potential=0.0, front_potential=0.0))
-        np.testing.assert_array_equal(plain, off)
 
 
 class ValueErrorTests(unittest.TestCase):
@@ -367,32 +337,6 @@ class UpdateTests(unittest.TestCase):
         self.assertGreater((values_after - values_before).abs().max().item(), 1e-4)
 
 
-class CaptureLearningTests(unittest.TestCase):
-    def test_a_network_with_a_capture_output_learns_where_its_sends_ended_up(self):
-        torch.manual_seed(0)
-        model = init_model("random", seed=0, capture_head=True).model
-        settings = SelfPlaySettings(passes=4, batch_size=256, max_policy_change=1.0, capture_weight=1.0)
-        matchups = [Matchup(generate_map(seed).definition, Seat(SELF, True), Seat(SELF, True)) for seed in range(4)]
-        records = play_games(matchups, {SELF: model}, seed=0, max_seconds=40)
-        rng = np.random.default_rng(0)
-        decisions, _ = judged_decisions(records, settings, hint=0.0, rng=rng)
-        self.assertGreater(np.isfinite(decisions.target("captured")).sum(), 50)
-        optimizer = torch.optim.Adam(model.parameters(), lr=3e-3)
-        first = update(model, optimizer, decisions, settings, rng, "cpu", learn_moves=False)
-        for _ in range(3):
-            last = update(model, optimizer, decisions, settings, rng, "cpu", learn_moves=False)
-        self.assertLess(last["capture error/of the network"], first["capture error/of the network"])
-
-    def test_a_network_without_one_reports_nothing(self):
-        model = init_model("random", seed=0).model
-        settings = SelfPlaySettings(passes=1, batch_size=256)
-        records = play_games([Matchup(generate_map(1).definition, Seat(SELF, True), Seat(SELF, True))], {SELF: model}, seed=0, max_seconds=20)
-        rng = np.random.default_rng(0)
-        decisions, _ = judged_decisions(records, settings, hint=0.0, rng=rng)
-        learned = update(model, torch.optim.Adam(model.parameters()), decisions, settings, rng, "cpu")
-        self.assertNotIn("capture error/of the network", learned)
-
-
 class BrokenNumbersTests(unittest.TestCase):
     """A batch with non-finite numbers is skipped; broken weights at the end are undone."""
 
@@ -435,6 +379,15 @@ class BrokenNumbersTests(unittest.TestCase):
 
 
 class BehaviourTests(unittest.TestCase):
+    def test_units_count_by_their_distance_to_the_nearest_enemy_base(self):
+        trajectory = line_trajectory(
+            # 10 at A (3 s from C) and 10 at B (1 s); then A's 10 on their way to B; then attacking C.
+            units=[[10, 10, 0], [0, 10, 0], [0, 0, 0]],
+            incoming=[[0, 0, 0], [0, 10, 0], [0, 0, 20]],
+        )
+        # The longest shortest path is 3 s: (10 x 3 + 10 x 1) / (20 x 3), then (20 x 1) / (20 x 3), then 0.
+        np.testing.assert_allclose(distance_from_front(trajectory), [40 / 60, 20 / 60, 0.0], atol=1e-4)
+
     def test_where_sends_and_units_go_is_measured(self):
         model = init_model("random", seed=0).model
         records = play_games([Matchup(generate_map(seed).definition, Seat(SELF, True), Seat(SELF, True)) for seed in range(2)], {SELF: model}, seed=0, max_seconds=30)
@@ -500,7 +453,6 @@ class SelfPlayRunTests(unittest.TestCase):
             for opponent in ("aggressive_ai", "careful_ai", "strategic_ai", "starting model"):
                 self.assertIn(f"score/vs {opponent}", entry)
         self.assertNotIn("entropy/of the policy", rounds[0])
-        self.assertEqual(list(rounds[3])[2].split("/")[0], "score")
 
         self.assertEqual(paused.training_state["round"], 2)
         self.assertEqual(latest.training_state["round"], 3)

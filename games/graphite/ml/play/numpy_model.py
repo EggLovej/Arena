@@ -56,7 +56,6 @@ DEFAULTS = {
     "route_features": COLUMNS_BEFORE_V2["route_features"],
     "global_features": len(GLOBAL_FEATURES),
     "amount_options": len(AMOUNT_OPTIONS),
-    "capture_head": False,
     "amounts": "options",
     "amount_curves": CURVES,
     "feature_set": "",

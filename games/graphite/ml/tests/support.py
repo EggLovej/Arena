@@ -27,7 +27,7 @@ def trajectory_input(
 
     base_features = torch.from_numpy(trajectory.base_features[decisions])
     count, bases = base_features.shape[:2]
-    limits = None if trajectory.route_limits is None else trajectory.limit_table(decisions).astype(np.float32)
+    limits = trajectory.limit_table(decisions).astype(np.float32)
     return ModelInput(
         base_features=base_features,
         pair_features=torch.tensor(trajectory.pair_features).expand(count, -1, -1, -1),
@@ -35,8 +35,8 @@ def trajectory_input(
         global_features=torch.from_numpy(trajectory.global_features[decisions]),
         base_mask=torch.ones(count, bases, dtype=torch.bool),
         allowed=torch.from_numpy(trajectory.allowed(decisions)),
-        most=None if limits is None else torch.from_numpy(limits[..., 0].copy()),
-        needed=None if limits is None else torch.from_numpy(limits[..., 1].copy()),
+        most=torch.from_numpy(limits[..., 0].copy()),
+        needed=torch.from_numpy(limits[..., 1].copy()),
     ).to(device)
 
 

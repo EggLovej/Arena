@@ -15,10 +15,7 @@ from ml.map_generator import generate_map
 from ml.models.checkpoint import init_model
 from ml.models.interface import ILLEGAL
 from ml.models.policy import log_probability
-from ml.encoding.action_encoder import AMOUNT_OPTIONS
-from ml.encoding.forecast import ticks_until_arrival
 from ml.play.rollout import (
-    OPTIONS_BEFORE_TACTICAL,
     WAIT,
     Matchup,
     RolloutPool,
@@ -138,57 +135,6 @@ class FreeAmountTests(unittest.TestCase):
     def test_every_move_is_accepted_and_the_games_replay(self):
         for record in self.local + self.served:
             self.assertEqual(replay(record).winner(), record.winner)
-
-
-class CaptureLabelTests(unittest.TestCase):
-    def test_each_send_says_whether_its_target_was_ours_right_after_it_landed(self):
-        records = play_games(matchups("net", "strategic_ai", seeds=range(3)), {"net": init_model("random", seed=2).model}, seed=4, max_seconds=40)
-        checked = 0
-        for record in records:
-            game = Game(record.matchup.map)
-            moves = {}
-            for tick, seat, source, target, units in record.actions:
-                moves.setdefault(tick, {})[seat] = SendAction(source, target, units)
-            for trajectory in record.trajectories:
-                waited = trajectory.source == WAIT
-                self.assertTrue(np.isnan(trajectory.captured[waited]).all())
-            # Replay the game and look at each recorded send's target once it has landed.
-            expected = {}
-            for trajectory in record.trajectories:
-                for number in np.flatnonzero(trajectory.source != WAIT):
-                    source, target = trajectory.base_ids[trajectory.source[number]], trajectory.base_ids[trajectory.target[number]]
-                    travel = game._travel_times[frozenset((source, target))]
-                    landing = int(trajectory.tick[number]) + ticks_until_arrival(travel, game.seconds_per_tick)
-                    expected.setdefault(landing, []).append((trajectory, number, target))
-            while game.tick < record.ticks:
-                game.step(moves.get(game.tick, {}))
-                for trajectory, number, target in expected.pop(game.tick, ()):
-                    self.assertEqual(trajectory.captured[number], float(game.bases[target].owner == trajectory.seat))
-                    checked += 1
-            # Sends still in flight at the end have no label.
-            for entries in expected.values():
-                for trajectory, number, _ in entries:
-                    self.assertTrue(np.isnan(trajectory.captured[number]))
-        self.assertGreater(checked, 50)
-
-
-class OlderTrajectoryTests(unittest.TestCase):
-    def test_a_trajectory_saved_with_fewer_options_reads_in_the_current_layout(self):
-        record = play_games(matchups("net", "net", seeds=[1]), {"net": init_model("random", seed=0).model}, seed=0, max_seconds=10)[0]
-        trajectory = record.trajectories[0]
-        current = trajectory.allowed()
-        # The same trajectory as it would have been saved before the last two options existed.
-        bases = len(trajectory.base_ids)
-        old_layout = current[..., :OPTIONS_BEFORE_TACTICAL].reshape(len(trajectory), -1)
-        older = replace(trajectory, allowed_bits=np.packbits(old_layout, axis=1), amount_options=OPTIONS_BEFORE_TACTICAL)
-        upgraded = older.allowed()
-        self.assertEqual(upgraded.shape, (len(trajectory), bases, bases, len(AMOUNT_OPTIONS)))
-        np.testing.assert_array_equal(upgraded[..., :OPTIONS_BEFORE_TACTICAL], current[..., :OPTIONS_BEFORE_TACTICAL])
-        self.assertFalse(upgraded[..., OPTIONS_BEFORE_TACTICAL:].any())
-        np.testing.assert_array_equal(older.current_allowed_bits(), np.packbits(upgraded.reshape(len(trajectory), -1), axis=1))
-        # Pickled before the field existed: the class default says how it was saved.
-        del older.__dict__["amount_options"]
-        self.assertEqual(older.amount_options, OPTIONS_BEFORE_TACTICAL)
 
 
 class RolloutTests(unittest.TestCase):

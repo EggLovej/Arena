@@ -14,7 +14,7 @@ from loading import load_ai
 from ml.map_generator import generate_map
 from ml.models.checkpoint import history_entry, init_model, save_checkpoint
 from ml.play.agent import NeuralAgent
-from ml.play.players import fresh_ai, keeps_memory, load_player, network_player
+from ml.play.players import fresh_ai, keeps_memory, load_player
 
 
 def play(definition, red, blue, ticks=300):
@@ -95,10 +95,10 @@ class NeuralAgentTests(unittest.TestCase):
             path = save_checkpoint(Path(directory) / "model.pt", self.model)
             # A network: name carries its settings, and the evaluator's --greedy reaches it.
             agent = load_player(f"network:{path}?temperature=0.2", seed=3)
-            self.assertEqual(network_player(f"network:{path}").temperature, 1.0)
+            self.assertEqual(load_player(f"network:{path}").temperature, 1.0)
             self.assertTrue(load_player(f"network:{path}", greedy=True).greedy)
             with self.assertRaises(ValueError):
-                network_player(f"network:{path}?temperature=0")
+                load_player(f"network:{path}?temperature=0")
             _, named = play(definition, agent, self.strategic, ticks=100)
             # So are a checkpoint, an untrained network and an AI file.
             state = Game(definition).view_for(RED)
@@ -115,7 +115,7 @@ class NeuralAgentTests(unittest.TestCase):
         # Plain AIs are shared, and names that are not AI files have no memory to keep.
         self.assertFalse(keeps_memory("strategic_ai"))
         self.assertIs(fresh_ai("strategic_ai"), fresh_ai("strategic_ai"))
-        self.assertFalse(keeps_memory("value:ml/runs/latest.pt"))
+        self.assertFalse(keeps_memory("network:ml/runs/latest.pt"))
         self.assertFalse(keeps_memory("untrained"))
 
 

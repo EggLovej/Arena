@@ -100,16 +100,6 @@ class DecisionSet:
     def __len__(self) -> int:
         return self._count
 
-    def batch_count(self, batch_size: int) -> int:
-        """How many batches one pass makes (each map size is batched on its own)."""
-
-        return sum(-(-sum(len(part) for part in group.route) // batch_size) for group in self._groups.values())
-
-    def target(self, name: str) -> np.ndarray:
-        """Every decision's value of one target, in no particular order."""
-
-        return np.concatenate([np.concatenate(group.targets[name]) for group in self._groups.values()])
-
     def add(
         self,
         trajectory: Trajectory,
@@ -128,8 +118,6 @@ class DecisionSet:
         if count == 0:
             return 0
         limits = self.free_amounts or self.option_units
-        if limits and trajectory.route_limits is None:
-            raise ValueError("This trajectory was recorded before route limits were kept (2026-10-09)")
         if trajectory.free_amounts and not self.free_amounts:
             raise ValueError("A network with amount options cannot learn from choices made with free amounts")
         keep = np.arange(count)
@@ -145,8 +133,7 @@ class DecisionSet:
         waited = source == WAIT
         group.base_features.append(trajectory.base_features[keep])
         group.global_features.append(trajectory.global_features[keep])
-        # In the current layout of amount options, also for trajectories recorded with fewer.
-        group.allowed_bits.append(trajectory.current_allowed_bits(keep))
+        group.allowed_bits.append(trajectory.allowed_bits[keep])
         group.route.append(np.where(waited, 0, 1 + source * bases + trajectory.target[keep]))
         amount = trajectory.units if self.free_amounts else trajectory.amount
         group.amount.append(np.where(waited, 0, amount[keep]).astype(np.int64))

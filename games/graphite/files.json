@@ -19,15 +19,12 @@
     "ml/models/checkpoint.py",
     "ml/models/graph_transformer.py",
     "ml/models/interface.py",
-    "ml/models/judge.py",
     "ml/models/policy.py",
     "ml/play/__init__.py",
     "ml/play/agent.py",
     "ml/play/beast.py",
-    "ml/play/lookahead.py",
     "ml/play/numpy_agent.py",
     "ml/play/numpy_model.py",
-    "ml/play/players.py",
-    "ml/play/value_player.py"
+    "ml/play/players.py"
   ]
 }

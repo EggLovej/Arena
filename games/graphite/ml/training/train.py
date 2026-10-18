@@ -5,23 +5,19 @@ Run from the game directory:
     .venv/bin/python -m ml train imitation --run copy_the_teacher
     .venv/bin/python -m ml train selfplay --run from_scratch
     .venv/bin/python -m ml train selfplay --run from_teacher --init ml/runs/copy_the_teacher/best.pt
-    .venv/bin/python -m ml train kickstart --run bigger --init ml/runs/bigger_start.pt --teacher ml/runs/x/best.pt
     .venv/bin/python -m ml train selfplay --help
 
 Every setting of a trainer is available as an option; ``--help`` lists them
 with their defaults. ``--init`` takes "random" or the path of a checkpoint to
-continue from. ``--monitor`` opens the live charts next to the run.
+continue from.
 """
 
 import argparse
 import json
-import subprocess
-import sys
 from dataclasses import fields
 
 from ml.models import DEFAULT_MODEL, MODELS
 from ml.training.imitation import ImitationSettings, train_imitation
-from ml.training.kickstart import KickstartSettings, train_kickstart
 from ml.training.runlog import RUNS_DIRECTORY
 from ml.training.selfplay import SelfPlaySettings, train_selfplay
 
@@ -30,7 +26,6 @@ from ml.training.selfplay import SelfPlaySettings, train_selfplay
 TRAINERS = {
     "imitation": (ImitationSettings, train_imitation),
     "selfplay": (SelfPlaySettings, train_selfplay),
-    "kickstart": (KickstartSettings, train_kickstart),
 }
 
 
@@ -43,7 +38,6 @@ def parse_args():
         command.add_argument("--init", default="random", help='"random" (the default) or the path of a checkpoint')
         command.add_argument("--model", default=DEFAULT_MODEL, choices=sorted(MODELS), help="Used with --init random")
         command.add_argument("--overwrite", action="store_true", help="Replace an existing run of the same name")
-        command.add_argument("--monitor", action="store_true", help="Open the live charts for this run")
         if name == "selfplay":
             command.add_argument(
                 "--resume",
@@ -105,15 +99,7 @@ def main() -> None:
         )
     if getattr(args, "stop_after", None):
         extra["stop_after"] = args.stop_after
-
-    monitor = None
-    if args.monitor:
-        monitor = subprocess.Popen([sys.executable, "-m", "ml", "monitor", "--run", args.run, "--wait"])
-    try:
-        run_trainer(args.run, settings, init=args.init, model_name=args.model, overwrite=args.overwrite, **extra)
-    finally:
-        if monitor is not None and monitor.poll() is None:
-            print("Training has finished. Close the chart window when you are done with it.")
+    run_trainer(args.run, settings, init=args.init, model_name=args.model, overwrite=args.overwrite, **extra)
 
 
 if __name__ == "__main__":

@@ -28,7 +28,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from torch.nn.functional import binary_cross_entropy_with_logits, mse_loss
+from torch.nn.functional import mse_loss
 
 from game_types import BLUE, RED
 
@@ -38,7 +38,7 @@ from ml.evaluation.evaluate import DEFAULT_OPPONENTS, FIRST_EVALUATION_SEED, Eva
 from ml.map_generator import generate_map
 from ml.models import DEFAULT_MODEL, PolicyValueModel
 from ml.models.checkpoint import history_entry, init_model, load_checkpoint
-from ml.models.policy import capture_logit, entropy_parts, log_probability
+from ml.models.policy import entropy_parts, log_probability
 from ml.play.rollout import WAIT, GameRecord, Matchup, RolloutPool, Seat, Trajectory
 from ml.training.dataset import DecisionSet
 from ml.training.imitation import OUTCOME_VALUE
@@ -55,11 +55,6 @@ _IS_MINE, _IS_ENEMY, _UNITS, _INCOMING_MINE = (
 )
 _PATH_TIME = PAIR_FEATURES.index("shortest_path_time")
 _LOG_UNITS = math.log1p(UNITS_REFERENCE)  # the encoder's scale for unit counts
-# The monitor draws charts in the order the groups first appear: results first.
-_CHART_ORDER = (
-    "score", "training wins", "decided games",
-    "game length", "behaviour", "sends", "entropy", "entropy bonus", "learning problems", "policy change", "value error", "capture error",
-)  # fmt: skip
 
 
 @dataclass(frozen=True)
@@ -93,18 +88,6 @@ class SelfPlaySettings:
     # starts here and fades to zero over the given number of rounds.
     material_hint: float = 0.5
     material_hint_rounds: int = 50
-    # Two more rules of thumb that stay on (added 2026-10-03; 0 turns them off). Both are
-    # "potentials": a move is credited with how much it changed them, so giving something
-    # back costs exactly what gaining it earned, and nothing can be collected twice. In
-    # theory this never changes which strategy is best, only how soon a move gets credit.
-    # production_potential: my share of the map's production (2 x share - 1, from -1 to +1),
-    # so capturing, holding, and losing productive bases count at once.
-    production_potential: float = 0.0
-    # front_potential: how close my units are to the enemy. Each unit, at one of my bases or
-    # on its way to any base, is as far away as the shortest path from there to the nearest
-    # enemy base, as a share of the map's longest shortest path; the potential is minus the
-    # average (from -1 to 0). Sending units forward earns credit, pulling them back costs.
-    front_potential: float = 0.0
 
     # ---- Learning ----------------------------------------------------------------
     passes: int = 4  # how many times each round's decisions are gone over
@@ -136,9 +119,6 @@ class SelfPlaySettings:
     # at 0.001 the network improved again.
     entropy_half_life: int = 0
     entropy_floor: float = 0.0
-    # How much a network with a capture output (``capture_head``) learns from where each of
-    # its sends ended up: was the target its own right after the fleet landed?
-    capture_weight: float = 0.1
     max_gradient: float = 0.5
 
     # ---- Feedback ----------------------------------------------------------------
@@ -295,7 +275,7 @@ def train_selfplay(
             path = log.save(round_number, model, history(round_number), state)
             if is_best:
                 log.mark_best(path)
-            log.log(round_number, in_chart_order(metrics), summary)
+            log.log(round_number, metrics, summary)
 
             if stop_after and round_number - first_round + 1 >= stop_after and round_number < settings.rounds:
                 stopped_early = True
@@ -328,8 +308,8 @@ def make_matchups(settings: SelfPlaySettings, rng: np.random.Generator) -> list[
     return matchups
 
 
-def front_potential(trajectory: Trajectory) -> np.ndarray:
-    """Minus how far my units are from the enemy, on average, at each decision: from -1 to 0.
+def distance_from_front(trajectory: Trajectory) -> np.ndarray:
+    """How far my units are from the enemy, on average, at each decision: from 0 to 1.
 
     A unit at one of my bases, or on its way to any base, counts as far away as the
     shortest path from there to the nearest enemy base (0 for an enemy base itself), as a
@@ -347,10 +327,10 @@ def front_potential(trajectory: Trajectory) -> np.ndarray:
     total = (units * known).sum(axis=1)
     far = (units * np.where(known, distance, 0.0)).sum(axis=1)
     longest = max(paths.max(), 1e-9)
-    potential = np.zeros(len(trajectory))
+    distance = np.zeros(len(trajectory))
     has_both = enemy.any(axis=1) & (total > 0)
-    potential[has_both] = -far[has_both] / (total[has_both] * longest)
-    return potential
+    distance[has_both] = far[has_both] / (total[has_both] * longest)
+    return distance
 
 
 def behaviour(records: list[GameRecord]) -> dict[str, float]:
@@ -365,7 +345,7 @@ def behaviour(records: list[GameRecord]) -> dict[str, float]:
             decisions += len(trajectory)
             own += int((trajectory.base_features[sent, trajectory.target[sent], _IS_MINE] > 0.5).sum())
             if len(trajectory):
-                away.append(-front_potential(trajectory).mean())
+                away.append(distance_from_front(trajectory).mean())
     if not sends:
         return {}
     return {
@@ -429,11 +409,6 @@ def judge_moves(
     units_share = trajectory.global_features[:, _UNITS_SHARE].astype(np.float64)
     production_share = trajectory.global_features[:, _PRODUCTION_SHARE].astype(np.float64)
     expected = trajectory.value.astype(np.float64) + hint * (units_share + production_share - 1.0)
-    # The rules of thumb that stay on, added the same way.
-    if settings.production_potential:
-        expected = expected + settings.production_potential * (2.0 * production_share - 1.0)
-    if settings.front_potential:
-        expected = expected + settings.front_potential * front_potential(trajectory)
 
     # How much better things looked at the next decision than at this one.
     # For the last decision, "next" is the actual result.
@@ -485,7 +460,6 @@ def judged_decisions(
                 "advantage": (advantage - mean) / spread,
                 "value_target": value_target,
                 "log_probability": trajectory.log_probability,
-                "captured": _captured(trajectory),
             },
             settings.decisions_per_game,
             rng,
@@ -498,27 +472,6 @@ def judged_decisions(
         "value error/always saying 0": float(np.mean(targets**2)),
     }
     return decisions, value_errors
-
-
-def _captured(trajectory: Trajectory) -> np.ndarray:
-    """Whether each send's target was ours once it landed (1 or 0); NaN where unknown."""
-
-    if trajectory.captured is None:
-        return np.full(len(trajectory), np.nan, dtype=np.float32)
-    return trajectory.captured
-
-
-def capture_loss(output, batch) -> torch.Tensor | None:
-    """Cross-entropy of the capture output against where the sends ended up; None if there is nothing to learn."""
-
-    if output.capture_logits is None or "captured" not in batch.targets:
-        return None
-    labels = batch.targets["captured"]
-    known = ~torch.isnan(labels) & (batch.route > 0)
-    if not known.any():
-        return None
-    logits = capture_logit(output, batch.route, batch.amount)
-    return binary_cross_entropy_with_logits(logits[known], labels[known])
 
 
 def update(
@@ -546,7 +499,6 @@ def update(
     skipped = 0
     model.train()
     moved_far_enough = False
-    capture_total = capture_seen = 0.0
     for _ in range(settings.passes):
         change = clipped = route_undecided = amount_undecided = seen = 0.0
         for batch in decisions.batches(settings.batch_size, rng, device, equal_size=True):
@@ -572,11 +524,6 @@ def update(
                 # penalised, because correcting the value would otherwise drag
                 # the moves along through the parts of the network they share.
                 loss = settings.value_weight * value_loss + settings.hold_weight * (shift**2).mean()
-            captures = capture_loss(output, batch)
-            if captures is not None:
-                loss = loss + settings.capture_weight * captures
-                capture_total += captures.item()
-                capture_seen += 1
             optimizer.zero_grad()
             if not torch.isfinite(loss):
                 skipped += 1
@@ -621,9 +568,6 @@ def update(
     if skipped or undone:
         learned["learning problems/batches skipped"] = float(skipped)
         learned["learning problems/round undone"] = float(undone)
-    if capture_seen:
-        # Cross-entropy; always saying "50:50" scores 0.69.
-        learned["capture error/of the network"] = capture_total / capture_seen
     return learned
 
 
@@ -655,14 +599,6 @@ def describe_scores(scores: dict[str, float]) -> str:
     return "score " + " ".join(
         f"{name.removeprefix('score/vs ').removesuffix('_ai')} {score:.0%}" for name, score in scores.items()
     )
-
-
-def in_chart_order(metrics: dict[str, float]) -> dict[str, float]:
-    def position(name: str) -> int:
-        group = name.split("/")[0]
-        return _CHART_ORDER.index(group) if group in _CHART_ORDER else len(_CHART_ORDER)
-
-    return dict(sorted(metrics.items(), key=lambda item: position(item[0])))
 
 
 def game_statistics(records: list[GameRecord]) -> dict[str, float]:

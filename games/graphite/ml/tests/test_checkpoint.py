@@ -132,11 +132,16 @@ class CheckpointTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             save_checkpoint(self.folder / "unlisted.pt", Unlisted())
 
-    def test_a_file_saved_before_a_setting_existed_still_loads(self):
+    def test_a_file_saved_before_a_setting_existed_or_with_one_since_removed_still_loads(self):
         start = init_model("random", seed=1)
         path = save_checkpoint(self.folder / "model.pt", start.model)
         contents = torch.load(path, weights_only=True)
         del contents["model_config"]["route_layers"]
+        # The capture output, with its weights: it never steered a move, so it is left out.
+        config = start.model.config
+        contents["model_config"]["capture_head"] = True
+        contents["weights"]["capture_out.weight"] = torch.zeros(config.amount_options, config.width)
+        contents["weights"]["capture_out.bias"] = torch.zeros(config.amount_options)
         torch.save(contents, path)
         loaded = load_checkpoint(path)
         self.assertEqual(loaded.model.config.route_layers, 1)

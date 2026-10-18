@@ -16,7 +16,7 @@ from ml.encoding.state_encoder import EncodedState
 from ml.models import PolicyValueModel, make_input
 from ml.models.checkpoint import init_model
 from ml.models.policy import choose, to_choices
-from ml.play.players import NETWORK as PREFIX, NetworkAgent, NetworkSettings  # noqa: F401 (also read from here)
+from ml.play.players import NetworkAgent
 
 
 class NeuralAgent(NetworkAgent):

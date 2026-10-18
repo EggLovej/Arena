@@ -45,7 +45,7 @@ from ml.encoding.action_encoder import (
     encode_action,
     legal_actions,
 )
-from ml.encoding.forecast import build_timelines, ticks_until_arrival
+from ml.encoding.forecast import build_timelines
 from ml.encoding.state_encoder import (
     BASE_FEATURES,
     GLOBAL_FEATURES,
@@ -62,9 +62,6 @@ from ml.play.players import keeps_memory, load_player
 
 
 WAIT = -1  # stored in place of a source, target, and amount when the choice was to wait
-# How many amount options there were before "hold" and "surplus" were added (2026-10-03).
-# Trajectories saved before then hold their legal choices in that layout.
-OPTIONS_BEFORE_TACTICAL = 9
 
 
 @dataclass(frozen=True)
@@ -108,22 +105,14 @@ class Trajectory:
     target: np.ndarray  # [decisions]
     amount: np.ndarray  # [decisions]
     tick: np.ndarray  # [decisions], the game tick of each decision
+    # The units each send sent (WAIT when it waited), and each route's LIMITS at each decision
+    # (ml/encoding/action_encoder.py): enough to rebuild what every amount option would have
+    # sent (``option_units``), and the most and the needed that a network with free amounts reads.
+    units: np.ndarray  # [decisions]
+    route_limits: np.ndarray  # [decisions, routes, LIMITS]
     # What the model thought at the time. Missing for scripted players.
     log_probability: np.ndarray | None = None  # [decisions]
     value: np.ndarray | None = None  # [decisions]
-    # For each send: 1 if its target was the sender's right after the fleet landed, 0 if not.
-    # NaN for waiting and for a fleet still in flight when the game ended. Missing in
-    # trajectories recorded before 2026-10-03.
-    captured: np.ndarray | None = None  # [decisions]
-    # How many amount options ``allowed_bits`` holds per route. Older trajectories hold fewer
-    # than there are now; ``allowed`` and ``current_allowed_bits`` give them the current layout.
-    amount_options: int = OPTIONS_BEFORE_TACTICAL
-    # Added 2026-10-09, missing before. The units each send sent (WAIT when it waited), and
-    # each route's LIMITS at each decision (ml/encoding/action_encoder.py): enough to rebuild
-    # what every amount option would have sent (``option_units``), and the most and the
-    # needed that a network with free amounts reads.
-    units: np.ndarray | None = None  # [decisions]
-    route_limits: np.ndarray | None = None  # [decisions, routes, LIMITS]
     # True when a network with free amounts made the choices: ``amount`` then holds units.
     free_amounts: bool = False
 
@@ -134,22 +123,8 @@ class Trajectory:
         """Legal choices as [decisions, bases, bases, amount options], True where legal."""
 
         bases = len(self.base_ids)
-        stored = (bases, bases, self.amount_options)
-        bits = np.unpackbits(self.allowed_bits[decisions], axis=1, count=bases * bases * stored[2])
-        allowed = bits.reshape(-1, *stored).astype(bool)
-        if self.amount_options < len(AMOUNT_OPTIONS):
-            # Options added since were not on offer when this was recorded.
-            missing = np.zeros((len(allowed), bases, bases, len(AMOUNT_OPTIONS) - self.amount_options), dtype=bool)
-            allowed = np.concatenate((allowed, missing), axis=-1)
-        return allowed
-
-    def current_allowed_bits(self, decisions: slice | np.ndarray = slice(None)) -> np.ndarray:
-        """``allowed_bits`` in the current layout of amount options."""
-
-        if self.amount_options == len(AMOUNT_OPTIONS):
-            return self.allowed_bits[decisions]
-        allowed = self.allowed(decisions)
-        return np.packbits(allowed.reshape(len(allowed), -1), axis=1)
+        bits = np.unpackbits(self.allowed_bits[decisions], axis=1, count=bases * bases * len(AMOUNT_OPTIONS))
+        return bits.reshape(-1, bases, bases, len(AMOUNT_OPTIONS)).astype(bool)
 
     def route_table(self, decisions: slice | np.ndarray = slice(None)) -> np.ndarray:
         """Route features as [decisions, bases, bases, route features], 0 where there is no route."""
@@ -246,7 +221,7 @@ def play_games(
                     run.moves[seat] = action
                     if run.seats[seat].record:
                         units = None if action is None else action.units
-                        run.record(seat, run.game.tick, encoded, legal, choice, units, log_p, value)
+                        run.recorders[seat].add(run.game.tick, encoded, legal, choice, units, log_p, value)
 
                 still_running = []
                 for run in group.running:
@@ -319,7 +294,7 @@ def _positions_to_decide(
                 request.players.append(spec.player)
             else:
                 choice = encode_action(run.moves[seat], legal)
-                run.record(seat, run.game.tick, encoded, legal, choice, None if choice is None else run.moves[seat].units)
+                run.recorders[seat].add(run.game.tick, encoded, legal, choice, None if choice is None else run.moves[seat].units)
     return asked, request
 
 
@@ -464,7 +439,6 @@ class _Recorder:
         self.units: list[int] = []
         self.log_probabilities: list[float] = []
         self.values: list[float] = []
-        self.captured: list[float] = []  # filled in by the game as each fleet lands
 
     def add(
         self,
@@ -484,7 +458,6 @@ class _Recorder:
         self.route_limits.append(legal.limits[self.routes[:, 0], self.routes[:, 1]])
         self.choices.append(choice)
         self.units.append(WAIT if units is None else units)
-        self.captured.append(np.nan)
         if log_p is not None:
             self.log_probabilities.append(log_p)
             self.values.append(value)
@@ -515,12 +488,10 @@ class _Recorder:
             target=choices[:, 1],
             amount=choices[:, 2],
             tick=np.array(self.ticks, dtype=np.int32),
-            log_probability=np.array(self.log_probabilities, dtype=np.float32) if by_model else None,
-            value=np.array(self.values, dtype=np.float32) if by_model else None,
-            captured=np.array(self.captured, dtype=np.float32),
-            amount_options=len(AMOUNT_OPTIONS),
             units=np.array(self.units, dtype=np.int32),
             route_limits=np.array(self.route_limits, dtype=np.int32).reshape(count, len(layout.routes), len(LIMITS)),
+            log_probability=np.array(self.log_probabilities, dtype=np.float32) if by_model else None,
+            value=np.array(self.values, dtype=np.float32) if by_model else None,
             free_amounts=free,
         )
 
@@ -538,24 +509,6 @@ class _RunningGame:
         self.actions: list[tuple[int, int, str, str, int]] = []
         self.players: dict = {}  # scripted players by seat
         self.last_send: dict[int, int] = {}  # the tick of each seat's last accepted send
-        # Recorded sends still in flight, by the tick at which they will have landed:
-        # (seat, the decision's number in its recorder, target row).
-        self.landings: dict[int, list[tuple[int, int, int]]] = {}
-        seconds_per_tick = self.game.seconds_per_tick
-        self.travel_ticks = {
-            (source, target): ticks_until_arrival(seconds, seconds_per_tick)
-            for source, routes in enumerate(self.layout.neighbours)
-            for target, seconds in routes
-        }
-
-    def record(self, seat: int, tick: int, encoded, legal, choice, units, log_p=None, value=None) -> None:
-        """Record a decision, and for a send, watch for its landing (see ``Trajectory.captured``)."""
-
-        recorder = self.recorders[seat]
-        recorder.add(tick, encoded, legal, choice, units, log_p, value)
-        if choice is not None:
-            landing = tick + self.travel_ticks[(choice.source, choice.target)]
-            self.landings.setdefault(landing, []).append((seat, len(recorder.choices) - 1, choice.target))
 
     def may_send(self, seat: int) -> bool:
         """False while a seat with a send gap is still waiting after its last send."""
@@ -574,9 +527,6 @@ class _RunningGame:
         for seat, action in self.moves.items():
             if action is not None and seat not in rejected:
                 self.last_send[seat] = tick
-        for seat, decision, target in self.landings.pop(self.game.tick, ()):
-            owner = self.game.bases[self.layout.base_ids[target]].owner
-            self.recorders[seat].captured[decision] = float(owner == seat)
         return not self.game.is_finished() and self.game.tick < self.max_ticks
 
     def finish(self, model_names: set[str], free: set[str]) -> GameRecord:

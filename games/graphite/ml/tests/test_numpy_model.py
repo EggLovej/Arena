@@ -33,7 +33,7 @@ SETTINGS = [
     {"amounts": "free"},
     {"amounts": "free", "feature_set": "v2", "layers": 2},
     {"route_layers": 3, "width": 32, "heads": 2},
-    {"capture_head": True, "feature_set": "v1"},
+    {"feature_set": "v1"},
 ]
 
 

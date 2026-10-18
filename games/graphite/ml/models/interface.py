@@ -57,9 +57,6 @@ class Scores:
     # scores fewer; the ones it does not know are never chosen. None with free amounts.
     amount: Tensor | None
     value: Tensor  # [batch]
-    # Optional: for each route and amount, a score for "the target is ours right after this
-    # fleet lands" (above 0: likely). Learned alongside, from what happened in the games.
-    capture: Tensor | None = None  # [batch, bases, bases, amount options]
     # With free amounts, in place of ``amount``: the curves of each route
     # ([batch, bases, bases, curves, parameters]; see ml/models/amounts.py).
     amount_curves: Tensor | None = None
@@ -77,7 +74,6 @@ class ModelOutput:
     route_logits: Tensor
     amount_logits: Tensor | None  # [batch, bases, bases, amount options]; None with free amounts
     value: Tensor  # [batch], expected result from -1 (loss) to +1 (win)
-    capture_logits: Tensor | None = None  # as ``Scores.capture``, where the architecture has it
     # With free amounts: each route's curves, and the two numbers they are built on (as in ModelInput).
     amount_curves: Tensor | None = None
     most: Tensor | None = None
@@ -134,7 +130,6 @@ class PolicyValueModel(nn.Module):
             route_logits=torch.cat((scores.wait[:, None], route), dim=1),
             amount_logits=amount.masked_fill(~allowed, ILLEGAL),
             value=torch.tanh(scores.value),
-            capture_logits=scores.capture,
         )
 
 
