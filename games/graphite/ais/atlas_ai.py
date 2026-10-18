@@ -9,7 +9,6 @@ The public neural checkpoint is pinned at match start; no running opponent
 object, private random generator, map name, or screen coordinates are read.
 Contexts are bounded. Use separate processes for independent interleaved
 matches, since GameView has no match identifier and the model is process-local.
-See AI_HANDOFF.md for measurements, dependencies and remaining limitations.
 """
 from dataclasses import replace
 from functools import partial

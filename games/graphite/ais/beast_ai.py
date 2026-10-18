@@ -3,8 +3,7 @@
 Who that is lives in ml/runs/beast.json (or, in a checkout without training
 runs, checkpoints/beast.json) and is moved whenever an evaluation shows a
 stronger player; the file is checked again at the start of every
-match. Today it thinks before every move, so each decision takes a few
-dozen milliseconds. Without the file it plays like Neural AI.
+match. Without the file it plays like Neural AI.
 """
 
 import sys

@@ -2,7 +2,7 @@
 
 Only the public GameView is used. No map names or coordinates affect planning.
 Speculative reserves and investment scores are heuristics; event combat follows
-the game rules. See AI_RESEARCH_NOTES.md for experiments and limitations."""
+the game rules."""
 from collections import defaultdict
 from heapq import heappop, heappush
 from math import ceil, floor

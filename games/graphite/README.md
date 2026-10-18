@@ -97,11 +97,12 @@ def choose_action(state):
 
 Run it with `--red-ai my_ai` or `--blue-ai my_ai`.
 
-`strategic_ai.py` is the strongest bundled example. It projects forces at their
-arrival time, defends threatened bases, chooses efficient captures, and moves
-surplus units through friendly territory toward useful frontier bases. Like the
-other examples, it only uses the public `GameView` interface and contains no
-map-specific names or coordinates.
+`strategic_ai.py` is the strongest of the simple examples; the look-ahead and
+network bots beat it. It projects forces at their arrival time, defends
+threatened bases, chooses efficient captures, and moves surplus units through
+friendly territory toward useful frontier bases. Like the other examples, it
+only uses the public `GameView` interface and contains no map-specific names or
+coordinates.
 
 `state` is an immutable, fully observable `GameView`. It contains the acting
 player's ID, the current tick and time, every base, every edge, and every fleet.
@@ -144,18 +145,23 @@ window too big for the screen is shrunk to fit.
 
 - `game_types.py`: the public AI contract and map data types
 - `game.py`: mutable match state and deterministic rules
+- `RULES.md`: the rules as the Arena website shows them
 - `loading.py`: dynamic map and AI loading plus map validation
 - `renderer.py`: read-only Pygame visualization
 - `sizing.py`: production-scaled base sizes shared by drawing and click detection
 - `home_screen.py`: two-step map and player selection
 - `avatars.py`: portraits for AIs, generated from their names
+- `bot_names.py`: the names AIs are shown by, here and on the website
 - `theme.py`: shared atlas colors, fonts, and image loading
+- `themes/`: the colors, which the website's board uses too
 - `assets/`: paper texture and faction brush marks
 - `human_controller.py`: mouse input translated into ordinary game actions
 - `main.py`: command-line match runner
+- `arena_game.py`: Graphite as the Arena plays it, for tournaments and the website
 - `ais/`: one-file agents
 - `maps/`: dynamically selectable JSON maps
 - `tests/`: rule, loading, generality, and replay tests
+- `checkpoints/`: the networks the neural AIs play (see `checkpoints/README.md`)
 - `ml/`: the learned agent, its training and evaluation (see `ml/README.md`)
 
 The visual system follows the warm Field Notes Atlas direction. Base counts,

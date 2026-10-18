@@ -332,7 +332,7 @@ class HomeScreen:
         self.screen.blit(self.blue_brush, (width - 205, 24))
         self._blit_centered(self.label_font.render("RED", True, WHITE), (117, 49))
         self._blit_centered(self.label_font.render("BLUE", True, WHITE), (width - 117, 49))
-        self._blit_centered(self.kicker_font.render(f"AGENT MAP GAME  ·  {kicker}", True, MUTED), (width // 2, 26))
+        self._blit_centered(self.kicker_font.render(f"GRAPHITE  ·  {kicker}", True, MUTED), (width // 2, 26))
         self._blit_centered(self.title_font.render(title, True, INK), (width // 2, 62))
 
     def _draw_panel(self, rect: pygame.Rect, fill=PAPER_LIGHT) -> None:
