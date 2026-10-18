@@ -50,12 +50,6 @@ def test_a_tournament_runs_in_one_or_several_processes(race, workers):
         assert (replay is not None) == plan.showcase
 
 
-def test_points_share_places():
-    outcome = Outcome((("a",), ("b", "c")), "finish", 10)
-    assert points(outcome, "a") == 1.0
-    assert points(outcome, "b") == points(outcome, "c") == 0.25
-
-
 def test_standings_make_one_table_per_match_size(race):
     rows = [row for _, row, _ in run("race", schedule(race, bots=["steady", "sprinter", "broken"]), 1)]
     tables = standings(race, rows)
@@ -74,11 +68,13 @@ def test_standings_make_one_table_per_match_size(race):
         for b, cell in head[a].items():
             assert cell["games"] == head[b][a]["games"]
             assert cell["points"] + head[b][a]["points"] == pytest.approx(cell["games"])
+    # 1 point for first place and 0 for last; seats that share a place share its points.
+    assert [points(Outcome((("a",), ("b", "c")), "finish", 10), seat) for seat in "abc"] == [1.0, 0.25, 0.25]
 
 
 def test_bots_with_equal_ratings_are_listed_by_id(race):
     def row(winner, loser):
-        seats = {seat: {"bot": bot, "moves": 1, "errors": 0, "refused": 0, "think_ms_mean": 0.0, "think_ms_max": 0.0}
+        seats = {seat: {"bot": bot, "moves": 1, "errors": 0, "refused": 0, "think_ms_mean": 0.0}
                  for seat, bot in (("red", winner), ("blue", loser))}
         return {"map": "short", "lineup": {"red": winner, "blue": loser}, "seats": seats,
                 "outcome": {"ranking": [["red"], ["blue"]], "reason": "finish", "ticks": 5}}

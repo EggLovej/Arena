@@ -85,12 +85,6 @@ def fit(rankings: Iterable[Ranking], anchor: tuple[str, float] | None = None, to
     }
 
 
-def expected_score(first: float, second: float) -> float:
-    """The share of points the first player is expected to take from the second, from ratings."""
-
-    return 1 / (1 + 10 ** ((second - first) / 400))
-
-
 def _orders(ranking: Ranking) -> list[tuple[tuple[str, ...], float]]:
     """Every strict order consistent with a ranking with ties, and how much each counts."""
 

@@ -4,15 +4,29 @@ Everything in ``arena`` (the match runner, replays, tournaments, ratings and the
 data the website reads) talks to a game only through these types, so a new game
 needs its rules, its bots and a small adapter, and nothing else here changes.
 
-A game is a Python package in ``games/<id>/`` with an ``arena_game.py`` file
-that defines ``GAME``, an object with the ``Game`` shape below.
+A game is a folder ``games/<id>/`` with:
+
+- ``arena_game.py``, which defines ``GAME``, an object with the ``Game`` shape below;
+- ``RULES.md``, the rules as the website shows them;
+- ``files.json``, the files its matches load besides ``arena_game.py``, as paths
+  (a folder stands for every file in it) relative to the game's folder::
+
+      {"rules": ["game.py", "maps"], "bots": ["ais", "checkpoints/net.pt"]}
+
+  ``rules`` is what decides how a match plays out from the actions: the rules and
+  maps. A replay depends on these and the adapter (``arena.registry.fingerprint``).
+  ``bots`` is everything else a match loads: the bots, the code and data they
+  use, and what the adapter imports. A tournament plays again when any of them
+  changes, and the website's play page loads exactly these.
 """
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 
 
@@ -89,10 +103,6 @@ class Outcome:
     reason: str  # for example "elimination" or "time"
     ticks: int
 
-    @property
-    def winner(self) -> str | None:
-        return self.ranking[0][0] if self.ranking and len(self.ranking[0]) == 1 else None
-
     def place(self, seat: str) -> float:
         """1 for first; seats that share a place get the average of the places they share."""
 
@@ -151,6 +161,15 @@ class Match(Protocol):
 
 
 class Game(Protocol):
+    """A game. Two more methods are optional, for the website's play page (``arena.live``):
+
+    - ``person(seat)`` returns an ``arena.live.Person`` that turns a person's commands into actions.
+      Without it, people can only watch the game's bots play.
+    - ``web_needs(bot_id)`` names what the browser must load before that bot plays: Python
+      ``packages`` (such as numpy) and data ``files`` from ``files.json`` (such as a network's
+      weights), as ``{"packages": [...], "files": [...]}``.
+    """
+
     info: GameInfo
 
     def maps(self) -> tuple[MapInfo, ...]: ...
@@ -161,24 +180,14 @@ class Game(Protocol):
 
     def new_match(self, map_id: str, seed: int) -> Match: ...
 
-    def restore_match(self, map_id: str, state: JSON) -> Match: ...
-
     def action_to_json(self, action: Action) -> JSON:
         """Raise ``TypeError`` or ``ValueError`` for something that is not an action. The match
         is given ``action_from_json`` of the result, so it plays exactly what the replay records."""
 
     def action_from_json(self, data: JSON) -> Action: ...
 
-    def observation_to_json(self, observation: Observation) -> JSON: ...
-
-    def rules(self) -> str:
-        """The rules as Markdown, for the website."""
-
     def theme(self) -> JSON:
         """Colours and style the website's renderer uses."""
-
-    def fingerprint(self) -> str:
-        """Changes whenever the rules, maps or bots change (for example a hash of their files)."""
 
 
 def state_hash(state: JSON) -> str:
@@ -193,10 +202,9 @@ class FunctionBot:
     """A bot that is a single function, ``choose_action(observation)``. It ignores ``reset``."""
 
     choose_action: Any
-    contexts: list[BotContext] = field(default_factory=list)
 
     def reset(self, context: BotContext) -> None:
-        self.contexts.append(context)
+        pass
 
     def act(self, observation: Observation) -> Action | None:
         return self.choose_action(observation)
@@ -215,3 +223,11 @@ def bot_from_module(module) -> Bot:
     if callable(choose_action):
         return FunctionBot(choose_action)
     raise TypeError(f"{module.__name__} must define create_bot() or choose_action(observation)")
+
+
+def summary(path: Path) -> str:
+    """The first paragraph of a module's docstring, on one line, read without importing the module
+    (so without its packages): what the website says about a bot that has no blurb of its own."""
+
+    docstring = ast.get_docstring(ast.parse(path.read_text())) or ""
+    return " ".join(docstring.split("\n\n")[0].split())

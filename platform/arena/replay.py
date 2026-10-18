@@ -7,41 +7,34 @@ A replay (written by ``arena.runner.play_match``) holds:
 - ``frames``: a snapshot of every tick as keyframes and deltas (``arena.frames``);
 - ``actions``: every action a bot chose, as ``[tick, seat, action]``;
 - ``hashes``: a hash of the exact state at every keyframe and at the end;
-- ``outcome`` and ``reports``: the result and how each bot behaved.
+- ``outcome``: the result.
 
 The rules are deterministic, so replaying the actions on a new match must
 reproduce every hash, keyframe and the result. ``verify`` checks exactly that.
-A replay recorded before the game's rules or maps changed (``is_current``) may
-no longer play back, and the next tournament replaces it.
+A replay recorded before the game's rules, maps or adapter changed (``is_current``)
+may no longer play back, and the next tournament replaces it.
 """
 
 from __future__ import annotations
 
-import gzip
 import json
 from collections import defaultdict
 from pathlib import Path
 
 from arena.contract import Game, Outcome, state_hash
 from arena.frames import apply
+from arena.registry import fingerprint
 from arena.runner import REPLAY_FORMAT, REPLAY_VERSION
 
 
 def write_replay(path: Path, replay: dict) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
-    text = json.dumps(replay, separators=(",", ":"))
-    if path.suffix == ".gz":
-        path.write_bytes(gzip.compress(text.encode(), mtime=0))
-    else:
-        path.write_text(text)
+    path.write_text(json.dumps(replay, separators=(",", ":")))
     return path
 
 
 def read_replay(path: Path) -> dict:
-    data = path.read_bytes()
-    if path.suffix == ".gz":
-        data = gzip.decompress(data)
-    replay = json.loads(data)
+    replay = json.loads(path.read_text())
     if replay.get("format") != REPLAY_FORMAT:
         raise ValueError(f"{path} is not an arena replay")
     if replay.get("version") != REPLAY_VERSION:
@@ -50,9 +43,9 @@ def read_replay(path: Path) -> dict:
 
 
 def is_current(game: Game, replay: dict) -> bool:
-    """Whether the replay was recorded with the game's rules and maps as they are now."""
+    """Whether the replay was recorded with the game's rules, maps and adapter as they are now."""
 
-    return replay.get("fingerprint") in (None, game.fingerprint())
+    return replay.get("fingerprint") in (None, fingerprint(game.info.id))
 
 
 def verify(game: Game, replay: dict) -> list[str]:

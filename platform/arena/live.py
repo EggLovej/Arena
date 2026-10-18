@@ -8,28 +8,20 @@ clock: it asks every bot for its move as soon as a tick has been played
 (``think``), waits until the tick is due, and plays it with whatever the
 people chose meanwhile (``step``).
 
-Two optional methods let a game shape this; without them it still plays:
-
-- ``person(seat)`` returns a ``Person``, which turns a person's commands into
-  one action a tick. Without it, each command is one action, as JSON
-  (``ActionQueue``). Graphite's adds standing orders, for example.
-- ``web_needs(bot_id)`` names what the browser must load before that bot
-  plays: Python ``packages`` (such as numpy) and ``files`` of the game's
-  folder that are not code (such as a network's weights).
+A game's optional ``person(seat)`` turns a person's commands into actions, and
+``web_needs(bot_id)`` names what a bot needs loaded first (see ``arena.contract.Game``).
 """
 
 from __future__ import annotations
 
 import json
 import random
-import time
-from collections import deque
 from typing import Protocol
 
 from arena.contract import JSON, Action, BotContext, Game, Observation
 from arena.frames import delta
 from arena.registry import load_game
-from arena.runner import SeatReport, _note_error, max_ticks_for, seat_seed
+from arena.runner import BotSeat, SeatReport, checked, max_ticks_for, seat_seed
 
 
 PERSON = "person"  # stands in for a bot id where a person plays a seat
@@ -46,26 +38,6 @@ class Person(Protocol):
 
     def view(self) -> JSON:
         """What the page shows about this seat beyond the board, such as standing orders."""
-
-
-class ActionQueue:
-    """The person sends actions as JSON; one is played each tick, in the order sent."""
-
-    def __init__(self, game: Game):
-        self.game = game
-        self.queue: deque = deque()
-
-    def command(self, data: JSON) -> None:
-        try:
-            self.queue.append(self.game.action_from_json(self.game.action_to_json(self.game.action_from_json(data))))
-        except (TypeError, ValueError, KeyError, IndexError) as error:
-            raise ValueError(f"not an action: {error}") from None
-
-    def act(self, observation: Observation) -> Action | None:
-        return self.queue.popleft() if self.queue else None
-
-    def view(self) -> JSON:
-        return {"waiting": len(self.queue)}
 
 
 def needs(game: Game, bot_ids) -> dict:
@@ -91,25 +63,22 @@ class LiveMatch:
         if set(lineup) != set(self.match.seats):
             raise ValueError(f"Map {map_id} has seats {self.match.seats}, but the lineup names {tuple(lineup)}")
         known = {bot.id for bot in game.bots()}
-        self.reports = {seat: SeatReport(lineup[seat]) for seat in self.match.seats}
         self.people: dict[str, Person] = {}
-        self.bots = {}  # seat -> bot, or None if it could not load
+        self.bots: dict[str, BotSeat] = {}
+        self.reports: dict[str, SeatReport] = {}
         for seat in self.match.seats:
             if lineup[seat] == PERSON:
-                make = getattr(game, "person", None)
-                self.people[seat] = make(seat) if make else ActionQueue(game)
+                if not hasattr(game, "person"):
+                    raise ValueError(f"{info.name} cannot be played by people")
+                self.people[seat] = game.person(seat)
+                self.reports[seat] = SeatReport(PERSON)
                 continue
             if lineup[seat] not in known:
                 raise ValueError(f"{info.name} has no bot {lineup[seat]!r}")
             context = BotContext(info.id, map_id, seat, self.match.seats, seat_seed(seed, seat), info.tick_seconds, self.max_ticks)
-            bot = None
-            try:  # a bot that fails to load sits the match out, as in a tournament
-                bot = game.load_bot(lineup[seat])
-                bot.reset(context)
-            except Exception as error:
-                _note_error(self.reports[seat], f"{'load' if bot is None else 'reset'}: {error!r}")
-            self.bots[seat] = bot
-        self.thinking_ms: dict[str, float] = {}  # each bot's last move
+            # As in a tournament, without the time limits: a slow bot slows the game down instead.
+            self.bots[seat] = BotSeat(game, lineup[seat], context, timed=False)
+            self.reports[seat] = self.bots[seat].report
         self._planned: dict[str, Action | None] | None = None  # the bots' actions for the coming tick
         self._shown = self.match.snapshot()
 
@@ -134,26 +103,7 @@ class LiveMatch:
 
         if self._planned is not None or self.finished():
             return
-        planned = {}
-        for seat in self.match.acting():
-            if seat not in self.bots:
-                continue
-            bot = self.bots[seat]
-            report = self.reports[seat]
-            report.moves += 1
-            action = None
-            if bot is not None:
-                before = time.perf_counter()
-                try:
-                    action = self._checked(bot.act(self.match.observe(seat)), report)
-                except Exception as error:
-                    _note_error(report, repr(error))
-                spent = time.perf_counter() - before
-                report.think_seconds += spent
-                report.slowest_seconds = max(report.slowest_seconds, spent)
-                self.thinking_ms[seat] = round(1000 * spent, 1)
-            planned[seat] = action
-        self._planned = planned
+        self._planned = {seat: self.bots[seat].move(self.match, seat)[0] for seat in self.match.acting() if seat in self.bots}
 
     def step(self) -> JSON:
         """Play the coming tick with the bots' planned actions and the people's; returns what the page needs."""
@@ -169,7 +119,7 @@ class LiveMatch:
             if person is None:
                 continue
             try:
-                actions[seat] = self._checked(person.act(self.match.observe(seat)), self.reports[seat])
+                actions[seat] = checked(self.game, person.act(self.match.observe(seat)), self.reports[seat])[0]
             except Exception as error:  # a bug in the game's Person: the person loses this tick, not the match
                 problems[seat] = repr(error)
                 actions[seat] = None
@@ -181,17 +131,6 @@ class LiveMatch:
     def finished(self) -> bool:
         return self.match.finished() or self.match.tick >= self.max_ticks
 
-    def _checked(self, action: Action | None, report: SeatReport) -> Action | None:
-        """The action as the game reads it back from JSON, as in a tournament; None if it is not one."""
-
-        if action is None:
-            return None
-        try:
-            return self.game.action_from_json(self.game.action_to_json(action))
-        except (TypeError, ValueError) as error:
-            _note_error(report, f"not an action: {error}")
-            return None
-
     def _update(self, refused: dict[str, str]) -> JSON:
         snapshot = self.match.snapshot()
         changes = delta(self._shown, snapshot)
@@ -201,7 +140,6 @@ class LiveMatch:
             "tick": self.match.tick,
             "delta": changes,
             "refused": refused,
-            "thinking_ms": self.thinking_ms,
             "errors": {seat: report.first_error for seat, report in self.reports.items() if report.first_error},
             "outcome": self.match.outcome().to_json() if done else None,
             **self._people_view(),

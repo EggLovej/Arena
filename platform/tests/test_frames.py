@@ -1,36 +1,25 @@
-from arena.frames import FrameRecorder, apply, delta, frame_at
+import json
+from pathlib import Path
+
+from arena.frames import FrameRecorder, apply, delta
+
+WEBSITE_FIXTURE = Path(__file__).resolve().parents[2] / "web" / "src" / "lib" / "fixtures" / "frames.json"
 
 
-def test_delta_keeps_only_changes_and_marks_removals():
+def test_a_delta_keeps_only_changes_and_applying_it_gives_the_next_snapshot():
     before = {"bases": {"a": [1, 5], "b": [2, 3]}, "fleets": {"7": [1, 4]}}
-    after = {"bases": {"a": [1, 6], "b": [2, 3]}, "fleets": {"8": [2, 1]}}
+    after = {"bases": {"a": [1, 6], "b": [2, 3]}, "fleets": {"8": [2, 1]}, "walls": {"x": True}}
     changes = delta(before, after)
-    assert changes == {"bases": {"a": [1, 6]}, "fleets": {"8": [2, 1], "7": None}}
+    assert changes == {"bases": {"a": [1, 6]}, "fleets": {"8": [2, 1], "7": None}, "walls": {"x": True}}
     assert apply(before, changes) == after
+    assert before == {"bases": {"a": [1, 5], "b": [2, 3]}, "fleets": {"7": [1, 4]}}  # left alone
+    assert delta(after, after) == {}
 
 
-def test_apply_adds_new_groups_and_leaves_the_original_alone():
-    before = {"bases": {"a": [1]}}
-    after = apply(before, {"walls": {"x": True}})
-    assert after == {"bases": {"a": [1]}, "walls": {"x": True}}
-    assert before == {"bases": {"a": [1]}}
-
-
-def test_nothing_changed_is_an_empty_delta():
-    snapshot = {"bases": {"a": [1, 2]}}
-    assert delta(snapshot, {"bases": {"a": [1, 2]}}) == {}
-
-
-def test_recorder_rebuilds_every_tick():
-    snapshots = [{"count": {"x": tick}, "odd": {"y": tick} if tick % 2 else {}} for tick in range(11)]
-    recorder = FrameRecorder(keyframe_every=4)
-    for snapshot in snapshots:
+def test_the_recorder_writes_what_the_website_reads():
+    # frames.test.ts checks that the website decodes this fixture back into its snapshots.
+    fixture = json.loads(WEBSITE_FIXTURE.read_text())
+    recorder = FrameRecorder(keyframe_every=fixture["frames"]["keyframe_every"])
+    for snapshot in fixture["snapshots"]:
         recorder.add(snapshot)
-    frames = recorder.to_json()
-    assert frames["count"] == 11
-    assert sorted(frames["keyframes"]) == ["0", "4", "8"]
-    assert len(frames["deltas"]) == 10
-    for tick, snapshot in enumerate(snapshots):
-        expected = {group: entries for group, entries in snapshot.items() if entries}
-        rebuilt = {group: entries for group, entries in frame_at(frames, tick).items() if entries}
-        assert rebuilt == expected
+    assert recorder.to_json() == fixture["frames"]

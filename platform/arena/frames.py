@@ -77,16 +77,4 @@ class FrameRecorder:
         }
 
 
-def frame_at(frames: dict, tick: int) -> Snapshot:
-    """The snapshot of one tick, rebuilt from the nearest keyframe before it."""
-
-    if not 0 <= tick < frames["count"]:
-        raise IndexError(f"tick {tick} is outside 0..{frames['count'] - 1}")
-    start = tick - tick % frames["keyframe_every"]
-    snapshot = frames["keyframes"][str(start)]
-    for index in range(start, tick):
-        snapshot = apply(snapshot, frames["deltas"][index])
-    return snapshot
-
-
 _MISSING = object()
