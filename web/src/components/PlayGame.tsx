@@ -334,6 +334,7 @@ function Match({
             <Controls
               board={board}
               snapshot={match.snapshot}
+              tick={match.tick}
               theme={theme}
               seat={person}
               person={match.people[person]}

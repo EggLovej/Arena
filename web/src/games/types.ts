@@ -22,6 +22,7 @@ export type SeatStat = { label: string; value: number };
 export type PlayControlsProps = {
   board: unknown;
   snapshot: Snapshot; // the position as it stands
+  tick: number; // the tick it stands at
   theme: unknown;
   seat: string; // the person's seat
   person: unknown; // what the game says about the person's seat beyond the board (its Person.view())

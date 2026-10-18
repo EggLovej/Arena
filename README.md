@@ -6,7 +6,7 @@ play each other, see who leads the ratings, and play against them yourself.
 
 The games are **Graphite**, real-time strategy on a graph, **Ricochet**, a
 tank duel where every shot may bounce once, and **Epoch**, two bases on one
-lane racing each other through the ages.
+lane racing each other through Age of War's five ages.
 
 ## What's where
 
