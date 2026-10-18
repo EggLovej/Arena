@@ -45,7 +45,7 @@ from ais._atlas_sim import Simulation
 
 
 # Atlas's ten policy styles, from aggressive (low reserves, full commitment) to
-# patient (reserves, saving up for valuable targets). Copied from Atlas.
+# patient (reserves, saving up for valuable targets).
 STYLES = [
     dict(reserve=0.1, buffer=0.0, saving=False, holding=0.0, costscale=20.0, surge=1.0, rally=1.0, overwhelm=2.0, enemy=3.0),
     dict(reserve=0.0, buffer=0.0, saving=False, holding=0.0, costscale=20.0, surge=1.0, rally=1.0, enemy=3.0),
@@ -64,9 +64,8 @@ CAUTIOUS = dict(reserve=1.0, holding=0.3, buffer=0.0, saving=False, surge=0.6)
 FINE_HORIZON = 12.0  # seconds simulated tick by tick in the coarse search
 SEARCH_HORIZON = 30.0  # seconds simulated in every search
 REPLAN_SECONDS = 1.0  # a new plan starts at most this often, and only once the last one is done
-WORK_PER_TICK = 120  # simulation steps per decision; measured 35-50 ms per decision on 8-24 bases, under load
+WORK_PER_TICK = 120  # simulation steps per decision; about 175 ms a move in the published tournament, over a 0.1 s tick
 REFINED_STYLES = 3  # the best styles of the coarse search, searched again tick by tick
-GOOD_FIT = 0.01  # a style whose discounted error is below this explains the opponent
 NO_FIT = 6.0  # above this, the cautious opponent is planned against as well
 ERROR_MEMORY = 0.97  # each tick, older prediction errors count this much less
 MAX_CONTEXTS = 12

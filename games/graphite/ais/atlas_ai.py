@@ -9,60 +9,31 @@ The public neural checkpoint is pinned at match start; no running opponent
 object, private random generator, map name, or screen coordinates are read.
 Contexts are bounded. Use separate processes for independent interleaved
 matches, since GameView has no match identifier and the model is process-local.
-See AI_HANDOFF.md for measurements, dependencies and remaining limitations.
 """
 from dataclasses import replace
 from functools import partial
 from collections import OrderedDict
-from ais._atlas_policy import policy as base_policy, _position
-from math import ceil
 from game_types import SendAction
 from ais._atlas_sim import Simulation
 from ais import aggressive_ai, careful_ai, strategic_ai
+from ais.atlas_clean_ai import CAUTIOUS, STYLE_POLICIES, STYLES, action_distance, policy
 
-def policy(state, **cfg):
-    action = base_policy(state, **cfg)
-    if action is None:
-        return None
-    p = _position(state)
-    i, j = (p.index[action.source_id], p.index[action.target_id])
-    source, target = (p.bases[i], p.bases[j])
-    if target.owner == 0 and target.production_rate > source.production_rate and any((p.bases[k].owner not in (0, state.player_id) for k, _ in p.graph[j])):
-        t = next((t for k, t in p.graph[i] if k == j))
-        need = p.required(j, t)
-        available = p.available(i)
-        if need and available >= action.units:
-            amount = min(available, max(action.units, need + ceil(target.production_rate)))
-            return SendAction(action.source_id, action.target_id, amount)
-    return action
-CONFIGS = [dict(reserve=0.1, buffer=0.0, saving=False, holding=0.0, costscale=20.0, surge=1.0, rally=1.0, overwhelm=2.0, enemy=3.0), dict(reserve=0.0, buffer=0.0, saving=False, holding=0.0, costscale=20.0, surge=1.0, rally=1.0, enemy=3.0), dict(reserve=0.0, buffer=0.0, saving=False, holding=0.0, costscale=20.0, surge=1.0, enemy=3.0), dict(reserve=0.5, buffer=0.0, saving=False, holding=0.0, costscale=10.0, surge=0.9), dict(reserve=1.0, buffer=0.0, saving=False, holding=0.0, costscale=10.0, surge=0.6), dict(reserve=1.0, buffer=0.0, saving=False, holding=0.0, costscale=5.0), dict(reserve=1.0, buffer=0.0, saving=False, holding=0.65, costscale=5.0), dict(reserve=0.5, buffer=0.0, saving=False, holding=0.25, costscale=20.0), dict(reserve=1.0, buffer=0.0, saving=True, holding=0.25, costscale=10.0, horizon=40.0), dict(reserve=2.0, buffer=2.0, saving=True, holding=0.5, costscale=20.0)]
-MODELS = [strategic_ai.choose_action, careful_ai.choose_action, aggressive_ai.choose_action, *[partial(policy, **cfg) for cfg in CONFIGS]]
+MODELS = [strategic_ai.choose_action, careful_ai.choose_action, aggressive_ai.choose_action, *STYLE_POLICIES]
 _CONTEXTS = OrderedDict()
 FINE_HORIZON = 12.0
 SEARCH_HORIZON = 30.0
 REPLAN_SECONDS = 1.0
 
-def action_distance(a, b):
-    """Prediction error for a visible departed fleet, including target and army size."""
-    if a == b:
-        return 0.0
-    if a is None or b is None:
-        return 1.0
-    if (a.source_id, a.target_id) != (b.source_id, b.target_id):
-        return 1.0
-    return min(1.0, abs(a.units - b.units) / max(1, a.units, b.units))
-
 def choose_action(state):
     """Choose one move using only the public observation and prior public observations."""
-    from game_types import SendAction
     key = (state.player_id, state.seconds_per_tick, tuple(((b.id, b.production_rate) for b in state.bases)), state.edges)
     ctx = _CONTEXTS.get(key)
     if ctx and ctx['previous'] == state:
         return ctx['action']
     if ctx is None or state.tick != ctx['previous'].tick + 1:
-        ctx = dict(previous=state, errors={}, config=CONFIGS[0], next_plan=state.tick, action=None, observed={}, neural_possible={}, neural_fit={}, certified=None, certify_after=0)
+        ctx = dict(previous=state, errors={}, config=STYLES[0], next_plan=state.tick, action=None, observed={}, neural_possible={}, neural_fit={}, certified=None, certify_after=0)
         from ais._atlas_model_planner import configure_checkpoint
-        ctx['checkpoint'] = configure_checkpoint()
+        configure_checkpoint()
         _CONTEXTS[key] = ctx
         while len(_CONTEXTS) > 12:
             _CONTEXTS.popitem(last=False)
@@ -118,14 +89,14 @@ def choose_action(state):
         if uncertain:
             alternative = dict(models)
             for p in uncertain:
-                alternative[p] = partial(policy, reserve=1.0, holding=0.3, buffer=0.0, saving=False, surge=0.6)
+                alternative[p] = partial(policy, **CAUTIOUS)
             scenarios.append(alternative)
         step = max(1, round(0.5 / state.seconds_per_tick))
         durations = [1] * max(1, round(FINE_HORIZON / state.seconds_per_tick)) + [step] * max(1, round((SEARCH_HORIZON - FINE_HORIZON) / (step * state.seconds_per_tick)))
         nsteps = len(durations)
         best = (-float('inf'), ctx['config'])
         rankings = []
-        for cfg in CONFIGS:
+        for cfg in STYLES:
             outcomes = []
             for opponent_models in scenarios:
                 sim = Simulation(state)

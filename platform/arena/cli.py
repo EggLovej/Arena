@@ -50,12 +50,6 @@ def main(argv: list[str] | None = None) -> int:
     publish.add_argument("--output", type=Path, help="Data folder (default: web/public/data)")
 
     args = parser.parse_args(argv)
-    # Loading a game can change the working directory, so fix every path first.
-    for name in ("replay", "output"):
-        if getattr(args, name, None) is not None:
-            setattr(args, name, getattr(args, name).resolve())
-    if getattr(args, "replays", None):
-        args.replays = [path.resolve() for path in args.replays]
     return {"games": _games, "match": _match, "tournament": _tournament, "verify": _verify, "publish": _publish}[
         args.command
     ](args)

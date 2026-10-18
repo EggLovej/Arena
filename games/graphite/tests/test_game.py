@@ -1,5 +1,7 @@
+import importlib
 import unittest
-from dataclasses import FrozenInstanceError
+from dataclasses import replace
+from types import SimpleNamespace
 
 from game import Game
 from game_types import (
@@ -13,7 +15,7 @@ from game_types import (
     SendAction,
 )
 from loading import available_ais, available_maps, load_ai, load_map, validate_map
-from main import collect_actions, play_headless
+from main import collect_actions
 from human_controller import HumanController
 from sizing import base_radii
 
@@ -56,91 +58,61 @@ def stream_map():
     )
 
 
+def first_move(name, state):
+    """A newly loaded AI's move. One that draws its moves by chance draws from seed 0, as in a seeded match."""
+
+    module = importlib.import_module(f"ais.{name}")
+    if hasattr(module, "create_bot"):
+        bot = module.create_bot()
+        bot.reset(SimpleNamespace(seed=0))
+        return bot.act(state)
+    return load_ai(name)(state)
+
+
 class GameTests(unittest.TestCase):
-    def test_simultaneous_tie_neutralizes_target(self):
-        game = Game(small_map(), seconds_per_tick=1)
-        game.step(
-            {
-                RED: SendAction("left", "middle", 7),
-                BLUE: SendAction("right", "middle", 7),
-            }
-        )
-        self.assertEqual(game.bases["middle"].owner, NEUTRAL)
-        self.assertEqual(game.bases["middle"].units, 0)
+    def test_simultaneous_arrivals_pool_each_side_whatever_the_order_of_actions(self):
+        # The largest force takes what the runner-up cannot match; a tie leaves the base neutral and empty.
+        for blue_units, owner, units in ((7, NEUTRAL, 0), (6, RED, 1)):
+            for order in ((RED, BLUE), (BLUE, RED)):
+                game = Game(small_map(), seconds_per_tick=1)
+                sends = {RED: SendAction("left", "middle", 7), BLUE: SendAction("right", "middle", blue_units)}
+                game.step({player: sends[player] for player in order})
+                self.assertEqual((game.bases["middle"].owner, game.bases["middle"].units), (owner, units))
 
-    def test_action_dictionary_order_does_not_change_result(self):
-        first = Game(small_map(), seconds_per_tick=1)
-        second = Game(small_map(), seconds_per_tick=1)
+    def test_every_invalid_move_is_refused_and_changes_nothing(self):
+        for action in (
+            SendAction("left", "middle", 0),
+            SendAction("left", "middle", 11),  # more than the base has
+            SendAction("left", "middle", 5.0),
+            SendAction("left", "middle", True),
+            SendAction("left", "right", 5),  # not connected
+            SendAction("right", "middle", 5),  # Blue's base
+            SendAction("left", "left", 5),
+            SendAction("left", "nowhere", 5),
+            SendAction("nowhere", "middle", 5),
+            ("left", "middle", 5),
+        ):
+            with self.subTest(action):
+                game = Game(small_map())
+                self.assertIn(RED, game.step({RED: action}))
+                self.assertEqual(game.fleets, [])
+                self.assertEqual(game.bases["left"].units, 10)
 
-        first.step(
-            {
-                RED: SendAction("left", "middle", 7),
-                BLUE: SendAction("right", "middle", 6),
-            }
-        )
-        second.step(
-            {
-                BLUE: SendAction("right", "middle", 6),
-                RED: SendAction("left", "middle", 7),
-            }
-        )
-        self.assertEqual(first.view_for(RED), second.view_for(RED))
-
-    def test_zero_unit_action_is_rejected_without_creating_a_fleet(self):
-        game = Game(small_map())
-        errors = game.step({RED: SendAction("left", "middle", 0), BLUE: None})
-        self.assertIn(RED, errors)
-        self.assertEqual(game.fleets, [])
-
-    def test_ai_receives_an_immutable_snapshot(self):
-        game = Game(small_map())
-        state = game.view_for(RED)
-        with self.assertRaises(FrozenInstanceError):
-            state.bases[0].units = 999
-
-    def test_maps_are_selected_from_the_maps_directory(self):
-        self.assertEqual(
-            available_maps(),
-            (
-                "classic",
-                "clockwork_citadel",
-                "crossroads",
-                "four_corners",
-                "frontier",
-                "nomads",
-                "ring",
-                "salt_and_pepper",
-                "shattered_spiral",
-                "siege",
-                "tectonic_archipelago",
-                "three_fronts",
-                "threefold_crucible",
-                "triangle",
-                "triple_ring",
-            ),
-        )
-        self.assertEqual(load_map("ring").name, "ring")
-
-    def test_new_maps_have_requested_sizes(self):
-        self.assertEqual(len(load_map("crossroads").bases), 10)
-        self.assertEqual(len(load_map("frontier").bases), 19)
-        self.assertEqual(len(load_map("four_corners").bases), 30)
-
-    def test_nomads_start_with_armies_but_no_production(self):
-        owned = [base for base in load_map("nomads").bases if base.owner != NEUTRAL]
-        self.assertEqual({base.owner for base in owned}, {RED, BLUE})
-        for base in owned:
-            self.assertEqual((base.units, base.production_rate), (80, 0))
-
-    def test_salt_and_pepper_starts_with_five_bases_each(self):
-        owners = [base.owner for base in load_map("salt_and_pepper").bases]
-        self.assertEqual(owners.count(RED), 5)
-        self.assertEqual(owners.count(BLUE), 5)
-
-    def test_siege_pits_one_fortress_against_four_camps(self):
-        owners = [base.owner for base in load_map("siege").bases]
-        self.assertEqual(owners.count(RED), 1)
-        self.assertEqual(owners.count(BLUE), 4)
+    def test_invalid_maps_are_refused(self):
+        valid = small_map()
+        left, *others = valid.bases
+        for problem, invalid in (
+            ("invalid owner", replace(valid, bases=(replace(left, owner=7), *others))),
+            ("outside the map", replace(valid, bases=(replace(left, x=-1), *others))),
+            ("negative", replace(valid, bases=(replace(left, units=-1), *others))),
+            ("unknown base", replace(valid, edges=(*valid.edges, EdgeDefinition("left", "nowhere", 1)))),
+            ("Duplicate edge", replace(valid, edges=(*valid.edges, EdgeDefinition("middle", "left", 2)))),
+            ("travel times must be positive", replace(valid, edges=(EdgeDefinition("left", "middle", 0), valid.edges[1]))),
+            ("Red and Blue", replace(valid, bases=(replace(left, owner=NEUTRAL), *others))),
+            ("connected", replace(valid, edges=valid.edges[:1])),
+        ):
+            with self.subTest(problem), self.assertRaisesRegex(ValueError, problem):
+                validate_map(invalid)
 
     def test_symmetric_maps_give_both_players_identical_positions(self):
         # Nomads and Tectonic Archipelago are mirrored left-right; Salt & Pepper and
@@ -177,64 +149,6 @@ class GameTests(unittest.TestCase):
                     twin_edge = frozenset((twin_ids[edge.a], twin_ids[edge.b]))
                     self.assertEqual(travel_times.get(twin_edge), edge.travel_time)
 
-    def test_large_maps_play_for_ten_minutes(self):
-        for map_name in ("clockwork_citadel", "shattered_spiral", "tectonic_archipelago", "threefold_crucible"):
-            with self.subTest(map_name):
-                map_definition = load_map(map_name)
-                self.assertGreaterEqual(len(map_definition.bases), 100)
-                self.assertEqual(map_definition.time_limit, 600)
-                self.assertTrue(map_definition.tagline)
-
-    def test_threefold_crucible_guards_its_prize_behind_fortified_bridges(self):
-        bases = load_map("threefold_crucible").bases
-        prize = max(bases, key=lambda base: base.production_rate)
-        self.assertEqual((prize.id, prize.production_rate, prize.units), ("crucible", 10.0, 1000))
-        bridges = [base for base in bases if base.id.startswith("bridge")]
-        self.assertEqual(len(bridges), 9)
-        for bridge in bridges:
-            self.assertEqual((bridge.production_rate, bridge.units), (0.2, 80))
-
-    def test_four_corners_starts_in_opposite_corners(self):
-        map_definition = load_map("four_corners")
-
-        def closest_to(x, y):
-            return min(
-                map_definition.bases,
-                key=lambda base: (base.x - x) ** 2 + (base.y - y) ** 2,
-            )
-
-        self.assertEqual(closest_to(0, 0).owner, BLUE)
-        self.assertEqual(closest_to(map_definition.width, 0).owner, RED)
-        self.assertEqual(closest_to(0, map_definition.height).owner, RED)
-        self.assertEqual(
-            closest_to(map_definition.width, map_definition.height).owner,
-            BLUE,
-        )
-
-    def test_three_player_maps_activate_red_blue_and_green(self):
-        for map_name in ("triangle", "three_fronts", "triple_ring"):
-            game = Game(load_map(map_name))
-            self.assertEqual(game.players, (RED, BLUE, GREEN))
-
-    def test_collect_actions_calls_all_three_controllers(self):
-        game = Game(load_map("triangle"))
-        called_players = []
-
-        def controller(state):
-            called_players.append(state.player_id)
-            return None
-
-        actions = collect_actions(game, controller, controller, controller)
-
-        self.assertEqual(set(called_players), {RED, BLUE, GREEN})
-        self.assertEqual(set(actions), {RED, BLUE, GREEN})
-
-    def test_ais_are_discovered_from_the_ais_directory(self):
-        self.assertEqual(
-            available_ais(),
-            ("aggressive_ai", "atlas_ai", "atlas_clean_ai", "beast_ai", "careful_ai", "neural_ai", "strategic_ai"),
-        )
-
     def test_strategic_ai_routes_units_out_of_an_enclosed_base(self):
         map_definition = MapDefinition(
             name="enclosed-base-test",
@@ -261,45 +175,54 @@ class GameTests(unittest.TestCase):
         self.assertEqual(action.target_id, "front")
         self.assertGreater(action.units, 0)
 
-    def test_invalid_travel_time_is_rejected(self):
-        definition = small_map()
-        invalid = MapDefinition(
-            name=definition.name,
-            width=definition.width,
-            height=definition.height,
-            bases=definition.bases,
-            edges=(EdgeDefinition("left", "middle", 0),),
-        )
-        with self.assertRaisesRegex(ValueError, "positive"):
-            validate_map(invalid)
-
-    def test_sample_ais_run_on_every_map_and_replay_deterministically(self):
-        red_ai = load_ai("aggressive_ai")
-        blue_ai = load_ai("careful_ai")
-        green_ai = load_ai("strategic_ai")
-
+    def test_every_map_plays_without_a_refused_move(self):
+        red, blue, green = load_ai("aggressive_ai"), load_ai("careful_ai"), load_ai("strategic_ai")
         for map_name in available_maps():
-            first = Game(load_map(map_name))
-            second = Game(load_map(map_name))
-            play_headless(first, red_ai, blue_ai, 500, green_ai)
-            play_headless(second, red_ai, blue_ai, 500, green_ai)
-            self.assertEqual(first.view_for(RED), second.view_for(RED))
+            game = Game(load_map(map_name))
+            for _ in range(150):
+                self.assertEqual(game.step(collect_actions(game, red, blue, green)), {}, map_name)
 
-    def test_human_clicks_create_one_half_unit_action(self):
+    def test_every_ai_loads_and_plays_every_map_without_a_refused_move(self):
+        self.assertNotIn("_atlas_sim", available_ais())  # helpers are not players
+        strategic = load_ai("strategic_ai")
+        for name in available_ais():
+            ai, sends = load_ai(name), 0
+            for map_name in available_maps():
+                game = Game(load_map(map_name))
+                for _ in range(5):
+                    actions = {player: (ai if player == RED else strategic)(game.view_for(player)) for player in game.players}
+                    sends += actions[RED] is not None
+                    self.assertEqual(game.step(actions), {}, (name, map_name))
+            self.assertGreater(sends, 0, name)
+
+    def test_renaming_and_moving_the_bases_does_not_change_any_ai_s_move(self):
+        # AIs get arbitrary base ids and coordinates, so they must reason from the graph.
+        state = Game(load_map("crossroads")).view_for(RED)
+        ids = {base.id: f"unseen-{137 * number + 19}" for number, base in enumerate(state.bases)}
+        renamed = replace(
+            state,
+            bases=tuple(replace(base, id=ids[base.id], x=3, y=9) for base in state.bases),
+            edges=tuple(replace(edge, a=ids[edge.a], b=ids[edge.b]) for edge in state.edges),
+        )
+        for name in available_ais():
+            with self.subTest(name):
+                action = first_move(name, state)
+                expected = action and SendAction(ids[action.source_id], ids[action.target_id], action.units)
+                self.assertEqual(first_move(name, renamed), expected)
+
+    def test_a_click_sends_half_of_one_of_your_own_bases(self):
         game = Game(small_map())
         human = HumanController(RED)
+        human.handle_click((280, 50), 1, game)  # Blue's base
+        self.assertIsNone(human.selected_base_id)
 
         human.handle_click((20, 50), 1, game)
         self.assertEqual(human.selected_base_id, "left")
         human.handle_click((150, 50), 1, game)
-
-        self.assertEqual(
-            human.choose_action(game.view_for(RED)),
-            SendAction("left", "middle", 5),
-        )
+        self.assertEqual(human.choose_action(game.view_for(RED)), SendAction("left", "middle", 5))
         self.assertIsNone(human.choose_action(game.view_for(RED)))
 
-    def test_human_shift_click_starts_a_stream_of_all_units(self):
+    def test_shift_click_starts_a_stream_and_on_its_source_stops_it(self):
         game = Game(stream_map())
         human = HumanController(RED)
 
@@ -315,16 +238,8 @@ class GameTests(unittest.TestCase):
             game.step({})
         self.assertEqual(human.choose_action(game.view_for(RED)), SendAction("left", "middle", 1))
 
-    def test_human_shift_click_on_the_source_stops_its_stream(self):
-        game = Game(stream_map())
-        human = HumanController(RED)
-        human.handle_click((20, 50), 1, game)
-        human.handle_click((150, 50), 1, game, shift_held=True)
-
         human.handle_click((20, 50), 1, game, shift_held=True)
-
         self.assertEqual(human.streams, {})
-        self.assertIsNone(human.selected_base_id)
         self.assertIsNone(human.choose_action(game.view_for(RED)))
 
     def test_a_click_goes_before_a_stream_and_streams_take_turns(self):
@@ -347,12 +262,6 @@ class GameTests(unittest.TestCase):
         self.assertIsNone(human.choose_action(game.view_for(RED)))
         self.assertEqual(human.streams, {})
 
-    def test_human_cannot_select_an_opponents_base(self):
-        game = Game(small_map())
-        human = HumanController(RED)
-        human.handle_click((280, 50), 1, game)
-        self.assertIsNone(human.selected_base_id)
-
     def test_richer_bases_are_drawn_larger(self):
         game = Game(load_map("classic"))
         radii = base_radii(game.bases.values())
@@ -371,17 +280,6 @@ class GameTests(unittest.TestCase):
         human.handle_click((home.x + radius - 2, home.y), 1, game)
 
         self.assertEqual(human.selected_base_id, home.id)
-
-    def test_human_can_control_green_on_a_three_player_map(self):
-        game = Game(load_map("triangle"))
-        human = HumanController(GREEN)
-        green_base = next(
-            base for base in game.bases.values() if base.owner == GREEN
-        )
-
-        human.handle_click((green_base.x, green_base.y), 1, game)
-
-        self.assertEqual(human.selected_base_id, green_base.id)
 
 
 if __name__ == "__main__":

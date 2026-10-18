@@ -3,7 +3,6 @@
 from dataclasses import dataclass
 
 from game_types import (
-    BLUE,
     NEUTRAL,
     PLAYERS,
     BaseView,
@@ -207,11 +206,6 @@ class Game:
                 forces[fleet.owner] = forces.get(fleet.owner, 0.0) + fleet.units
 
             ranked_forces = sorted(forces.items(), key=lambda item: item[1], reverse=True)
-            if not ranked_forces:
-                target.owner = NEUTRAL
-                target.units = 0.0
-                continue
-
             strongest_owner, strongest_units = ranked_forces[0]
             second_units = ranked_forces[1][1] if len(ranked_forces) > 1 else 0.0
 

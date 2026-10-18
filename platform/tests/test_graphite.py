@@ -12,16 +12,24 @@ def graphite():
     return load_game("graphite")
 
 
+def test_the_large_maps_have_their_own_group_and_time_limit(graphite):
+    maps = {map_info.id: map_info for map_info in graphite.maps()}
+    assert (maps["classic"].group, maps["classic"].max_ticks) == ("", None)
+    assert (maps["threefold_crucible"].group, maps["threefold_crucible"].max_ticks) == ("Large maps", 6000)
+
+
 @pytest.mark.parametrize("bot", ["neural_ai", "beast_ai"])
-def test_the_neural_bots_play_their_committed_networks(graphite, bot):
+def test_the_neural_bots_play_their_committed_networks_the_same_way_twice(graphite, bot):
+    # The networks draw their moves by chance, from the match's seed: a seeded match can be played again.
     torch = pytest.importorskip("torch")
     torch.set_num_threads(1)
-    record = play_match(graphite, "classic", {"red": bot, "blue": "strategic_ai"}, seed=2)
-    assert record.seats["red"].errors == 0
-    assert sum(seat == "red" for _, seat, _ in record.replay["actions"]) > 10
+    first, second = (play_match(graphite, "classic", {"red": bot, "blue": "strategic_ai"}, seed=2) for _ in range(2))
+    assert first.seats["red"].errors == 0
+    assert sum(seat == "red" for _, seat, _ in first.replay["actions"]) > 10
+    assert first.replay["actions"] == second.replay["actions"]
 
 
-def test_an_action_naming_bases_by_anything_but_their_id_is_refused(graphite):
+def test_an_action_must_name_bases_by_id_and_send_whole_units(graphite):
     from game_types import SendAction
 
     assert graphite.action_to_json(SendAction("north", "center", 3)) == ["north", "center", 3]
@@ -29,6 +37,8 @@ def test_an_action_naming_bases_by_anything_but_their_id_is_refused(graphite):
         graphite.action_to_json(SendAction(["north"], "center", 3))
     with pytest.raises(TypeError, match="target_id must be a base id"):
         graphite.action_to_json(SendAction("north", 7, 3))
+    with pytest.raises(TypeError, match="units must be a whole number"):
+        graphite.action_to_json(SendAction("north", "center", 3.0))
 
 
 def fleets_of(live: LiveMatch, seat: str) -> list:

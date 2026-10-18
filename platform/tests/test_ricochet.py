@@ -4,7 +4,6 @@ import math
 
 import pytest
 
-from arena.contract import BotContext
 from arena.registry import games_directory, load_game
 from arena.runner import play_match
 
@@ -12,16 +11,6 @@ from arena.runner import play_match
 @pytest.fixture(scope="module")
 def ricochet():
     return load_game("ricochet")
-
-
-def test_maps_and_bots_come_from_its_folder_wherever_it_runs(ricochet, tmp_path, monkeypatch):
-    # Graphite's adapter moves into Graphite's folder, which has an ais/ of its own.
-    (tmp_path / "ais").mkdir()
-    (tmp_path / "ais" / "direct_ai.py").write_text("raise RuntimeError('not a Ricochet bot')\n")
-    monkeypatch.chdir(tmp_path)
-    assert {bot.id for bot in ricochet.bots()} >= {"direct_ai", "sentinel_ai"}
-    bot = ricochet.load_bot("direct_ai")
-    bot.reset(BotContext("ricochet", "classic", "cyan", ("cyan", "coral"), 1, 1 / 30, 2700))
 
 
 def test_a_shot_is_stored_when_fired_and_when_it_bounces(ricochet):

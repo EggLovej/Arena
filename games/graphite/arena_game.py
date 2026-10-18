@@ -5,9 +5,8 @@ bots, new matches, what to draw for each tick, and actions as JSON. The rules
 themselves stay in ``game.py`` and the bots in ``ais/``, unchanged.
 
 Graphite's modules import each other by their plain names (``from game import
-Game``) and read files relative to this folder, so loading this adapter puts
-this folder first on ``sys.path`` and makes it the working directory. That is
-also why one process plays one game's matches.
+Game``), so loading this adapter puts this folder first on ``sys.path``. That
+is also why one process plays one game's matches.
 """
 
 from __future__ import annotations
@@ -21,7 +20,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-os.chdir(ROOT)
 
 # Leaderboard matches play the networks committed in checkpoints/, not whatever a
 # local training run last wrote to ml/runs/. Setting these beforehand plays others.
@@ -243,8 +241,8 @@ class GraphiteGame:
         for name in ("source_id", "target_id"):
             if not isinstance(getattr(action, name), str):
                 raise TypeError(f"{name} must be a base id (a string), got {type(getattr(action, name)).__name__}")
-        if not isinstance(action.units, (int, float)) or isinstance(action.units, bool):
-            raise TypeError(f"units must be a number, got {type(action.units).__name__}")
+        if not isinstance(action.units, int) or isinstance(action.units, bool):
+            raise TypeError(f"units must be a whole number, got {type(action.units).__name__}")
         return [action.source_id, action.target_id, action.units]
 
     def action_from_json(self, data: list) -> SendAction:

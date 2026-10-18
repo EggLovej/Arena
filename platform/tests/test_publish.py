@@ -3,9 +3,7 @@ import json
 import pytest
 
 from arena import publish
-from arena.registry import repo_root
 from arena.tournament import run, schedule
-from conftest import FIXTURES
 
 
 def test_published_files_and_rederived_tables(race, tmp_path):
@@ -78,10 +76,3 @@ def test_inputs_are_the_files_a_match_loads(race, tmp_path, monkeypatch):
     with pytest.raises(FileNotFoundError, match="gone.py"):
         publish.inputs_fingerprint(race, settings)
 
-
-def test_a_relative_arena_root_stays_where_it_started(race, monkeypatch):
-    monkeypatch.chdir(FIXTURES.parent)
-    monkeypatch.setenv("ARENA_ROOT", FIXTURES.name)
-    assert repo_root() == FIXTURES
-    monkeypatch.chdir(FIXTURES / "games" / "race")  # as loading a game can
-    assert repo_root() == FIXTURES

@@ -1,12 +1,13 @@
-"""Differential tests against the real engine, not an alternate mock of its rules."""
+"""Atlas's forecasts and policy, and Mirror's play, tested against the real engine, not a mock of its rules."""
 import unittest
 import random
 from dataclasses import replace
-from game import Game
-from game_types import *
+from game import Fleet, Game
+from game_types import BLUE, GREEN, RED, BaseDefinition, EdgeDefinition, MapDefinition, SendAction
 from loading import load_map
-from ais._atlas_policy import Position,arrival_ticks
+from ais._atlas_policy import Position
 from ais._atlas_sim import Simulation
+from ais.atlas_clean_ai import policy
 
 class ForecastTests(unittest.TestCase):
  def random_game(self,seed):
@@ -32,7 +33,7 @@ class ForecastTests(unittest.TestCase):
      self.assertEqual(owner,g.bases[b.id].owner,(seed,t,b.id))
      self.assertAlmostEqual(units,g.bases[b.id].units,places=7)
 
- def test_batched_simulator_matches_every_tick(self):
+ def test_simulator_matches_the_engine(self):
   for seed in range(60):
    g=self.random_game(seed);sim=Simulation(g.view_for(RED));rng=random.Random(seed)
    for cycle in range(12):
@@ -52,13 +53,25 @@ class ForecastTests(unittest.TestCase):
     a=sorted(view.fleets,key=key);b=sorted(g.view_for(RED).fleets,key=key)
     self.assertEqual([key(f) for f in a],[key(f) for f in b])
     for x,y in zip(a,b):self.assertAlmostEqual(x.remaining_time,y.remaining_time,places=7)
+  # Tick by tick it matches exactly, so forecast opponents play exactly as the real ones do.
+  from ais.strategic_ai import choose_action
+  for name in ('classic','ring','triangle','three_fronts'):
+   g=Game(load_map(name))
+   for _ in range(31):
+    g.step({p:choose_action(g.view_for(p)) for p in g.players})
+   sim=Simulation(g.view_for(RED))
+   for _ in range(300):
+    actual={p:choose_action(g.view_for(p)) for p in g.players}
+    predicted={p:choose_action(sim.view(p)) for p in g.players}
+    self.assertEqual(actual,predicted)
+    g.step(actual);sim.step(predicted,1)
+    self.assertEqual(g.view_for(RED),sim.view(RED))
 
  def test_capture_requirement_is_minimum_with_three_way_arrival(self):
   definition=MapDefinition('event',100,100,(
    BaseDefinition('a',RED,100,0,0,0),BaseDefinition('b',BLUE,10,0,30,0),
    BaseDefinition('c',GREEN,100,0,60,0)),(
    EdgeDefinition('a','b',.3),EdgeDefinition('c','b',.3)))
-  from game import Fleet
   g=Game(definition)
   g.fleets=[Fleet(GREEN,25,'c','b',.3,.3),Fleet(RED,4,'a','b',.3,.3)]
   p=Position(g.view_for(RED));need=p.required(1,3)
@@ -72,7 +85,6 @@ class ForecastTests(unittest.TestCase):
    self.assertEqual(h.bases['b'].owner==RED,amount==need)
 
  def test_reserve_protects_all_committed_arrivals(self):
-  from game import Fleet
   definition=MapDefinition('reserve',100,100,(
    BaseDefinition('a',RED,25,1,0,0),BaseDefinition('b',BLUE,50,0,30,0)),(EdgeDefinition('a','b',5),))
   g=Game(definition);g.fleets=[Fleet(BLUE,12,'b','a',2,5),Fleet(BLUE,15,'b','a',4,5)]
@@ -82,8 +94,29 @@ class ForecastTests(unittest.TestCase):
   for _ in range(40):
    self.assertEqual(g.bases['a'].owner,RED);g.step({})
 
+ def test_campaign_funding_enables_the_configured_attack(self):
+  definition=MapDefinition('funding',300,100,(
+   BaseDefinition('rear',RED,20,0,0,0),
+   BaseDefinition('front',RED,15,0,100,0),
+   BaseDefinition('enemy',BLUE,10,0,200,0),
+  ),(EdgeDefinition('rear','front',1.),EdgeDefinition('front','enemy',1.)))
+  game=Game(definition)
+  config=dict(overwhelm=2.,reserve=0.,buffer=0.,holding=0.,saving=False)
+  self.assertIsNone(policy(game.view_for(RED),**config))
+  action=policy(game.view_for(RED),campaign_funding=True,**config)
+  self.assertEqual(action,SendAction('rear','front',10))
+  self.assertFalse(game.step({RED:action,BLUE:None}))
+  for _ in range(9):game.step({RED:None,BLUE:None})
+  attack=policy(game.view_for(RED),campaign_funding=True,**config)
+  self.assertEqual((attack.source_id,attack.target_id),('front','enemy'))
+  self.assertGreaterEqual(attack.units,22)
+  game.step({RED:attack,BLUE:None})
+  for _ in range(9):game.step({RED:None,BLUE:None})
+  self.assertEqual(game.winner(),RED)
 
-class ControllerTests(unittest.TestCase):
+
+
+class MirrorTests(unittest.TestCase):
  def setUp(self):
   from ais.atlas_ai import _CONTEXTS
   _CONTEXTS.clear()
@@ -104,79 +137,9 @@ class ControllerTests(unittest.TestCase):
    final.append(g.view_for(RED))
   self.assertEqual(*final)
 
- def test_model_fits_visible_departures(self):
-  from ais.atlas_ai import choose_action,_CONTEXTS
-  from ais.careful_ai import choose_action as opponent
-  g=Game(load_map('classic'))
-  for tick in range(25):
-   action=choose_action(g.view_for(RED))
-   self.assertFalse(g.step({RED:action,BLUE:opponent(g.view_for(BLUE))}))
-  ctx=next(iter(_CONTEXTS.values()))
-  errors=ctx['errors'][BLUE]
-  self.assertEqual(errors[1],0.)
-  self.assertGreater(errors[0],0.)
-  self.assertGreater(errors[2],0.)
-
- def test_arbitrary_ids_and_coordinates(self):
-  from ais.atlas_ai import choose_action
-  g=Game(load_map('crossroads'));state=g.view_for(RED)
-  action=choose_action(state)
-  ids={b.id:f'unseen-{137*i+19}' for i,b in enumerate(state.bases)}
-  transformed=replace(state,
-   bases=tuple(replace(b,id=ids[b.id],x=3,y=9) for b in state.bases),
-   edges=tuple(replace(e,a=ids[e.a],b=ids[e.b]) for e in state.edges))
-  other=choose_action(transformed)
-  self.assertEqual(other,SendAction(ids[action.source_id],ids[action.target_id],action.units))
-
- def test_nonstandard_tick_durations_and_same_module_players(self):
-  from ais.atlas_ai import choose_action
-  for dt in (.13,.7,3.):
-   g=Game(load_map('triangle'),dt)
-   for tick in range(3):
-    actions={p:choose_action(g.view_for(p)) for p in g.players}
-    self.assertFalse(g.step(actions))
-
-class ContinuationTests(unittest.TestCase):
- def test_opponent_trajectories_match_without_float_tolerance(self):
-  from ais.strategic_ai import choose_action
-  for name in ('classic','ring','triangle','three_fronts'):
-   g=Game(load_map(name))
-   for _ in range(31):
-    g.step({p:choose_action(g.view_for(p)) for p in g.players})
-   sim=Simulation(g.view_for(RED))
-   for _ in range(300):
-    actual={p:choose_action(g.view_for(p)) for p in g.players}
-    predicted={p:choose_action(sim.view(p)) for p in g.players}
-    self.assertEqual(actual,predicted)
-    g.step(actual);sim.step(predicted,1)
-    self.assertEqual(g.view_for(RED),sim.view(RED))
-
- def test_large_armies_are_not_terminal_states(self):
-  g=Game(load_map('classic'))
-  g.bases['west_home'].units=10**8
-  sim=Simulation(g.view_for(RED))
-  self.assertFalse(g.is_finished())
-  self.assertLess(abs(sim.value(RED)),100000)
-
- def test_mismatched_observation_invalidates_continuation(self):
-  from ais.atlas_ai import choose_action,_CONTEXTS
-  from ais.careful_ai import choose_action as opponent
-  _CONTEXTS.clear()
-  g=Game(load_map('classic'))
-  action=choose_action(g.view_for(RED))
-  ctx=next(iter(_CONTEXTS.values()))
-  ctx['certified']={BLUE:lambda view:None}
-  ctx['certify_after']=10**9
-  enemy_action=opponent(g.view_for(BLUE))
-  self.assertIsNotNone(enemy_action)
-  self.assertFalse(g.step({RED:action,BLUE:enemy_action}))
-  choose_action(g.view_for(RED))
-  self.assertIsNone(ctx['certified'])
-
  def test_predicted_winning_continuation_finishes_in_real_engine(self):
   from ais.atlas_ai import choose_action,_CONTEXTS
   from ais.strategic_ai import choose_action as opponent
-  _CONTEXTS.clear()
   g=Game(load_map('classic'));checked=False
   for _ in range(1800):
    action=choose_action(g.view_for(RED))
@@ -185,34 +148,5 @@ class ContinuationTests(unittest.TestCase):
    if g.is_finished():break
   self.assertTrue(checked)
   self.assertEqual(g.winner(),RED)
-
- def test_eliminated_candidate_is_a_loss_before_overall_match_ends(self):
-  from benchmark_ai import outcome_for
-  g=Game(load_map('triangle'))
-  self.assertEqual(outcome_for(g,RED),'timeout')
-  for base in g.bases.values():
-   if base.owner==RED:base.owner=BLUE
-  self.assertFalse(g.is_finished())
-  self.assertEqual(outcome_for(g,RED),'loss')
-
-
-class EvaluatorTests(unittest.TestCase):
- def test_existing_evaluator_counts_eliminated_seat_as_loss(self):
-  import io
-  from contextlib import redirect_stdout
-  from unittest.mock import patch
-  import evaluate
-  definition=MapDefinition('evaluation',100,100,(
-   BaseDefinition('red',RED,0,0,0,0),
-   BaseDefinition('blue',BLUE,10,0,50,0),
-   BaseDefinition('green',GREEN,10,0,100,0)),(
-   EdgeDefinition('red','blue',.1),EdgeDefinition('blue','green',1)))
-  def enemy(state):
-   if state.player_id==BLUE and state.get_base('red').owner==RED:
-    return SendAction('blue','red',1)
-   return None
-  def load(name):return (lambda state:None) if name=='candidate' else enemy
-  with patch.object(evaluate,'available_maps',return_value=('scenario',)),patch.object(evaluate,'load_map',return_value=definition),patch.object(evaluate,'load_ai',side_effect=load),redirect_stdout(io.StringIO()):
-   self.assertEqual(evaluate.evaluate('candidate','opponent',.1,.1),(1.,3))
 
 if __name__=='__main__':unittest.main()

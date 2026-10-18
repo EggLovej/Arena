@@ -26,7 +26,7 @@ from ml.tests.test_models import positions
 
 
 ROOT = Path(__file__).resolve().parents[2]
-COMMITTED = [ROOT / "checkpoints" / "neural_ai.pt", ROOT / "checkpoints" / "beast_ai.pt", ROOT / "atlas_model" / "opponent.pt"]
+COMMITTED = [ROOT / "checkpoints" / "neural_ai.pt", ROOT / "checkpoints" / "beast_ai.pt"]
 # Architectures the numpy network must also follow, beyond the committed ones.
 SETTINGS = [
     {},

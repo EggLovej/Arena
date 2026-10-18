@@ -56,15 +56,12 @@ For direct command-line or automated runs:
 Map names come from JSON files in `maps/`. AI names come from Python files in
 `ais/`.
 
-To test one AI across every installed map and from every available player seat:
+To test an AI against others on every map and from every seat, run the
+Arena's tournament from the repository root (see the root README):
 
 ```bash
-.venv/bin/python evaluate.py --candidate aggressive_ai --opponent careful_ai
+python -m arena tournament graphite --bots my_ai careful_ai --output /tmp/my_ai
 ```
-
-The evaluator discovers maps and their active players dynamically. On a
-three-player map, the candidate takes each of the three seats while the chosen
-opponent controls both remaining players.
 
 ## Play against an AI
 
@@ -100,21 +97,18 @@ def choose_action(state):
 
 Run it with `--red-ai my_ai` or `--blue-ai my_ai`.
 
-`strategic_ai.py` is the strongest bundled example. It projects forces at their
-arrival time, defends threatened bases, chooses efficient captures, and moves
-surplus units through friendly territory toward useful frontier bases. Like the
-other examples, it only uses the public `GameView` interface and contains no
-map-specific names or coordinates.
+`strategic_ai.py` is the strongest of the simple examples; the look-ahead and
+network bots beat it. It projects forces at their arrival time, defends
+threatened bases, chooses efficient captures, and moves surplus units through
+friendly territory toward useful frontier bases. Like the other examples, it
+only uses the public `GameView` interface and contains no map-specific names or
+coordinates.
 
 `state` is an immutable, fully observable `GameView`. It contains the acting
 player's ID, the current tick and time, every base, every edge, and every fleet.
 An AI can return one `SendAction` per tick or `None` to wait. It receives
 arbitrary base IDs and is not told the map filename. A robust AI should reason
 from the graph and live state rather than recognizing coordinates or IDs.
-
-The evaluator should use additional unseen maps. That is what makes a general
-strategy necessary; an interface alone cannot prevent a submitted AI from
-hard-coding the public examples.
 
 ## Tick rules
 
@@ -151,21 +145,23 @@ window too big for the screen is shrunk to fit.
 
 - `game_types.py`: the public AI contract and map data types
 - `game.py`: mutable match state and deterministic rules
+- `RULES.md`: the rules as the Arena website shows them
 - `loading.py`: dynamic map and AI loading plus map validation
 - `renderer.py`: read-only Pygame visualization
 - `sizing.py`: production-scaled base sizes shared by drawing and click detection
 - `home_screen.py`: two-step map and player selection
 - `avatars.py`: portraits for AIs, generated from their names
+- `bot_names.py`: the names AIs are shown by, here and on the website
 - `theme.py`: shared atlas colors, fonts, and image loading
+- `themes/`: the colors, which the website's board uses too
 - `assets/`: paper texture and faction brush marks
 - `human_controller.py`: mouse input translated into ordinary game actions
 - `main.py`: command-line match runner
-- `evaluate.py`: all-map, both-colors evaluator
+- `arena_game.py`: Graphite as the Arena plays it, for tournaments and the website
 - `ais/`: one-file agents
 - `maps/`: dynamically selectable JSON maps
-- `tests/`: rule, loading, generality, and replay tests
-- `atlas_model/`: inference-only copy of the ML network that Atlas AI uses to
-  forecast opponents
+- `tests/`: tests of the rules, maps, bots and window
+- `checkpoints/`: the networks the neural AIs play (see `checkpoints/README.md`)
 - `ml/`: the learned agent, its training and evaluation (see `ml/README.md`)
 
 The visual system follows the warm Field Notes Atlas direction. Base counts,

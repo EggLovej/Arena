@@ -15,7 +15,7 @@ Which file a bot plays, first match wins:
 - **Neural AI:** `NEURAL_AI_CHECKPOINT`, then `ml/runs/latest.pt`, then `checkpoints/neural_ai.pt`.
 - **Beast AI:** `BEAST_AI_FILE`, then `ml/runs/beast.json`, then `checkpoints/beast.json`.
 - **Atlas AI's forecasts:** `ATLAS_OPPONENT_CHECKPOINT`, then `NEURAL_AI_CHECKPOINT`, then
-  `ml/runs/latest.pt`, then `checkpoints/neural_ai.pt`, then `atlas_model/opponent.pt`.
+  `ml/runs/latest.pt`, then `checkpoints/neural_ai.pt`.
 
 The Arena adapter (`arena_game.py`) sets `NEURAL_AI_CHECKPOINT` and `BEAST_AI_FILE` to the files
 here unless they are already set, so leaderboard matches always play the committed networks.
