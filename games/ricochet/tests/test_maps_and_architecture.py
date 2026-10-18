@@ -1,10 +1,14 @@
+import math
+import subprocess
+import sys
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
 from ricochet.game.config import RulesConfig
 from ricochet.game.maps import available_maps, load_map, validate_map
-from ricochet.game.types import MapDefinition, SpawnDefinition, Vec2, WallDefinition
+from ricochet.game.types import MapDefinition, Vec2
 
 
 def test_three_maps_load_and_are_symmetric() -> None:
@@ -18,24 +22,45 @@ def test_three_maps_load_and_are_symmetric() -> None:
         assert first.position.y == second.position.y
 
 
-def test_map_rejects_spawn_overlapping_wall() -> None:
-    definition = MapDefinition(
-        id="bad",
-        name="Bad",
-        width=100,
-        height=100,
-        spawns=(
-            SpawnDefinition(0, Vec2(30, 50), Vec2(1, 0)),
-            SpawnDefinition(1, Vec2(80, 50), Vec2(-1, 0)),
+@pytest.mark.parametrize(
+    ("problem", "message"), [("not finite", "finite"), ("spawn in a wall", "overlaps a wall")]
+)
+def test_invalid_maps_are_refused(problem: str, message: str) -> None:
+    definition = load_map("classic")
+    first, second = definition.spawns
+    broken = {
+        "not finite": replace(definition, width=math.nan),
+        # The centre of Classic's centre block.
+        "spawn in a wall": replace(
+            definition, spawns=(replace(first, position=Vec2(480, 320)), second)
         ),
-        walls=(WallDefinition("wall", 20, 40, 20, 20),),
+    }[problem]
+    with pytest.raises(ValueError, match=message):
+        validate_map(broken, RulesConfig())
+
+
+def test_map_serialization_round_trips_and_normalizes_numbers() -> None:
+    definition = load_map("crossfire")
+    assert MapDefinition.from_dict(definition.to_dict()) == definition
+    rebuilt = MapDefinition.from_dict(
+        definition.to_dict() | {"width": 960, "height": 640}  # Integers, as in map files.
     )
-    with pytest.raises(ValueError, match="overlaps"):
-        validate_map(definition, RulesConfig(tank_radius=10))
+    assert rebuilt == definition and isinstance(rebuilt.width, float)
 
 
-def test_game_package_does_not_import_pygame_or_gymnasium() -> None:
-    root = Path(__file__).resolve().parents[1] / "src" / "ricochet" / "game"
-    text = "\n".join(path.read_text() for path in root.glob("*.py"))
-    assert "import pygame" not in text
-    assert "import gymnasium" not in text
+def test_what_the_arena_runs_needs_no_pygame_numpy_or_gymnasium() -> None:
+    # What arena_game.py imports, and every bot it loads, in tournaments and in the browser.
+    code = (
+        "import sys\n"
+        "import ricochet.game.engine, ricochet.game.mapgen, ricochet.themes\n"
+        "from ricochet.runtime.loading import available_ais, load_controller\n"
+        "for name in available_ais():\n"
+        "    load_controller(name)\n"
+        "print(sorted({'pygame', 'numpy', 'gymnasium'} & set(sys.modules)))\n"
+    )
+    game = Path(__file__).resolve().parents[1]
+    result = subprocess.run(
+        [sys.executable, "-c", code], cwd=game, capture_output=True, text=True, check=False
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "[]"

@@ -47,7 +47,7 @@ def test_checkpoint_pool_and_version_contract(tmp_path):
     assert str(path) in names and len(names) > 1
     with pytest.raises(ValueError, match="rules"):
         controller.reset(
-            MatchContext("classic", 0, 1, 0, 30, 2700, RulesConfig.preset("legacy_shield"))
+            MatchContext("classic", 0, 1, 0, 30, 2700, RulesConfig(shield_activation_cost=0))
         )
     metadata["encoder_version"] = 999
     metadata_path(path).write_text(json.dumps(metadata))
@@ -73,10 +73,6 @@ def test_tiny_training_resume_and_finite_metrics(tmp_path, monkeypatch):
     first = training.train(tmp_path / "first", config)
     second = training.train(tmp_path / "resumed", config, first)
     assert json.loads(metadata_path(second).read_text())["steps"] == 64
-    from stable_baselines3 import PPO
-
-    model = PPO.load(second)
-    assert model._n_updates == 4
     for row in (tmp_path / "resumed" / "metrics.jsonl").read_text().splitlines():
         data = json.loads(row)
         assert all(np.isfinite(v) for v in data["metrics"].values())

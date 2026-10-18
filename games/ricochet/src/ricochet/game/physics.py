@@ -1,3 +1,8 @@
+"""Collision geometry: tanks are circles, shots are small circles swept along their path.
+
+A swept collision's time ``t`` is a fraction of the move: 0 at its start, 1 at its end.
+"""
+
 from __future__ import annotations
 
 import math
@@ -24,6 +29,8 @@ class Arena(Protocol):
 
 @dataclass(frozen=True)
 class Collision:
+    """Where a move first touches a surface: at fraction ``t`` of it, against ``normal``."""
+
     t: float
     normal: Vec2
 
@@ -39,6 +46,7 @@ def circle_overlaps_wall(center: Vec2, radius: float, wall: WallDefinition) -> b
 
 
 def tank_position_is_clear(position: Vec2, radius: float, arena: Arena) -> bool:
+    """Whether a circle fits at ``position``, inside the border and clear of every wall."""
     if not radius <= position.x <= arena.width - radius:
         return False
     if not radius <= position.y <= arena.height - radius:
@@ -47,6 +55,7 @@ def tank_position_is_clear(position: Vec2, radius: float, arena: Arena) -> bool:
 
 
 def slide_circle(start: Vec2, displacement: Vec2, radius: float, arena: Arena) -> Vec2:
+    """Move along x, then y, skipping an axis that would end in a wall: tanks slide along walls."""
     position = start
     x_candidate = Vec2(clamp(start.x + displacement.x, radius, arena.width - radius), start.y)
     if tank_position_is_clear(x_candidate, radius, arena):
@@ -66,6 +75,10 @@ def resolve_tank_overlap(
     radius: float,
     arena: Arena,
 ) -> tuple[Vec2, Vec2]:
+    """Push two overlapping tanks apart, both halfway or one all the way if the other is stuck.
+
+    Returns the positions unchanged if neither can move.
+    """
     delta = second - first
     distance = delta.length()
     minimum = radius * 2
@@ -117,6 +130,8 @@ def earliest_wall_collision(
     radius: float,
     arena: Arena,
 ) -> Collision | None:
+    """The first contact, if any, of a circle of ``radius`` moving from ``start`` to ``end``
+    with the border or a wall."""
     candidates: list[Collision] = []
     direction = end - start
     if direction.x < -EPSILON and end.x < radius:
@@ -136,6 +151,10 @@ def earliest_wall_collision(
 
 
 def segment_circle_time(start: Vec2, end: Vec2, center: Vec2, radius: float) -> float | None:
+    """When a point moving from ``start`` to ``end`` comes within ``radius`` of ``center``.
+
+    A fraction of the move from 0 to 1; 0 if it starts within, None if it never gets there.
+    """
     direction = end - start
     relative = start - center
     a = direction.dot(direction)
@@ -154,6 +173,7 @@ def segment_circle_time(start: Vec2, end: Vec2, center: Vec2, radius: float) -> 
 
 
 def reflect(vector: Vec2, normal: Vec2) -> Vec2:
+    """``vector`` bounced off a surface with unit ``normal``."""
     return vector - normal * (2 * vector.dot(normal))
 
 

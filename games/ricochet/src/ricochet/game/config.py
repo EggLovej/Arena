@@ -1,31 +1,35 @@
+"""The numbers behind the rules. Lengths are in pixels, times in seconds, energy in points."""
+
 import math
 from dataclasses import asdict, dataclass
 
-RULES_VERSION = 2
+RULES_VERSION = 2  # Stored in replays and checkpoints, which refuse any other version.
 
 
 @dataclass(frozen=True)
 class RulesConfig:
-    shield_activation_cost: float = 16.0
-    shield_min_seconds: float = 0.2
+    """Every number the rules use; the defaults are the rules in RULES.md."""
+
+    shield_activation_cost: float = 16.0  # energy to raise the shield, besides its prepaid minimum
+    shield_min_seconds: float = 0.2  # a raised shield stays up at least this long
     ticks_per_second: int = 30
-    max_seconds: float = 90.0
-    starting_health: int = 3
-    max_energy: float = 100.0
+    max_seconds: float = 90.0  # match length; reaching it is a draw
+    starting_health: int = 3  # each hit takes one
+    max_energy: float = 100.0  # energy points; tanks start full
     energy_regen_per_second: float = 12.0
-    movement_energy_per_second: float = 16.0
-    shield_energy_per_second: float = 36.0
-    shield_speed_multiplier: float = 0.6
-    fire_energy: float = 32.0
-    fire_cooldown_seconds: float = 0.5
-    tank_speed: float = 180.0
-    tank_radius: float = 18.0
-    projectile_speed: float = 420.0
-    projectile_radius: float = 4.0
-    projectile_lifetime: float = 5.0
-    max_projectiles: int = 24
-    max_walls: int = 12
-    max_bot_faults: int = 3
+    movement_energy_per_second: float = 16.0  # at full speed, less in proportion when slower
+    shield_energy_per_second: float = 36.0  # while the shield is up
+    shield_speed_multiplier: float = 0.6  # share of tank_speed while shielded
+    fire_energy: float = 32.0  # per shot
+    fire_cooldown_seconds: float = 0.5  # between two shots of one tank
+    tank_speed: float = 180.0  # pixels per second
+    tank_radius: float = 18.0  # pixels
+    projectile_speed: float = 420.0  # pixels per second
+    projectile_radius: float = 4.0  # pixels
+    projectile_lifetime: float = 5.0  # seconds before an unspent shot disappears
+    max_projectiles: int = 24  # shots in flight at once; nobody fires beyond it
+    max_walls: int = 12  # per map
+    max_bot_faults: int = 3  # standalone game only: faults before a bot forfeits
 
     def __post_init__(self) -> None:
         for name, value in asdict(self).items():
@@ -48,14 +52,6 @@ class RulesConfig:
     @property
     def shield_min_ticks(self) -> int:
         return max(1, math.ceil(self.shield_min_seconds * self.ticks_per_second))
-
-    @classmethod
-    def preset(cls, name: str) -> "RulesConfig":
-        if name == "default":
-            return cls()
-        if name == "legacy_shield":
-            return cls(shield_activation_cost=0, shield_min_seconds=0)
-        raise ValueError(f"unknown rules preset: {name}")
 
     @property
     def dt(self) -> float:

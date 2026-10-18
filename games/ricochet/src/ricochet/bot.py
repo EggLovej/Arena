@@ -1,13 +1,15 @@
-"""Optional building blocks for controllers: a base class and pure observation helpers.
+"""Building blocks for controllers: their protocol, a base class and observation helpers.
 
 Nothing here is required. Any object with ``reset(context)`` and ``act(observation)`` is a
-controller; these helpers just keep bots from re-deriving the same game geometry.
+controller (``Controller`` spells that out for type checkers); the base class and helpers
+just keep bots from re-deriving the same game geometry.
 """
 
 from __future__ import annotations
 
 import heapq
 import math
+from typing import Protocol
 
 from ricochet.game.config import RulesConfig
 from ricochet.game.physics import segment_circle_time, segment_hits_wall, tank_position_is_clear
@@ -19,6 +21,14 @@ from ricochet.game.types import (
     TankView,
     Vec2,
 )
+
+
+class Controller(Protocol):
+    """What a match asks of a bot: ``reset`` once per match, then ``act`` every tick."""
+
+    def reset(self, context: MatchContext) -> None: ...
+
+    def act(self, observation: GameObservation) -> ControlAction: ...
 
 
 class BaseController:
@@ -125,6 +135,7 @@ def find_path(
 
 __all__ = [
     "BaseController",
+    "Controller",
     "find_path",
     "lead_target",
     "line_of_sight",

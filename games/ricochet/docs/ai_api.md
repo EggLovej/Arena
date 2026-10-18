@@ -21,7 +21,7 @@ def create_controller():
     return MyController()
 ```
 
-Modules using dataclasses and postponed annotations are supported. Put match state on controller instances. Factories must return an object with callable `reset` and `act` methods. `reset` receives a frozen `MatchContext` with seed, player/opponent IDs, map ID, tick rate, duration, immutable rules and rules version. Both `act` calls observe the same pre-tick state.
+Modules using dataclasses and postponed annotations are supported. Put match state on controller instances. Factories must return an object with callable `reset` and `act` methods. `reset` receives a frozen `MatchContext` with seed, player/opponent IDs, map ID, tick rate, duration and immutable rules. Both `act` calls observe the same pre-tick state.
 
 `BaseController` is optional: its `reset` stores `self.context`, `self.rules`, `self.player_id` and `self.opponent_id`. Override `reset` for extra per-match state and call `super().reset(context)` first. Any object with `reset` and `act` still works.
 
@@ -41,7 +41,11 @@ Modules using dataclasses and postponed annotations are supported. Put match sta
 
 Actions contain movement XY, aim XY, fire and shield. Vectors must be finite and are limited to length one; nonzero aim is normalized by the engine. A zero aim keeps the previous aim. Boolean fire/shield flags must be actual booleans. Shield takes priority over firing and remains active for its prepaid commitment. See [rules](rules.md).
 
-`act` faults emit a no-op and count toward three-fault forfeiture. Import/factory/reset failure is an immediate forfeit. If both controllers fail, the match is invalid; JSON summaries include failure messages. Local execution has no security sandbox or enforced time budget.
+## Faults and time limits
+
+In the Arena, a bot that raises an error, or returns anything that isn't an action, does nothing that tick and plays on. A bot may think for up to 120 seconds on one move (or on loading and `reset`) and 30 minutes over a match; one that runs out of time, or fails to load, does nothing for the rest of the match. The match report counts each bot's errors.
+
+The standalone game is stricter about errors and has no time limit. An `act` fault emits a no-op and counts toward three-fault forfeiture; an import, factory or `reset` failure is an immediate forfeit. If both controllers fail, the match is invalid; JSON summaries include failure messages. Either way, bots are trusted Python with no security sandbox.
 
 ## Encoding and neural controllers
 
@@ -59,6 +63,6 @@ Load a trusted compatible checkpoint through `checkpoint:/path/to/model.zip` any
 
 ## Search and multi-agent use
 
-`GameEngine.capture_state()` returns a JSON-serializable complete state. `restore_state(state)` replaces the engine's state; `clone()` returns an independent engine. Snapshots include the map, rules, timers, projectile counter and outcome, so rollout bots need not manipulate private entities.
+`GameEngine.capture_state()` returns a JSON-serializable complete state. `restore_state(state)` replaces the engine's state, and `GameEngine.from_state(state)` builds an independent engine from it. Snapshots include the map, rules, timers, projectile counter and outcome, so rollout bots need not manipulate private entities.
 
 `RicochetEnv` provides single-agent Gymnasium play against a controller or controller factory. `RicochetParallelEnv` in `ricochet.training.parallel_env` provides simultaneous `player_0` / `player_1` observations and actions. Its reward is terminal win/loss/draw only; Gym's extra damage shaping is intentionally an adapter choice. Both use the same engine and versioned encoder.

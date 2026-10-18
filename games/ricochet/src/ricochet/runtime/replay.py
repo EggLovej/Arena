@@ -1,3 +1,8 @@
+"""Replays of the standalone game: every action and state hash, with seeking for the viewer.
+
+The Arena records its own replays (``platform/arena``); these are for the ``ricochet`` command.
+"""
+
 from __future__ import annotations
 
 import hashlib
@@ -14,7 +19,7 @@ from ricochet.runtime.loading import default_ais_directory
 from ricochet.runtime.match import MatchSummary
 
 REPLAY_SCHEMA_VERSION = 2
-ENGINE_VERSION = "2.0.0"
+ENGINE_VERSION = "2.1.0"  # raise whenever the engine plays the same actions differently
 
 
 @dataclass
@@ -88,7 +93,7 @@ class ReplayRecorder:
 def load_replay(path: Path) -> dict[str, Any]:
     data = json.loads(path.read_text())
     if data.get("schema_version") != REPLAY_SCHEMA_VERSION:
-        raise ValueError("Replay v1 requires the pre-v2 game (revision afc5ee0); rules changed")
+        raise ValueError("incompatible replay schema version")
     if data.get("engine_version") != ENGINE_VERSION:
         raise ValueError("incompatible replay engine version")
     return data

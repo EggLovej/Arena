@@ -50,7 +50,7 @@ def test_a_match_nobody_wins_is_a_draw_on_time(ricochet):
 
 def test_actions_are_recorded_exactly_and_nothing_is_zero(ricochet):
     from ricochet import ControlAction, Vec2
-    from ricochet.api import validate_action
+    from ricochet.game.types import validate_action
 
     action = ControlAction(Vec2(0.123456789, -0.5), Vec2(3, 4), fire=True, shield=False)
     encoded = ricochet.action_to_json(action)
