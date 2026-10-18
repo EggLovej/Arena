@@ -10,7 +10,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 import time
 from pathlib import Path
@@ -169,8 +168,8 @@ def _verify(args) -> int:
     exact = len(args.replays) - failed - stale
     print(f"{exact} of {len(args.replays)} replays play back exactly")
     if stale:
-        # A rules or map change may change how old matches play; that is not an error.
-        print(f"{stale} recorded before the game's rules or maps changed no longer do; the next tournament replaces them")
+        # A change to the rules, maps or adapter may change how old matches play; that is not an error.
+        print(f"{stale} recorded before the game's rules, maps or adapter changed no longer do; the next tournament replaces them")
     return 1 if failed else 0
 
 

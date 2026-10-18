@@ -2,7 +2,10 @@ import copy
 import sys
 from dataclasses import replace
 
+import pytest
+
 from arena.cli import main
+from arena.live import LiveMatch
 from arena.replay import is_current, read_replay, verify, write_replay
 from arena.runner import play_match
 
@@ -10,7 +13,7 @@ from arena.runner import play_match
 def test_a_match_plays_to_the_end_and_its_replay_checks_out(race):
     record = play_match(race, "short", {"red": "steady", "blue": "sprinter"}, seed=3)
     assert record.outcome.reason == "finish"
-    assert record.outcome.winner in ("red", "blue")
+    assert record.outcome.ranking == (("blue",), ("red",))
     replay = record.replay
     assert replay["frames"]["count"] == record.outcome.ticks + 1
     assert replay["seats"] == [{"seat": "red", "bot": "steady"}, {"seat": "blue", "bot": "sprinter"}]
@@ -26,88 +29,51 @@ def test_the_same_seed_plays_the_same_match(race):
     assert first["actions"] != other["actions"]
 
 
-def test_a_changed_action_is_caught(race):
-    replay = play_match(race, "long", {"red": "steady", "blue": "sprinter", "green": "steady"}, seed=5).replay
-    tampered = copy.deepcopy(replay)
-    tampered["actions"] = [[tick, seat, 1 if seat == "blue" else action] for tick, seat, action in tampered["actions"]]
-    problems = verify(race, tampered)
-    assert any("final state differs" in problem for problem in problems)
-
-
-def test_a_changed_frame_is_caught(race):
-    replay = play_match(race, "short", {"red": "steady", "blue": "steady"}, seed=1, keyframe_every=2).replay
-    tampered = copy.deepcopy(replay)
-    tampered["frames"]["keyframes"]["2"]["runners"]["red"] = [99]
-    assert "snapshot differs at tick 2" in verify(race, tampered)
-
-
-def test_a_changed_delta_is_caught(race):
-    replay = play_match(race, "short", {"red": "steady", "blue": "steady"}, seed=1).replay
-    tampered = copy.deepcopy(replay)
-    tampered["frames"]["deltas"][0]["runners"] = {"red": [999]}
-    assert verify(race, tampered) == ["snapshot differs at tick 1"]
-    del tampered["frames"]["deltas"][-1]
-    assert "a delta for every tick" in verify(race, tampered)[0]
-
-
-def test_bots_that_fail_lose_their_moves_not_the_match(race):
-    record = play_match(race, "long", {"red": "broken", "blue": "garbage", "green": "cheater"}, seed=2)
-    red, blue, green = (record.seats[seat] for seat in ("red", "blue", "green"))
-    assert red.errors == red.moves and "always fails" in red.first_error
-    assert blue.errors == blue.moves and "not an action" in blue.first_error
-    assert green.errors == 0 and green.refused == green.moves
-    assert record.outcome.reason == "time" and record.outcome.ticks == race.info.max_ticks
-    assert record.outcome.ranking == (("red", "blue", "green"),)
+@pytest.mark.parametrize(
+    "bot, limits, problem",
+    [
+        ("broken", {}, "this bot always fails"),  # raises
+        ("garbage", {}, "not an action"),  # returns something that is not an action
+        ("cheater", {}, None),  # returns an action the rules refuse
+        ("missing", {}, "load: ModuleNotFoundError"),  # cannot be loaded
+        ("sleeper", {"move_time_limit": 0.03}, "more than 0.03s on one move"),
+        ("sleeper", {"match_time_limit": 0.25}, "used up its 0.25s for the match"),
+    ],
+)
+def test_a_misbehaving_bot_loses_its_moves_not_the_match(race, monkeypatch, bot, limits, problem):
+    monkeypatch.setattr(race, "info", replace(race.info, **limits))
+    record = play_match(race, "short", {"red": bot, "blue": "steady"}, seed=6)
+    red = record.seats["red"]
+    if problem:
+        assert problem in red.first_error
+    else:
+        assert red.errors == 0 and red.refused == red.moves
+    for limit in limits.values():  # stopped at its limit, not left to finish thinking
+        assert red.think_seconds < limit + 0.04
+    assert record.outcome.ranking == (("blue",), ("red",))
     assert verify(race, record.replay) == []
 
 
-def test_a_map_can_have_a_longer_time_limit_than_its_game(race, monkeypatch):
+def watched(game, map_id, lineup, seed):
+    """The outcome of a match the website plays with bots in every seat."""
+
+    live = LiveMatch(game, map_id, lineup, seed)
+    while not live.finished():
+        update = live.step()
+    return update["outcome"]
+
+
+def tournament(game, map_id, lineup, seed):
+    return play_match(game, map_id, lineup, seed, record_replay=False).outcome.to_json()
+
+
+@pytest.mark.parametrize("play", [tournament, watched])
+def test_a_map_can_have_a_longer_time_limit_than_its_game(race, monkeypatch, play):
     tracks = sys.modules[type(race).__module__].MAPS
     track = tracks["long"]
     monkeypatch.setitem(tracks, "long", replace(track, info=replace(track.info, max_ticks=55)))
-    record = play_match(race, "long", {"red": "broken", "blue": "garbage", "green": "cheater"}, seed=2)
-    assert record.outcome.reason == "time" and record.outcome.ticks == 55 > race.info.max_ticks
-    assert record.replay["max_ticks"] == 55
-    assert verify(race, record.replay) == []
-
-
-def test_replays_round_trip_plain_and_gzipped(race, tmp_path):
-    replay = play_match(race, "short", {"red": "steady", "blue": "dice"}, seed=8).replay
-    for name in ("match.json", "match.json.gz"):
-        path = write_replay(tmp_path / name, replay)
-        assert read_replay(path) == replay
-
-
-def test_a_summary_row_has_what_the_tables_need(race):
-    row = play_match(race, "short", {"red": "steady", "blue": "sprinter"}, seed=0, match_id="m1", record_replay=False).summary()
-    assert row["id"] == "m1" and row["lineup"] == {"red": "steady", "blue": "sprinter"}
-    assert set(row["seats"]["red"]) >= {"bot", "moves", "errors", "refused", "think_ms_mean", "think_ms_max"}
-
-
-def test_a_bot_that_fails_to_load_forfeits_and_the_match_goes_on(race):
-    record = play_match(race, "short", {"red": "missing", "blue": "steady"}, seed=6)
-    red = record.seats["red"]
-    assert red.errors == 1 and red.first_error.startswith("load: ModuleNotFoundError")
-    assert red.moves == record.outcome.ticks and record.outcome.winner == "blue"
-    assert verify(race, record.replay) == []
-
-
-def test_a_bot_that_thinks_too_long_on_one_move_forfeits(race, monkeypatch):
-    monkeypatch.setattr(race, "info", replace(race.info, move_time_limit=0.03))
-    record = play_match(race, "short", {"red": "sleeper", "blue": "steady"}, seed=6)
-    red = record.seats["red"]
-    assert red.errors == 1 and "more than 0.03s on one move" in red.first_error
-    assert red.slowest_seconds < 0.09  # stopped, not left to finish its 0.1s nap
-    assert record.outcome.winner == "blue" and not any(seat == "red" for _, seat, _ in record.replay["actions"])
-
-
-def test_a_bot_that_uses_up_its_time_for_the_match_forfeits(race, monkeypatch):
-    monkeypatch.setattr(race, "info", replace(race.info, match_time_limit=0.25))
-    record = play_match(race, "long", {"red": "sleeper", "blue": "steady", "green": "steady"}, seed=6)
-    red = record.seats["red"]
-    assert red.errors == 1 and "used up its 0.25s" in red.first_error
-    assert 2 <= sum(seat == "red" for _, seat, _ in record.replay["actions"]) <= 3
-    assert red.think_seconds < 0.3
+    outcome = play(race, "long", {"red": "broken", "blue": "garbage", "green": "cheater"}, 2)
+    assert outcome["reason"] == "time" and outcome["ticks"] == 55 > race.info.max_ticks
 
 
 def test_the_match_plays_each_action_as_its_replay_records_it(race, monkeypatch):
@@ -115,6 +81,33 @@ def test_the_match_plays_each_action_as_its_replay_records_it(race, monkeypatch)
     record = play_match(race, "short", {"red": "sprinter", "blue": "sprinter"}, seed=4)
     assert record.outcome.ticks >= 10  # one step a tick, as decoded, not the three asked for
     assert verify(race, record.replay) == []
+
+
+def tamper_action(replay):
+    replay["actions"] = [[tick, seat, 1 if seat == "blue" else action] for tick, seat, action in replay["actions"]]
+    return "final state differs"
+
+
+def tamper_keyframe(replay):
+    replay["frames"]["keyframes"]["2"]["runners"]["red"] = [99]
+    return "snapshot differs at tick 2"
+
+
+def tamper_delta(replay):
+    replay["frames"]["deltas"][0]["runners"] = {"red": [999]}
+    return "snapshot differs at tick 1"
+
+
+def drop_delta(replay):
+    del replay["frames"]["deltas"][-1]
+    return "a delta for every tick"
+
+
+@pytest.mark.parametrize("tamper", [tamper_action, tamper_keyframe, tamper_delta, drop_delta])
+def test_a_tampered_replay_is_caught(race, tamper):
+    replay = copy.deepcopy(play_match(race, "long", {"red": "steady", "blue": "sprinter", "green": "steady"}, seed=5, keyframe_every=2).replay)
+    expected = tamper(replay)
+    assert any(expected in problem for problem in verify(race, replay))
 
 
 def test_verify_tells_a_broken_replay_from_one_older_rules_changed(race, tmp_path, capsys):

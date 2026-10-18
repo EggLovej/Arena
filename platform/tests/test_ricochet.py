@@ -1,31 +1,17 @@
-"""Ricochet through the Arena contract: the adapter, replays and restoring a match."""
+"""Ricochet's own promises beyond what every game makes (test_games.py)."""
 
 import math
 
 import pytest
 
-from arena.contract import BotContext, state_hash
+from arena.contract import BotContext
 from arena.registry import games_directory, load_game
-from arena.replay import verify
 from arena.runner import play_match
 
 
 @pytest.fixture(scope="module")
 def ricochet():
     return load_game("ricochet")
-
-
-def test_maps_bots_and_seats(ricochet):
-    maps = {map_info.id: map_info for map_info in ricochet.maps()}
-    assert {"classic", "channels", "crossfire", "generated-3"} <= set(maps)
-    assert all(map_info.seats == ("cyan", "coral") for map_info in maps.values())
-    assert maps["generated-3"].name == "Generated 3"
-    bots = {bot.id: bot for bot in ricochet.bots()}
-    assert set(bots) == {"bank_shot_ai", "close_range_ai", "direct_ai", "random_ai", "reactive_defender_ai", "sentinel_ai"}
-    assert bots["bank_shot_ai"].name == "Bank Shot"
-    assert all(bot.description and bot.kind == "scripted" for bot in bots.values())
-    with pytest.raises(ValueError):
-        ricochet.load_bot("template_ai")  # where a new bot starts, not a player
 
 
 def test_maps_and_bots_come_from_its_folder_wherever_it_runs(ricochet, tmp_path, monkeypatch):
@@ -36,17 +22,6 @@ def test_maps_and_bots_come_from_its_folder_wherever_it_runs(ricochet, tmp_path,
     assert {bot.id for bot in ricochet.bots()} >= {"direct_ai", "sentinel_ai"}
     bot = ricochet.load_bot("direct_ai")
     bot.reset(BotContext("ricochet", "classic", "cyan", ("cyan", "coral"), 1, 1 / 30, 2700))
-
-
-def test_a_match_replays_exactly(ricochet):
-    record = play_match(ricochet, "crossfire", {"cyan": "sentinel_ai", "coral": "direct_ai"}, seed=3)
-    assert sum(report.errors for report in record.seats.values()) == 0
-    assert record.outcome.ranking == (("cyan",), ("coral",))
-    assert record.outcome.reason == "elimination"
-    assert verify(ricochet, record.replay) == []
-    frames = record.replay["frames"]
-    assert set(frames["keyframes"]["0"]) == {"tanks", "status", "shots"}
-    assert any(delta.get("shots") for delta in frames["deltas"])
 
 
 def test_a_shot_is_stored_when_fired_and_when_it_bounces(ricochet):
@@ -64,31 +39,6 @@ def test_a_shot_is_stored_when_fired_and_when_it_bounces(ricochet):
     assert [shot[6] for shot in seen] == [0, 1]  # one bounce, then gone at the floor
     bounced = seen[1]
     assert bounced[4] == 420.0 and bounced[2] < 30
-
-
-def test_a_restored_match_carries_on_the_same(ricochet):
-    match = ricochet.new_match("generated-8", 7)
-    bots = {}
-    for seat, bot_id in zip(match.seats, ("sentinel_ai", "bank_shot_ai")):
-        bots[seat] = ricochet.load_bot(bot_id)
-        bots[seat].reset(BotContext("ricochet", "generated-8", seat, match.seats, 1, 1 / 30, 2700))
-
-    def moves(current):
-        # As the runner plays them: the action as the replay records it.
-        return {seat: ricochet.action_from_json(ricochet.action_to_json(bots[seat].act(current.observe(seat)))) for seat in current.acting()}
-
-    for _ in range(60):
-        match.step(moves(match))
-    copy = ricochet.restore_match("generated-8", match.save_state())
-    assert state_hash(copy.save_state()) == state_hash(match.save_state())
-    assert copy.snapshot() == match.snapshot()
-    for _ in range(60):
-        if match.finished():
-            break
-        actions = moves(match)
-        match.step(actions)
-        copy.step(actions)
-        assert state_hash(copy.save_state()) == state_hash(match.save_state())
 
 
 def test_a_match_nobody_wins_is_a_draw_on_time(ricochet):
@@ -123,13 +73,11 @@ def test_the_arena_plays_like_ricochets_own_runtime(ricochet, monkeypatch):
     assert record.outcome.ticks == native.ticks
 
 
-@pytest.mark.parametrize("kind", ["text", "dict", "tuple", "nan", "flag"])
-def test_anything_but_an_action_is_refused(ricochet, kind):
+@pytest.mark.parametrize("kind", ["tuple", "nan", "flag"])
+def test_an_action_of_the_wrong_types_is_refused(ricochet, kind):
     from ricochet import ControlAction, Vec2
 
     wrong = {
-        "text": "fire",
-        "dict": {"move": [1, 0]},
         "tuple": ControlAction(move=(1, 0)),
         "nan": ControlAction(aim=Vec2(math.nan, 0)),
         "flag": ControlAction(fire="yes"),
@@ -166,12 +114,9 @@ def test_a_person_moves_aims_and_fires_in_the_browser(ricochet):
 @pytest.mark.parametrize(
     "command",
     [
-        "fire",
         {"move": [1, 0]},
-        {"move": [1], "target": None, "fire": False, "shield": False},
         {"move": [1, 0], "target": [math.nan, 0], "fire": False, "shield": False},
         {"move": [1, 0], "target": None, "fire": 1, "shield": False},
-        {"move": [True, 0], "target": None, "fire": False, "shield": False},
     ],
 )
 def test_a_person_s_wrong_command_is_refused(ricochet, command):

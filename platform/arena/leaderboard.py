@@ -83,10 +83,9 @@ def standings(game: Game, results: Iterable[dict]) -> dict:
 class _Record:
     def __init__(self):
         self.games = self.wins = self.draws = self.losses = 0
-        self.points = self.places = 0.0
+        self.points = 0.0
         self.errors = self.refused = self.moves = 0
         self.think_ms = 0.0
-        self.slowest_ms = 0.0
         self.by_map: dict[str, list[float]] = defaultdict(lambda: [0.0, 0])
 
     def add(self, row: dict, outcome: Outcome, seat: str) -> None:
@@ -100,7 +99,6 @@ class _Record:
             self.losses += 1
         score = points(outcome, seat)
         self.points += score
-        self.places += outcome.place(seat)
         self.by_map[row["map"]][0] += score
         self.by_map[row["map"]][1] += 1
         report = row["seats"][seat]
@@ -108,7 +106,6 @@ class _Record:
         self.refused += report["refused"]
         self.moves += report["moves"]
         self.think_ms += report["think_ms_mean"] * report["moves"]
-        self.slowest_ms = max(self.slowest_ms, report["think_ms_max"])
 
     def to_json(self) -> dict:
         return {
@@ -117,11 +114,9 @@ class _Record:
             "draws": self.draws,
             "losses": self.losses,
             "score": round(self.points / self.games, 4) if self.games else 0.0,
-            "average_place": round(self.places / self.games, 3) if self.games else 0.0,
             "errors": self.errors,
             "refused": self.refused,
             "think_ms_mean": round(self.think_ms / self.moves, 3) if self.moves else 0.0,
-            "think_ms_max": round(self.slowest_ms, 1),
             "by_map": {
                 name: {"score": round(score / games, 4), "games": games} for name, (score, games) in sorted(self.by_map.items())
             },

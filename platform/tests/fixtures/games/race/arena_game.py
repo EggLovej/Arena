@@ -3,7 +3,8 @@
 Every tick each runner moves 1, 2 or 3 steps, but a gust of wind (the same for a
 given seed) holds one of them still. The first to reach the goal wins; runners
 level at the goal share first place. It is also a template for a new game's
-``arena_game.py``: rules, a few bots, and the adapter methods.
+``arena_game.py``: rules, a few bots, and the adapter methods, with ``RULES.md`` and
+``files.json`` beside it (everything Race's matches load is in this file).
 """
 
 from __future__ import annotations
@@ -95,15 +96,33 @@ BOTS = {
 }
 
 
+class Runner:
+    """A person on the website: runs at the speed they last chose (1, 2 or 3 steps a tick)."""
+
+    def __init__(self):
+        self.speed = None
+
+    def command(self, data):
+        if not isinstance(data, int) or isinstance(data, bool):
+            raise ValueError(f"{data!r} is not a number of steps")
+        self.speed = data
+
+    def act(self, observation):
+        return self.speed
+
+    def view(self):
+        return {"speed": self.speed}
+
+
 class RaceMatch:
-    def __init__(self, map_id: str, seed: int, positions: dict[str, int] | None = None, tick: int = 0):
+    def __init__(self, map_id: str, seed: int):
         track = MAPS[map_id]
         info, self.goal = track.info, track.goal
         self.map_id = map_id
         self.seed = seed
         self.seats = info.seats
-        self.positions = dict(positions) if positions else {seat: 0 for seat in self.seats}
-        self.tick = tick
+        self.positions = {seat: 0 for seat in self.seats}
+        self.tick = 0
 
     def acting(self):
         return self.seats
@@ -165,9 +184,6 @@ class RaceGame:
     def new_match(self, map_id, seed):
         return RaceMatch(map_id, seed)
 
-    def restore_match(self, map_id, state):
-        return RaceMatch(map_id, state["seed"], state["positions"], state["tick"])
-
     def action_to_json(self, action):
         if not isinstance(action, int):
             raise TypeError(f"{action!r} is not a number of steps")
@@ -176,17 +192,11 @@ class RaceGame:
     def action_from_json(self, data):
         return data
 
-    def observation_to_json(self, observation):
-        return observation
-
-    def rules(self):
-        return "# Race\n\nMove 1, 2 or 3 steps a tick. First to the goal wins."
+    def person(self, seat):
+        return Runner()
 
     def theme(self):
         return {}
-
-    def fingerprint(self):
-        return "race-1"
 
 
 GAME = RaceGame()

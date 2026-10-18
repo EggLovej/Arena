@@ -7,11 +7,12 @@ import random
 import signal
 import threading
 import time
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass, field
 
-from arena.contract import BotContext, Game, Outcome, state_hash
+from arena.contract import JSON, Action, BotContext, Game, Match, Outcome, state_hash
 from arena.frames import FrameRecorder
+from arena.registry import fingerprint
 
 
 REPLAY_FORMAT = "arena-replay"
@@ -28,7 +29,6 @@ class SeatReport:
     errors: int = 0  # the bot raised, or returned something that is not an action
     refused: int = 0  # the game refused the action, for example too many units
     think_seconds: float = 0.0
-    slowest_seconds: float = 0.0
     first_error: str = ""
 
     def to_json(self) -> dict:
@@ -38,7 +38,6 @@ class SeatReport:
             "errors": self.errors,
             "refused": self.refused,
             "think_ms_mean": round(1000 * self.think_seconds / self.moves, 3) if self.moves else 0.0,
-            "think_ms_max": round(1000 * self.slowest_seconds, 3),
             "first_error": self.first_error,
         }
 
@@ -80,6 +79,74 @@ def max_ticks_for(game: Game, map_id: str) -> int:
     return next((m.max_ticks for m in game.maps() if m.id == map_id and m.max_ticks), game.info.max_ticks)
 
 
+class BotSeat:
+    """One seat's bot, played the same way in tournaments and on the website: loaded and reset,
+    then asked for a move on each tick it acts, timed, and its move read back as the replay
+    records it. A bot that fails to load, or runs out of time, sits out the rest of the match;
+    a bot that fails on one move loses that move. Time limits apply when ``timed``."""
+
+    def __init__(self, game: Game, bot_id: str, context: BotContext, timed: bool = True):
+        self.game = game
+        self.report = SeatReport(bot_id)
+        self.timed = timed
+        limit = game.info.move_time_limit
+        bot = None
+        try:  # a broken bot loses its moves, not the whole tournament
+            with self._limit(limit):
+                bot = game.load_bot(bot_id)
+                bot.reset(context)
+        except OutOfTime:
+            _note_error(self.report, f"{'load' if bot is None else 'reset'}: took longer than {limit:g}s")
+            bot = None
+        except Exception as error:  # a bot that fails to reset still plays; one that fails to load cannot
+            _note_error(self.report, f"{'load' if bot is None else 'reset'}: {error!r}")
+        self.bot = bot
+
+    def move(self, match: Match, seat: str) -> tuple[Action | None, JSON]:
+        """The bot's action for this tick and its JSON, or (None, None) if it has none."""
+
+        report = self.report
+        report.moves += 1
+        if self.bot is None:
+            return None, None
+        observation = match.observe(seat)
+        info = self.game.info
+        limit = min(info.move_time_limit, info.match_time_limit - report.think_seconds)
+        action = None
+        before = time.perf_counter()
+        try:
+            with self._limit(limit):
+                action = self.bot.act(observation)
+        except OutOfTime:
+            self.bot = None
+            if limit < info.move_time_limit:
+                _note_error(report, f"out of time: used up its {info.match_time_limit:g}s for the match")
+            else:
+                _note_error(report, f"out of time: thought for more than {limit:g}s on one move")
+        except Exception as error:
+            _note_error(report, repr(error))
+        report.think_seconds += time.perf_counter() - before
+        return checked(self.game, action, report)
+
+    def _limit(self, seconds: float):
+        return time_limit(seconds) if self.timed else nullcontext()
+
+
+def checked(game: Game, action: Action | None, report: SeatReport) -> tuple[Action | None, JSON]:
+    """The action as the game reads it back from its JSON, and that JSON; (None, None) for no action
+    or for something that is not an action. The match plays the action as the replay records it, so
+    a replay always plays back the same, whatever odd types a bot returned."""
+
+    if action is None:
+        return None, None
+    try:
+        encoded = game.action_to_json(action)
+        return game.action_from_json(encoded), encoded
+    except (TypeError, ValueError) as error:
+        _note_error(report, f"not an action: {error}")
+        return None, None
+
+
 def play_match(
     game: Game,
     map_id: str,
@@ -99,21 +166,11 @@ def play_match(
     if set(lineup) != set(match.seats):
         raise ValueError(f"Map {map_id} has seats {match.seats}, but the lineup names {tuple(lineup)}")
 
-    reports = {seat: SeatReport(lineup[seat]) for seat in match.seats}
-    bots = {}  # seat -> bot, or None once it has forfeited the match
-    for seat in match.seats:
-        context = BotContext(info.id, map_id, seat, match.seats, seat_seed(seed, seat), info.tick_seconds, max_ticks)
-        bot = None
-        try:  # a broken bot loses its moves, not the whole tournament
-            with time_limit(info.move_time_limit):
-                bot = game.load_bot(lineup[seat])
-                bot.reset(context)
-        except OutOfTime:
-            _note_error(reports[seat], f"{'load' if bot is None else 'reset'}: took longer than {info.move_time_limit:g}s")
-            bot = None
-        except Exception as error:  # a bot that fails to reset still plays; one that fails to load cannot
-            _note_error(reports[seat], f"{'load' if bot is None else 'reset'}: {error!r}")
-        bots[seat] = bot
+    seats = {
+        seat: BotSeat(game, lineup[seat], BotContext(info.id, map_id, seat, match.seats, seat_seed(seed, seat), info.tick_seconds, max_ticks))
+        for seat in match.seats
+    }
+    reports = {seat: bot_seat.report for seat, bot_seat in seats.items()}
 
     frames = FrameRecorder(keyframe_every) if record_replay else None
     actions_log: list[list] = []
@@ -131,39 +188,9 @@ def play_match(
         tick = match.tick
         actions = {}
         for seat in match.acting():
-            report = reports[seat]
-            report.moves += 1
-            action = None
-            if bots[seat] is not None:
-                observation = match.observe(seat)
-                limit = min(info.move_time_limit, info.match_time_limit - report.think_seconds)
-                before = time.perf_counter()
-                try:
-                    with time_limit(limit):
-                        action = bots[seat].act(observation)
-                except OutOfTime:
-                    bots[seat] = None
-                    if limit < info.move_time_limit:
-                        _note_error(report, f"out of time: used up its {info.match_time_limit:g}s for the match")
-                    else:
-                        _note_error(report, f"out of time: thought for more than {limit:g}s on one move")
-                except Exception as error:
-                    _note_error(report, repr(error))
-                spent = time.perf_counter() - before
-                report.think_seconds += spent
-                report.slowest_seconds = max(report.slowest_seconds, spent)
-            if action is not None:
-                try:
-                    encoded = game.action_to_json(action)
-                    # The match plays the action as the replay records it, so a replay always
-                    # plays back the same, whatever odd types a bot returned.
-                    action = game.action_from_json(encoded)
-                except (TypeError, ValueError) as error:
-                    action = None
-                    _note_error(report, f"not an action: {error}")
-                else:
-                    actions_log.append([tick, seat, encoded])
-            actions[seat] = action
+            actions[seat], encoded = seats[seat].move(match, seat)
+            if encoded is not None:
+                actions_log.append([tick, seat, encoded])
         for seat in match.step(actions):
             reports[seat].refused += 1
         observe_state()
@@ -178,7 +205,7 @@ def play_match(
             "format": REPLAY_FORMAT,
             "version": REPLAY_VERSION,
             "game": info.id,
-            "fingerprint": game.fingerprint(),
+            "fingerprint": fingerprint(info.id),
             "match_id": match_id,
             "map": map_id,
             "seed": seed,
@@ -190,7 +217,6 @@ def play_match(
             "actions": actions_log,
             "hashes": hashes,
             "outcome": outcome.to_json(),
-            "reports": {seat: report.to_json() for seat, report in reports.items()},
         }
     return record
 
