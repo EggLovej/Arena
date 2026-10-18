@@ -8,6 +8,8 @@
 
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 
+import { typing } from "@/components/usePlayback.ts";
+
 import type { PlayControlsProps } from "../types.ts";
 import type { RicochetBoardData } from "./RicochetBoard.tsx";
 
@@ -77,10 +79,9 @@ export function RicochetControls({ board: rawBoard, theme: rawTheme, seat, activ
 
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
-      if (event.ctrlKey || event.metaKey || event.altKey) return;
-      if (event.target instanceof Element && event.target.closest("input, select, textarea")) return;
+      if (typing(event)) return;
       if (!(event.code in MOVES) && event.code !== "Space") return;
-      // Keys are followed all along, so a key held through the countdown counts from "Go". While the
+      // Keys are followed all along, so a key held through the countdown counts from the start. While the
       // clock runs they are the game's: the arrows and Space do not scroll the page, and Space (the
       // shield) does not press a button that has the focus.
       if (latest.current.active) {

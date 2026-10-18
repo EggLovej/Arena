@@ -4,15 +4,15 @@
 // how each side did over time, and controls to pause, seek and change speed.
 // It works for every game; only the board and the scoreboard numbers differ.
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { gameView } from "@/games/index.ts";
 import { describeOutcome, formatClock } from "@/lib/format.ts";
 import type { Seat, Snapshot } from "@/lib/types.ts";
 
-import { useAnimationClock, useReplay } from "./usePlayback.ts";
-
-import { BotName } from "./BotName.tsx";
+import { Scoreboard } from "./Scoreboard.tsx";
+import { SpeedSelect } from "./SpeedSelect.tsx";
+import { typing, useAnimationClock, useReplay } from "./usePlayback.ts";
 
 const SPEEDS = [0.5, 1, 2, 4, 8, 16];
 
@@ -64,7 +64,7 @@ export function ReplayPlayer({ gameId, replayUrl, seats, botNames, theme }: Prop
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) return;
+      if (typing(event)) return;
       const second = 1 / tickSeconds;
       if (event.key === " ") {
         event.preventDefault();
@@ -87,7 +87,6 @@ export function ReplayPlayer({ gameId, replayUrl, seats, botNames, theme }: Prop
 
   const tick = Math.max(0, Math.min(last, Math.floor(position)));
   const snapshot = snapshots[tick];
-  const stats = view.stats(replay.board, snapshot);
   const seatInfo = Object.fromEntries(seats.map((seat) => [seat.id, seat]));
   const lineup = Object.fromEntries(replay.seats.map(({ seat, bot }) => [seat, bot]));
   const finished = tick >= last;
@@ -95,33 +94,16 @@ export function ReplayPlayer({ gameId, replayUrl, seats, botNames, theme }: Prop
 
   return (
     <div className="replay" ref={player}>
-      <div className="scoreboard" style={{ "--seats": replay.seats.length } as CSSProperties}>
-        {replay.seats.map(({ seat, bot }) => {
-          const place = replay.outcome.ranking.findIndex((group) => group.includes(seat));
-          const out = finished && place > 0;
-          return (
-            <div key={seat} className={`scoreboard-seat${out ? " is-out" : ""}`} style={{ "--seat": seatInfo[seat]?.color } as CSSProperties}>
-              <span className="scoreboard-name">
-                <BotName name={botNames[bot] ?? bot} game={gameId} id={bot} />
-              </span>
-              <span className="scoreboard-color">{seatInfo[seat]?.name ?? seat}</span>
-              <span className="scoreboard-stats">
-                {stats[seat]
-                  ? stats[seat].map((stat) => (
-                      <span key={stat.label}>
-                        <strong>{stat.value}</strong> {stat.label}
-                      </span>
-                    ))
-                  : <span>Knocked out</span>}
-              </span>
-            </div>
-          );
-        })}
-        <div className="scoreboard-clock">
-          <span>{formatClock(position * tickSeconds)}</span>
-          <small>tick {tick}</small>
-        </div>
-      </div>
+      <Scoreboard
+        gameId={gameId}
+        lineup={lineup}
+        seats={seats}
+        botNames={botNames}
+        stats={view.stats(replay.board, snapshot)}
+        ranking={finished ? replay.outcome.ranking : null}
+        seconds={position * tickSeconds}
+        note={`tick ${tick}`}
+      />
 
       <div className="replay-board">
         <Board board={replay.board} snapshot={snapshot} next={snapshots[tick + 1]} tick={position} tickSeconds={tickSeconds} theme={theme} seats={seats} />
@@ -151,16 +133,7 @@ export function ReplayPlayer({ gameId, replayUrl, seats, botNames, theme }: Prop
         <span className="replay-time">
           {formatClock(position * tickSeconds)} / {formatClock(last * tickSeconds)}
         </span>
-        <label className="replay-speed">
-          Speed
-          <select value={speed} onChange={(event) => setSpeed(Number(event.target.value))}>
-            {SPEEDS.map((value) => (
-              <option key={value} value={value}>
-                {value}×
-              </option>
-            ))}
-          </select>
-        </label>
+        <SpeedSelect speeds={SPEEDS} value={speed} onChange={setSpeed} />
       </div>
       <StrengthChart
         snapshots={snapshots}

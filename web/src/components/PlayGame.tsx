@@ -13,8 +13,10 @@ import { PERSON, drawnTick, lineupFor, playsOn, result } from "@/lib/play.ts";
 import type { GameData } from "@/lib/types.ts";
 
 import { BotAvatar } from "./BotAvatar.tsx";
-import { BotName } from "./BotName.tsx";
 import { MapPreview } from "./MapPreview.tsx";
+import { Scoreboard } from "./Scoreboard.tsx";
+import { SpeedSelect } from "./SpeedSelect.tsx";
+import { typing, useAnimationClock } from "./usePlayback.ts";
 import { usePlayMatch, type Setup } from "./usePlayMatch.ts";
 
 const SPEEDS = [0.5, 1, 2, 4];
@@ -205,14 +207,7 @@ function Match({
 
   // Redraw with the screen while the match runs, so fleets glide between ticks.
   const [now, setNow] = useState(0);
-  useEffect(() => {
-    if (phase !== "playing") return;
-    let frame = requestAnimationFrame(function draw(time) {
-      setNow(time);
-      frame = requestAnimationFrame(draw);
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [phase]);
+  useAnimationClock(phase === "playing", () => setNow(performance.now()));
 
   // The board is brought into view as it is set out, so the whole map shows while playing.
   const area = useRef<HTMLDivElement>(null);
@@ -240,9 +235,8 @@ function Match({
   const pauseKey = play.pauseKey ?? " ";
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.ctrlKey || event.metaKey || event.altKey) return;
-      // A field keeps its keys, and a focused button or link keeps its own use of the space bar.
-      if (event.target instanceof Element && event.target.closest("input, select, textarea")) return;
+      // Fields and shortcuts keep their keys, and a focused button or link keeps its own use of the space bar.
+      if (typing(event)) return;
       if (event.key === "f" || event.key === "F") {
         event.preventDefault();
         toggleFull();
@@ -293,7 +287,6 @@ function Match({
   }
 
   const position = drawnTick(match.tick, match.playedAt, now, tickMs, phase === "playing");
-  const stats = view.stats(match.board, match.snapshot);
   const Board = view.Board;
   const Controls = play.Controls;
   const outcome = match.outcome;
@@ -301,32 +294,17 @@ function Match({
 
   return frame(
     <>
-      <div className="scoreboard" style={{ "--seats": seats.length } as CSSProperties}>
-        {seats.map((seat) => {
-          const out = outcome !== null && outcome.ranking.findIndex((group) => group.includes(seat)) > 0;
-          return (
-            <div key={seat} className={`scoreboard-seat${out ? " is-out" : ""}${seat === person ? " is-you" : ""}`} style={{ "--seat": seatInfo[seat]?.color } as CSSProperties}>
-              <span className="scoreboard-name">{seat === person ? "You" : <BotName name={names[setup.lineup[seat]] ?? setup.lineup[seat]} game={game.id} id={setup.lineup[seat]} />}</span>
-              <span className="scoreboard-color">{seatInfo[seat]?.name ?? seat}</span>
-              <span className="scoreboard-stats">
-                {stats[seat] ? (
-                  stats[seat].map((stat) => (
-                    <span key={stat.label}>
-                      <strong>{stat.value}</strong> {stat.label}
-                    </span>
-                  ))
-                ) : (
-                  <span>Knocked out</span>
-                )}
-              </span>
-            </div>
-          );
-        })}
-        <div className="scoreboard-clock">
-          <span>{formatClock(match.tick * game.tick_seconds)}</span>
-          <small>of {formatClock((game.maps.find((entry) => entry.id === setup.map)?.max_ticks ?? game.max_ticks) * game.tick_seconds)}</small>
-        </div>
-      </div>
+      <Scoreboard
+        gameId={game.id}
+        lineup={setup.lineup}
+        seats={game.seats}
+        botNames={names}
+        stats={view.stats(match.board, match.snapshot)}
+        ranking={outcome?.ranking ?? null}
+        you={person}
+        seconds={match.tick * game.tick_seconds}
+        note={`of ${formatClock((game.maps.find((entry) => entry.id === setup.map)?.max_ticks ?? game.max_ticks) * game.tick_seconds)}`}
+      />
 
       <div className="replay-board play-board">
         <Board board={match.board} snapshot={match.snapshot} tick={position} tickSeconds={game.tick_seconds} theme={game.theme} seats={game.seats} />
@@ -380,16 +358,7 @@ function Match({
             Pause
           </button>
         )}
-        <label className="replay-speed">
-          Speed
-          <select value={speed} onChange={(event) => onSpeed(Number(event.target.value))}>
-            {SPEEDS.map((value) => (
-              <option key={value} value={value}>
-                {value}×
-              </option>
-            ))}
-          </select>
-        </label>
+        <SpeedSelect speeds={SPEEDS} value={speed} onChange={onSpeed} />
         <span className="play-tools" ref={setTools} />
         <button type="button" onClick={toggleFull} aria-pressed={full !== false} title="Full screen (F)">
           {full ? "Exit full screen" : "Full screen"}

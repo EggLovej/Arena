@@ -11,6 +11,8 @@
 import { useEffect, useRef, useState, type KeyboardEvent as KeyPress, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
 
+import { typing } from "@/components/usePlayback.ts";
+
 import type { PlayControlsProps } from "../types.ts";
 import { LARGE_MAP, baseRadii, formatRate, viewBox, type BaseState, type GraphiteBoardData } from "./GraphiteBoard.tsx";
 
@@ -48,7 +50,7 @@ export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, s
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSelected(null);
+      if (event.key === "Escape" && !typing(event)) setSelected(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
