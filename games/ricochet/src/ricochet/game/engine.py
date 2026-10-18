@@ -198,12 +198,11 @@ class GameEngine:
                 tank.energy = max(0.0, tank.energy - shield_cost)
                 tank.shield_active = True
             elif not was_active and requested_shield:
-                ticks = self.rules.shield_min_ticks
-                upfront = self.rules.shield_activation_cost + ticks * shield_cost
+                upfront = self.rules.shield_upfront_cost
                 tank.shield_active = tank.energy + EPSILON >= upfront
                 if tank.shield_active:
                     tank.energy = max(0.0, tank.energy - upfront)
-                    tank.shield_ticks_remaining = ticks - 1
+                    tank.shield_ticks_remaining = self.rules.shield_min_ticks - 1
             else:
                 tank.shield_active = False
             if was_active != tank.shield_active:
