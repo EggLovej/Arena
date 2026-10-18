@@ -218,14 +218,3 @@ def min_send_gap(checkpoint: str | Path) -> int:
     history = read_checkpoint(checkpoint)["history"]
     return history[-1].get("min_send_gap", 0) if history else 0
 
-
-def name_with_settings(prefix: str, path, settings) -> str:
-    """The player name for this checkpoint and these settings; settings at their default are left out."""
-
-    defaults = type(settings)()
-    changed = [
-        f"{setting.name}={getattr(settings, setting.name)}"
-        for setting in fields(settings)
-        if getattr(settings, setting.name) != getattr(defaults, setting.name)
-    ]
-    return f"{prefix}{path}" + ("?" + "&".join(changed) if changed else "")

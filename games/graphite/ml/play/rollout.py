@@ -347,7 +347,6 @@ class RolloutPool:
         # worker's positions in batches there (see ml/play/inference.py). Without one, each
         # worker runs its own copy of the models on its CPU core.
         self.inference_device = inference_device
-        self.last_batching = None  # with a server: (batches, positions) of the last play
         self._pool = multiprocessing.get_context("spawn").Pool(self.workers, initializer=_prepare_worker)
         self._manager = None  # started on first use, for reporting finished games (see ``play``)
 
@@ -426,7 +425,6 @@ class RolloutPool:
                 results = pending.get()
         finally:
             if server is not None:
-                self.last_batching = (server.batches, server.positions)
                 server.close()
         records: list[GameRecord | None] = [None] * len(matchups)
         for hand, played in zip(hands, results):
@@ -445,40 +443,6 @@ class RolloutPool:
 
     def __exit__(self, *exception) -> None:
         self.close()
-
-
-def replay(record: GameRecord) -> Game:
-    """Play a recorded game again from its list of moves, and return the finished game."""
-
-    game = Game(record.matchup.map)
-    moves: dict[int, dict[int, SendAction]] = {}
-    for tick, seat, source_id, target_id, units in record.actions:
-        moves.setdefault(tick, {})[seat] = SendAction(source_id, target_id, units)
-    while game.tick < record.ticks:
-        game.step(moves.get(game.tick, {}))
-    return game
-
-
-def match_score(
-    pool: "RolloutPool",
-    first: str,
-    second: str,
-    maps: list[MapDefinition],
-    models: dict[str, PolicyValueModel] | None = None,
-    seed: int = 0,
-    max_seconds: float = MATCH_SECONDS,
-) -> float:
-    """``first``'s score against ``second``: every map from both seats, wins 1 and draws 1/2."""
-
-    matchups = []
-    for definition in maps:
-        matchups += [Matchup(definition, Seat(first), Seat(second)), Matchup(definition, Seat(second), Seat(first))]
-    records = pool.play(matchups, models, seed=seed, max_seconds=max_seconds)
-    points = 0.0
-    for number, record in enumerate(records):
-        seat = RED if number % 2 == 0 else BLUE
-        points += 0.5 if record.winner is None else float(record.winner == seat)
-    return points / len(records)
 
 
 def count_decisions(records: list[GameRecord]) -> int:

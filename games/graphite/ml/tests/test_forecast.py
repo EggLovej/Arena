@@ -5,7 +5,7 @@ from game import Game
 from game_types import BLUE, NEUTRAL, RED, BaseDefinition, EdgeDefinition, MapDefinition, SendAction
 from loading import load_ai
 
-from ml.encoding.forecast import forecast_base, ticks_until_arrival
+from ml.encoding.forecast import BaseTimeline, ticks_until_arrival
 from ml.map_generator import generate_map
 
 
@@ -29,7 +29,7 @@ def three_base_map(middle_owner=NEUTRAL, middle_units=5, production=1.0):
 def forecast_from_game(game, base_id, ticks=None):
     state = game.view_for(RED)
     incoming = [fleet for fleet in state.fleets if fleet.target_id == base_id]
-    return forecast_base(state.get_base(base_id), incoming, state.seconds_per_tick, ticks)
+    return BaseTimeline(state.get_base(base_id), incoming, state.seconds_per_tick).at(ticks)
 
 
 def advance(game, ticks):

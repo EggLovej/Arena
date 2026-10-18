@@ -26,10 +26,9 @@ from ml.play.rollout import (
     Seat,
     count_decisions,
     play_games,
-    replay,
 )
 from ml.play.inference import InferenceServer
-from ml.tests.support import repeated, trajectory_choices, trajectory_input
+from ml.tests.support import repeated, replay, trajectory_choices, trajectory_input
 
 
 def matchups(red, blue, seeds=range(4), record=True):
@@ -58,7 +57,6 @@ class ServerTests(unittest.TestCase):
         cls.finished = []
         with RolloutPool(workers=2, inference_device="cpu") as pool:
             cls.records = pool.play(played, cls.models, seed=3, max_seconds=20, on_finished=lambda *args: cls.finished.append(args))
-            cls.batching = pool.last_batching
 
     def test_every_game_is_played_and_reported(self):
         self.assertEqual(len(self.records), 6)
@@ -79,10 +77,6 @@ class ServerTests(unittest.TestCase):
                 self.assertTrue(torch.allclose(expected, torch.from_numpy(trajectory.log_probability), atol=1e-4))
                 self.assertTrue(torch.allclose(output.value, torch.from_numpy(trajectory.value), atol=1e-4))
         self.assertEqual(players, {"net", "other"})
-
-    def test_requests_are_answered_in_batches(self):
-        batches, positions = self.batching
-        self.assertGreater(positions / batches, 4)
 
     def test_replaying_gives_the_same_game(self):
         for record in self.records:

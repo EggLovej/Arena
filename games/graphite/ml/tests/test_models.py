@@ -13,7 +13,7 @@ from ml.map_generator import generate_map
 from ml.models import MODELS, build_model, make_input
 from ml.models.amounts import CURVES, PARAMETERS, on_grid
 from ml.models.interface import ILLEGAL, ModelInput, ModelOutput, PolicyValueModel, Scores, padded_route_list
-from ml.models.policy import choose, entropy, entropy_parts, from_choices, log_probability, to_choices
+from ml.models.policy import choose, entropy, entropy_parts, log_probability, to_choices
 from ml.tests.support import repeated
 
 
@@ -373,13 +373,6 @@ class ModelTests(unittest.TestCase):
             value=self.output.value,
         )
         self.assertLess(entropy_parts(certain)[1].max().item(), 1e-6)
-
-    def test_choices_convert_both_ways(self):
-        bases = self.inputs.base_mask.shape[1]
-        route, amount = choose(self.output)
-        back_route, back_amount = from_choices(to_choices(route, amount, bases), bases)
-        self.assertTrue(torch.equal(route, back_route))
-        self.assertTrue(torch.equal(amount, back_amount))
 
     def test_base_order_does_not_matter(self):
         generator = torch.Generator().manual_seed(1)

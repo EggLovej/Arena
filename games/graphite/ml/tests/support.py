@@ -5,9 +5,12 @@ from dataclasses import fields
 import numpy as np
 import torch
 
+from game import Game
+from game_types import SendAction
+
 from ml.models import ModelInput
 from ml.models.interface import ModelOutput
-from ml.play.rollout import WAIT, Trajectory
+from ml.play.rollout import WAIT, GameRecord, Trajectory
 
 
 def trajectory_input(
@@ -55,3 +58,15 @@ def repeated(output: ModelOutput, row: int, count: int) -> ModelOutput:
 
     parts = {field.name: getattr(output, field.name) for field in fields(output)}
     return ModelOutput(**{name: None if part is None else part[row : row + 1].expand(count, *part.shape[1:]) for name, part in parts.items()})
+
+
+def replay(record: GameRecord) -> Game:
+    """Play a recorded game again from its list of moves, and return the finished game."""
+
+    game = Game(record.matchup.map)
+    moves: dict[int, dict[int, SendAction]] = {}
+    for tick, seat, source_id, target_id, units in record.actions:
+        moves.setdefault(tick, {})[seat] = SendAction(source_id, target_id, units)
+    while game.tick < record.ticks:
+        game.step(moves.get(game.tick, {}))
+    return game
