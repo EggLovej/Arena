@@ -54,6 +54,11 @@ class RulesConfig:
         return max(1, math.ceil(self.shield_min_seconds * self.ticks_per_second))
 
     @property
+    def shield_upfront_cost(self) -> float:
+        """The energy a tank needs to raise its shield: the activation cost and its minimum time up."""
+        return self.shield_activation_cost + self.shield_min_ticks * (self.shield_energy_per_second * self.dt)
+
+    @property
     def dt(self) -> float:
         return 1.0 / self.ticks_per_second
 

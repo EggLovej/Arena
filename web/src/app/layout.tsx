@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { ThemeToggle } from "@/components/ThemeToggle.tsx";
+import { BOARD_THEME_SCRIPT } from "@/lib/themes.ts";
 
 import "./globals.css";
 
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className={`${display.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: BOARD_THEME_SCRIPT }} />
       </head>
       <body>
         <header className="site-header">

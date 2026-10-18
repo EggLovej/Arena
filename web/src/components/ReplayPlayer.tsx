@@ -8,10 +8,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { gameView } from "@/games/index.ts";
 import { describeOutcome, formatClock } from "@/lib/format.ts";
-import type { Seat, Snapshot } from "@/lib/types.ts";
+import type { Seat, Snapshot, Theme } from "@/lib/types.ts";
 
 import { Scoreboard } from "./Scoreboard.tsx";
 import { SpeedSelect } from "./SpeedSelect.tsx";
+import { useTheme } from "./ThemedBoard.tsx";
 import { typing, useAnimationClock, useReplay } from "./usePlayback.ts";
 
 const SPEEDS = [0.5, 1, 2, 4, 8, 16];
@@ -21,11 +22,12 @@ type Props = {
   replayUrl: string;
   seats: Seat[];
   botNames: Record<string, string>;
-  theme: unknown;
+  themes: Theme[];
 };
 
-export function ReplayPlayer({ gameId, replayUrl, seats, botNames, theme }: Props) {
+export function ReplayPlayer({ gameId, replayUrl, seats, botNames, themes }: Props) {
   const view = gameView(gameId);
+  const [theme] = useTheme(gameId, themes);
   const { replay, snapshots, error } = useReplay(replayUrl);
   const [position, setPosition] = useState(0);
   const [playing, setPlaying] = useState(false);
