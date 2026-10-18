@@ -40,6 +40,8 @@ from arena.contract import BotInfo, GameInfo, MapInfo, Outcome, SeatInfo, bot_fr
 
 SEAT_OF = {RED: "red", BLUE: "blue", GREEN: "green"}
 PLAYER_OF = {seat: player for player, seat in SEAT_OF.items()}
+# The game window's theme, which gives the seats their colours. The website can also draw
+# the board in the other themes in themes/ (see themes()).
 THEME_FILE = ROOT / "themes" / "paper_atlas.json"
 THEME = json.loads(THEME_FILE.read_text())
 
@@ -266,8 +268,9 @@ class GraphiteGame:
             return {}
         return {"packages": ["numpy"], "files": [checkpoint.resolve().relative_to(ROOT).as_posix()]}
 
-    def theme(self) -> dict:
-        return THEME
+    def themes(self) -> tuple[dict, ...]:
+        others = sorted(path for path in THEME_FILE.parent.glob("*.json") if path != THEME_FILE)
+        return (THEME, *(json.loads(path.read_text()) for path in others))
 
 
 class WebPerson(HumanController):

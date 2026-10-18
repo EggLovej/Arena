@@ -16,6 +16,7 @@ import { BotAvatar } from "./BotAvatar.tsx";
 import { MapPreview } from "./MapPreview.tsx";
 import { Scoreboard } from "./Scoreboard.tsx";
 import { SpeedSelect } from "./SpeedSelect.tsx";
+import { useTheme } from "./ThemedBoard.tsx";
 import { typing, useAnimationClock } from "./usePlayback.ts";
 import { usePlayMatch, type Setup } from "./usePlayMatch.ts";
 
@@ -199,6 +200,7 @@ function Match({
 }) {
   const view = gameView(game.id);
   const play = view.play!;
+  const [theme] = useTheme(game.id, game.themes);
   const { phase, match, pause, resume } = live;
   const seatInfo = Object.fromEntries(game.seats.map((seat) => [seat.id, seat]));
   const seats = Object.keys(setup.lineup);
@@ -308,12 +310,12 @@ function Match({
       />
 
       <div className="replay-board play-board">
-        <Board board={match.board} snapshot={match.snapshot} tick={position} tickSeconds={game.tick_seconds} theme={game.theme} seats={game.seats} />
+        <Board board={match.board} snapshot={match.snapshot} tick={position} tickSeconds={game.tick_seconds} theme={theme} seats={game.seats} />
         {person && (
           <Controls
             board={match.board}
             snapshot={match.snapshot}
-            theme={game.theme}
+            theme={theme}
             seat={person}
             person={match.people[person]}
             active={phase === "playing"}

@@ -1,6 +1,9 @@
 // Graphite's board in the browser, drawn the way the game's Pygame renderer
 // (games/graphite/renderer.py) draws it: paper, inked routes with travel times,
 // bases sized by production, and fleets as arrowheads moving along their routes.
+// The paper, ink and factions' colours are the theme's (games/graphite/themes).
+
+import { useId } from "react";
 
 import type { BoardProps } from "../types.ts";
 
@@ -13,9 +16,11 @@ export type GraphiteBoardData = {
 };
 
 type Theme = {
-  colors: Record<"ink" | "paper" | "paper_light" | "paper_dark" | "muted" | "highlight" | "white", string>;
+  colors: Record<"ink" | "paper" | "paper_light" | "paper_dark" | "muted" | "highlight" | "white", string> & { rule?: string };
   players: Record<string, { fill: string; dark: string }>;
   neutral: { fill: string };
+  texture?: string; // a picture of the paper, laid over its colour
+  grid?: number; // squared paper: the side of a square in map units, ruled in colors.rule, every fifth line bolder
 };
 
 // [owner seat or "" for neutral, whole units]
@@ -82,7 +87,9 @@ export function formatRate(rate: number): string {
 export function GraphiteBoard({ board: rawBoard, snapshot, tick, tickSeconds, theme: rawTheme, compact = false }: BoardProps) {
   const board = rawBoard as GraphiteBoardData;
   const theme = rawTheme as Theme;
-  const { ink, paper, paper_light: paperLight, paper_dark: paperDark, white } = theme.colors;
+  const { ink, paper, paper_light: paperLight, paper_dark: paperDark, white, rule } = theme.colors;
+  const { texture, grid } = theme;
+  const squares = useId();
   const color = (owner: string) => (owner ? theme.players[owner]?.fill ?? theme.neutral.fill : theme.neutral.fill);
 
   const bases = (snapshot.bases ?? {}) as Record<string, BaseState>;
@@ -105,15 +112,27 @@ export function GraphiteBoard({ board: rawBoard, snapshot, tick, tickSeconds, th
       // A preview fills its frame, with paper round the edges where the shapes differ.
       style={{ fontFamily: FONT, display: "block", width: "100%", height: compact ? "100%" : "auto", background: paper }}
     >
-      <image
-        href="/games/graphite/paper.jpg"
-        x={0}
-        y={0}
-        width={board.width}
-        height={board.height}
-        preserveAspectRatio="xMidYMid slice"
-        opacity={compact ? 0.6 : 1}
-      />
+      {texture && (
+        <image
+          href={texture}
+          x={0}
+          y={0}
+          width={board.width}
+          height={board.height}
+          preserveAspectRatio="xMidYMid slice"
+          opacity={compact ? 0.6 : 1}
+        />
+      )}
+      {grid && (
+        <>
+          <pattern id={squares} width={grid * 5} height={grid * 5} patternUnits="userSpaceOnUse">
+            <path d={[1, 2, 3, 4].map((n) => `M ${n * grid} 0 V ${grid * 5} M 0 ${n * grid} H ${grid * 5}`).join(" ")} stroke={rule} strokeWidth={1} />
+            <path d={`M 0 0 V ${grid * 5} M 0 0 H ${grid * 5}`} stroke={rule} strokeWidth={2.5} />
+          </pattern>
+          {/* Beyond the map too, where a preview's frame is a different shape. */}
+          <rect x={x0 - width} y={y0 - height} width={width * 3} height={height * 3} fill={`url(#${squares})`} />
+        </>
+      )}
 
       {board.edges.map((edge) => {
         const a = byId[edge.a];

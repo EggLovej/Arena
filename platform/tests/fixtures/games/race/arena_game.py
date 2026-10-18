@@ -195,8 +195,8 @@ class RaceGame:
     def person(self, seat):
         return Runner()
 
-    def theme(self):
-        return {}
+    def themes(self):
+        return ({"id": "plain", "name": "Plain", "description": "Runners on a line."},)
 
 
 GAME = RaceGame()
