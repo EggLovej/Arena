@@ -8,7 +8,7 @@ Select **Sentinel** in the menu, or use `--p1 sentinel_ai` / `--p2 sentinel_ai`.
 - A short-horizon movement search evaluates 16 directions plus waiting, goal movement and the previous action. Incoming projectiles are traced through their permitted bounce, including the bot's own returning shots. Candidate movement respects wall sliding and energy limits.
 - Quadratic interception leads moving targets. Mirrored targets propose boundary and obstacle bank shots; the actual swept-circle path is checked before spending energy.
 - It stops to regenerate firing energy instead of moving continuously. Observed enemy behavior informs when to apply contact pressure and when to leave room to dodge.
-- Shields are **off by default**, including in the reported benchmarks. Rule values come from the match context, so changing shield economics does not invalidate a model or require retraining.
+- It never raises its shield. Rule values come from the match context, so changing shield economics does not invalidate a model or require retraining.
 
 This is approximate receding-horizon planning, not minimax or an optimal-policy proof. Enemy velocity can change after aiming; defensive search assumes a constant candidate movement over a short horizon and cannot see an action the opponent has not yet taken. The close-contact tactic against stationary shield users depends on current discrete movement/projectile timing. New firing rules, tick rates or collision semantics should be re-evaluated.
 

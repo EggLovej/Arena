@@ -56,7 +56,7 @@ def test_tanks_separate_at_boundary_and_order_independent():
     first = GameEngine(load_map("crossfire"))
     first.tanks[0].position = Vec2(18, 100)
     first.tanks[1].position = Vec2(54, 100)
-    second = first.clone()
+    second = GameEngine.from_state(first.capture_state())
     actions = {0: ControlAction(), 1: ControlAction(move=Vec2(-1, 0))}
     first.step(actions)
     second.step(dict(reversed(list(actions.items()))))
@@ -97,7 +97,7 @@ def test_shield_hold_and_insufficient_start_energy():
 def test_capture_restore_json_and_clone_do_not_alias():
     engine = GameEngine(load_map("crossfire"))
     engine.step({0: ControlAction(fire=True)})
-    clone = engine.clone()
+    clone = GameEngine.from_state(engine.capture_state())
     restored = GameEngine(load_map("classic"))
     restored.restore_state(json.loads(json.dumps(engine.capture_state())))
     for _ in range(50):

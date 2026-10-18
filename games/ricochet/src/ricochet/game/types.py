@@ -4,7 +4,7 @@ import math
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from ricochet.game.config import RULES_VERSION, RulesConfig
+from ricochet.game.config import RulesConfig
 
 PLAYER_ONE = 0
 PLAYER_TWO = 1
@@ -72,10 +72,6 @@ class ControlAction:
             fire=bool(data.get("fire", False)),
             shield=bool(data.get("shield", False)),
         )
-
-
-def create_noop_action() -> ControlAction:
-    return ControlAction()
 
 
 def validate_action(action: object) -> ControlAction:
@@ -274,7 +270,6 @@ class MatchContext:
     ticks_per_second: int
     max_ticks: int
     rules: RulesConfig = RulesConfig()
-    rules_version: int = RULES_VERSION
 
 
 @dataclass(frozen=True)

@@ -6,10 +6,10 @@
 - `runtime`: bot loading, match lifecycle, controller faults/timing, action replays and command routing. Tournaments are the Arena's (`python -m arena tournament ricochet` from the repository root). Display/learning libraries are imported only by the commands that need them.
 - `training`: encoders, Gymnasium/Parallel adapters, PPO training, checkpoint controllers and evaluation. Reward shaping and neural representation belong here.
 - `display`: input bindings (`controls.py`), viewport conversion, immutable snapshot rendering, effects, local cosmetic RNG and audio. It never mutates the game engine. Rendering consumes `RenderSnapshot` and `GameEvent`; contact events carry positions/normals where relevant. Drawing styles live in `display/styles/` (see [themes](themes.md)).
-- `api` / `bot`: the controller protocol, plus the optional `BaseController` and shared observation helpers for bots.
+- `bot`: the controller protocol, plus the optional `BaseController` and shared observation helpers for bots.
 - `ais` / `maps`: contributor plugins and data. Wheels bundle fallback copies; working-directory plugin/data directories take precedence (`resources.contributor_directory`).
 
-The core entry points are construction/reset via a new engine or `GameEngine.from_state`, `observation_for(player)`, `context_for(player)`, `step(joint_actions)`, results, `capture_state`, `restore_state`, `clone`, and `render_snapshot`. Actions must be validated before stepping. `runtime.match.ControllerSlot` applies validation, fault counting and timing for matches and the Gym opponent alike. Versions bind rules, encoders and replay formats to their meaning.
+The core entry points are construction/reset via a new engine or `GameEngine.from_state`, `observation_for(player)`, `context_for(player)`, `step(joint_actions)`, results, `capture_state`, `restore_state` and `render_snapshot`. Actions must be validated before stepping. `runtime.match.ControllerSlot` applies validation, fault counting and timing for matches and the Gym opponent alike. Versions bind rules, encoders and replay formats to their meaning.
 
 ## Replays
 

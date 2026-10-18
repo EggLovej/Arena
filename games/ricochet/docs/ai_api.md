@@ -21,7 +21,7 @@ def create_controller():
     return MyController()
 ```
 
-Modules using dataclasses and postponed annotations are supported. Put match state on controller instances. Factories must return an object with callable `reset` and `act` methods. `reset` receives a frozen `MatchContext` with seed, player/opponent IDs, map ID, tick rate, duration, immutable rules and rules version. Both `act` calls observe the same pre-tick state.
+Modules using dataclasses and postponed annotations are supported. Put match state on controller instances. Factories must return an object with callable `reset` and `act` methods. `reset` receives a frozen `MatchContext` with seed, player/opponent IDs, map ID, tick rate, duration and immutable rules. Both `act` calls observe the same pre-tick state.
 
 `BaseController` is optional: its `reset` stores `self.context`, `self.rules`, `self.player_id` and `self.opponent_id`. Override `reset` for extra per-match state and call `super().reset(context)` first. Any object with `reset` and `act` still works.
 
@@ -59,6 +59,6 @@ Load a trusted compatible checkpoint through `checkpoint:/path/to/model.zip` any
 
 ## Search and multi-agent use
 
-`GameEngine.capture_state()` returns a JSON-serializable complete state. `restore_state(state)` replaces the engine's state; `clone()` returns an independent engine. Snapshots include the map, rules, timers, projectile counter and outcome, so rollout bots need not manipulate private entities.
+`GameEngine.capture_state()` returns a JSON-serializable complete state. `restore_state(state)` replaces the engine's state, and `GameEngine.from_state(state)` builds an independent engine from it. Snapshots include the map, rules, timers, projectile counter and outcome, so rollout bots need not manipulate private entities.
 
 `RicochetEnv` provides single-agent Gymnasium play against a controller or controller factory. `RicochetParallelEnv` in `ricochet.training.parallel_env` provides simultaneous `player_0` / `player_1` observations and actions. Its reward is terminal win/loss/draw only; Gym's extra damage shaping is intentionally an adapter choice. Both use the same engine and versioned encoder.

@@ -6,7 +6,7 @@ import uuid
 from pathlib import Path
 from types import ModuleType
 
-from ricochet.api import Controller
+from ricochet.bot import Controller
 from ricochet.resources import contributor_directory
 
 

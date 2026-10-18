@@ -7,7 +7,7 @@ import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 
-from ricochet.api import Controller
+from ricochet.bot import Controller
 from ricochet.game.config import RulesConfig
 from ricochet.game.engine import GameEngine
 from ricochet.game.maps import jitter_spawns, load_map

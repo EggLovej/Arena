@@ -57,11 +57,7 @@ class Sentinel(BaseController):
         self.graph = []
         self.waypoint = None
         self.previous_move = ZERO
-        self.shots_fired = 0
-        self.use_shield = False
-        self.use_banks = True
         self.enemy_shields = False
-        self.enemy_attacks = False
         self.short_range_shooter = False
 
     def clear(self, obs, start, end, radius):
@@ -179,12 +175,12 @@ class Sentinel(BaseController):
                 if shot.owner_id != me.player_id or segment[4]:
                     paths.append(segment)
         if not paths:
-            return preferred, False
+            return preferred
         moves = [ZERO, preferred, self.previous_move]
         moves += [Vec2(math.cos(i * math.tau / 16), math.sin(i * math.tau / 16)) for i in range(16)]
-        best, chosen, immediate = math.inf, ZERO, False
+        best, chosen = math.inf, ZERO
         for move in moves:
-            position, energy, risk, urgent = me.position, me.energy, 0.0, False
+            position, energy, risk = me.position, me.energy, 0.0
             for step in range(10):
                 t0, t1 = step * horizon / 10, (step + 1) * horizon / 10
                 energy += rules.energy_regen_per_second * (t1 - t0)
@@ -217,15 +213,14 @@ class Sentinel(BaseController):
                     )
                     if hit is not None:
                         risk += 2000 * (1 - 0.5 * lo / horizon)
-                        urgent |= lo < rules.dt * 1.5
             progress = (position - self.waypoint).length() - (me.position - self.waypoint).length()
             score = risk + progress * 0.5 + move.length() * (18 if me.energy < 40 else 3)
             if distance < 40:
                 score += (position - me.position).length() * 0.6
             score += (move - self.previous_move).length() * 0.3
             if score < best:
-                best, chosen, immediate = score, move, urgent
-        return chosen, immediate
+                best, chosen = score, move
+        return chosen
 
     def shot(self, obs, origin):
         enemy, rules = obs.opponent, self.rules
@@ -237,16 +232,15 @@ class Sentinel(BaseController):
             (1, rules.projectile_radius),
             (1, obs.height - rules.projectile_radius),
         ]
-        if self.use_banks:
-            for wall in obs.walls:
-                faces += [
-                    (0, wall.left - rules.projectile_radius),
-                    (0, wall.right + rules.projectile_radius),
-                    (1, wall.top - rules.projectile_radius),
-                    (1, wall.bottom + rules.projectile_radius),
-                ]
+        for wall in obs.walls:
+            faces += [
+                (0, wall.left - rules.projectile_radius),
+                (0, wall.right + rules.projectile_radius),
+                (1, wall.top - rules.projectile_radius),
+                (1, wall.bottom + rules.projectile_radius),
+            ]
         best = None
-        for face in [None] + (faces if self.use_banks else []):
+        for face in [None, *faces]:
             target, velocity = enemy.position, enemy.velocity
             if face:
                 axis, plane = face
@@ -310,7 +304,6 @@ class Sentinel(BaseController):
     def act(self, obs):
         rules, me = self.rules, obs.me
         self.enemy_shields |= obs.opponent.shield_active
-        self.enemy_attacks |= any(p.owner_id == obs.opponent.player_id for p in obs.projectiles)
         enemy = obs.opponent
         approaching = enemy.velocity.dot((me.position - enemy.position).normalized())
         if approaching > 0.3 * rules.tank_speed and (enemy.position - me.position).length() < 300:
@@ -320,17 +313,8 @@ class Sentinel(BaseController):
                 < rules.projectile_speed * rules.dt * 2 + 10
                 for p in obs.projectiles
             )
-        move, urgent = self.choose_move(obs)
+        move = self.choose_move(obs)
         self.previous_move = move
-        shield = (
-            self.use_shield
-            and urgent
-            and me.energy
-            >= (
-                rules.shield_activation_cost
-                + rules.shield_min_ticks * rules.shield_energy_per_second * rules.dt
-            )
-        )
         origin = slide_circle(
             me.position, move * (rules.tank_speed * rules.dt), rules.tank_radius, obs
         )
@@ -346,16 +330,13 @@ class Sentinel(BaseController):
             and (obs.opponent.position - origin).length() > 2 * rules.tank_radius + 0.01
         )
         if (
-            not shield
-            and not stationary_far
+            not stationary_far
             and available >= rules.fire_energy
             and me.cooldown_remaining <= rules.dt
         ):
             solution = self.shot(obs, origin)
         aim = solution[1] if solution else obs.opponent.position - origin
-        fire = solution is not None
-        self.shots_fired += int(fire)
-        return ControlAction(move=move, aim=aim, fire=fire, shield=shield)
+        return ControlAction(move=move, aim=aim, fire=solution is not None)
 
 
 def create_controller():

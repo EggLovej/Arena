@@ -22,7 +22,7 @@ def test_viewport_transform():
 
 def test_rendering_does_not_change_engine_or_hide_top_edge(monkeypatch):
     engine = GameEngine(load_map("classic"))
-    other = engine.clone()
+    other = GameEngine.from_state(engine.capture_state())
     renderer = Renderer(engine.render_snapshot(), ("One", "Two"))
     flips = []
     monkeypatch.setattr(pygame.display, "flip", lambda: flips.append(1))
