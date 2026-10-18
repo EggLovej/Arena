@@ -19,7 +19,7 @@ from ricochet.runtime.loading import default_ais_directory
 from ricochet.runtime.match import MatchSummary
 
 REPLAY_SCHEMA_VERSION = 2
-ENGINE_VERSION = "2.0.0"
+ENGINE_VERSION = "2.1.0"  # raise whenever the engine plays the same actions differently
 
 
 @dataclass
