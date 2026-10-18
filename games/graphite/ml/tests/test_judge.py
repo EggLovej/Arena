@@ -21,9 +21,7 @@ from ml.map_generator import generate_map
 from ml.models import build_model
 from ml.models.checkpoint import init_model, load_checkpoint, save_checkpoint
 from ml.models.judge import GraphJudge
-from ml.play.lookahead import LookaheadPlayer
 from ml.play.players import network_player
-from ml.play.value_player import ValuePlayer
 from ml.tests.support import trajectory_input
 
 
