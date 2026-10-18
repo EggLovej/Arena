@@ -5,7 +5,7 @@ Speculative reserves and investment scores are heuristics; event combat follows
 the game rules. See AI_RESEARCH_NOTES.md for experiments and limitations."""
 from collections import defaultdict
 from heapq import heappop, heappush
-from math import ceil, exp, floor
+from math import ceil, floor
 from functools import lru_cache
 from game_types import SendAction
 DEFAULTS = dict(campaign_funding=False, horizon=24.0, reserve=1.0, buffer=0.0, logistics=1.0, enemy=1.8, expansion=1.0, coordination=True, saving=False, costscale=5.0, holding=0.65, evacuation=True, ffa=True, surge=0.0, rally=0.0, overwhelm=1.0)
