@@ -1,13 +1,14 @@
 "use client";
 
 // Play a game against the bots, or watch bots play each other, in the browser. Shared by
-// every game: the setup (map, seat, bots), the scoreboard, the clock, full screen and the
-// result. The game brings its board and the controls that lie over it (GameView.play);
+// every game: the setup (map, seat, bots), the scoreboard, the clock, full screen, music and
+// the result. The game brings its board and the controls that lie over it (GameView.play);
 // Python runs the match in a worker (usePlayMatch).
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type ReactNode, type RefObject } from "react";
 
 import { gameView } from "@/games/index.ts";
+import type { PlayView } from "@/games/types.ts";
 import { describeOutcome, formatClock, listNames } from "@/lib/format.ts";
 import { PERSON, drawnTick, largerTurned, lineupFor, playsOn, result } from "@/lib/play.ts";
 import type { GameData } from "@/lib/types.ts";
@@ -23,6 +24,7 @@ import { usePlayMatch, type Setup } from "./usePlayMatch.ts";
 const SPEEDS = [0.5, 1, 2, 4];
 // A bot that thinks this long a move on the tournament's machines may slow a browser game down.
 const SLOW_MS = 20;
+const MUTED = "arena-music-muted"; // in local storage: "1" if the person muted the music
 
 type Props = {
   game: GameData;
@@ -45,6 +47,7 @@ export function PlayGame({ game, ratings, thinking }: Props) {
   const [speed, setSpeed] = useState(1);
   const [setup, setSetup] = useState<Setup | null>(null);
   const live = usePlayMatch(game.id, game.tick_seconds);
+  const music = useMusic(play.music, live.phase === "countdown" || live.phase === "playing");
 
   const map = game.maps.find((entry) => entry.id === choice.map) ?? game.maps[0];
   const sized = ratings[String(map.seats.length)] ?? {};
@@ -62,6 +65,7 @@ export function PlayGame({ game, ratings, thinking }: Props) {
   const start = (event?: FormEvent) => {
     event?.preventDefault();
     const next = { map: map.id, lineup, seed: Math.floor(Math.random() * 2 ** 31) };
+    music.begin(); // here, in the click that starts the match: browsers let a page start sound only from one
     setSetup(next);
     live.start(next);
     live.speed(speed);
@@ -176,6 +180,7 @@ export function PlayGame({ game, ratings, thinking }: Props) {
         live.speed(value);
       }}
       live={live}
+      music={music}
       again={() => start()}
     />
   );
@@ -188,6 +193,7 @@ function Match({
   speed,
   onSpeed,
   live,
+  music,
   again,
 }: {
   game: GameData;
@@ -196,6 +202,7 @@ function Match({
   speed: number;
   onSpeed: (speed: number) => void;
   live: ReturnType<typeof usePlayMatch>;
+  music: ReturnType<typeof useMusic>;
   again: () => void;
 }) {
   const view = gameView(game.id);
@@ -396,6 +403,11 @@ function Match({
         )}
         <SpeedSelect speeds={SPEEDS} value={speed} onChange={onSpeed} />
         <span className="play-tools" ref={setTools} />
+        {music.muted !== null && (
+          <button type="button" onClick={music.toggle} aria-pressed={music.muted}>
+            {music.muted ? "Unmute music" : "Mute music"}
+          </button>
+        )}
         <button type="button" onClick={toggleFull} aria-pressed={full !== false} title="Full screen (F)">
           {full ? "Exit full screen" : "Full screen"}
         </button>
@@ -453,6 +465,59 @@ function useFullScreen(area: RefObject<HTMLElement | null>) {
     }
   }, [area, full]);
   return [full, toggle] as const;
+}
+
+/**
+ * The game's music (PlayView.music), looping while `on` unless the person mutes it, which is
+ * remembered on the device. `muted` is null for a game without music. The sound starts in
+ * `begin`, called from a click: browsers keep a page quiet until then.
+ */
+function useMusic(music: PlayView["music"], on: boolean) {
+  const [context, setContext] = useState<AudioContext | null>(null);
+  const [muted, setMuted] = useState(false);
+  useEffect(() => {
+    try {
+      setMuted(localStorage.getItem(MUTED) === "1");
+    } catch {
+      // No storage here: the music plays.
+    }
+  }, []);
+  useEffect(() => {
+    if (!context) return;
+    (on && !muted ? context.resume() : context.suspend()).catch(() => {});
+  }, [context, on, muted]);
+  useEffect(() => () => void context?.close(), [context]);
+
+  const begin = () => {
+    if (!music || context) return;
+    const made = new AudioContext();
+    const volume = made.createGain();
+    volume.gain.value = 0.5;
+    volume.connect(made.destination);
+    setContext(made);
+    // Played from Web Audio, as an <audio> element can leave a gap where the loop starts again.
+    fetch(music.file)
+      .then((response) => response.arrayBuffer())
+      .then((data) => made.decodeAudioData(data))
+      .then((buffer) => {
+        const source = made.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
+        source.loopEnd = music.seconds;
+        source.connect(volume);
+        source.start();
+      })
+      .catch(() => {}); // a browser that can't fetch or play the file stays quiet
+  };
+  const toggle = () => {
+    setMuted(!muted);
+    try {
+      localStorage.setItem(MUTED, muted ? "0" : "1");
+    } catch {
+      // Not saved; it holds for this visit.
+    }
+  };
+  return { muted: music ? muted : null, begin, toggle };
 }
 
 /** The last setup played on this device, so "play again later" starts where it left off. */

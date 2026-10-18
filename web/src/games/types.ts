@@ -45,6 +45,11 @@ export type PlayView = {
   help: string[];
   /** The map the play page starts on (the first map if not given). */
   map?: string;
+  /**
+   * Music that loops while a match plays, with a button to mute it: a file whose end runs straight into its start, and how
+   * long it is, as some browsers decode an Ogg file a few samples past its end, which would click where the loop starts again.
+   */
+  music?: { file: string; seconds: number };
   /** The key that pauses and carries on (KeyboardEvent.key, any case), for games that use the space bar themselves. Not Escape: in full screen the browser keeps it. Not F, which switches full screen. */
   pauseKey?: string;
 };

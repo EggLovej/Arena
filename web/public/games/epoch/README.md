@@ -1,9 +1,14 @@
-# Epoch artwork
+# Epoch's art and music
 
 `sprites.svg` holds every unit, turret and base as a `<symbol>`; `lane.svg` is
 the backdrop (1000 × 300, ground line at y = 250, `xMidYMax slice`).
 `web/src/games/epoch/EpochBoard.tsx` draws them, including where each shooter's
 shots leave it; this file says how they are made, for adding ages and units.
+
+`music.ogg` is the theme the play page loops: an original orchestral piece in
+Age of War's spirit, none of its melodies, 30 seconds (16 bars at 128 BPM)
+whose end runs into its start. It is Ogg Vorbis because an MP3's encoder
+padding leaves a gap where the loop starts again.
 
 ## Symbols
 

@@ -41,5 +41,6 @@ export const epoch: GameView = {
       "X calls your age's special, free but slow to recharge. Destroy the enemy base to win; when time runs out, the stronger base wins.",
     ],
     map: "meadow",
+    music: { file: "/games/epoch/music.ogg", seconds: 30 },
   },
 };
