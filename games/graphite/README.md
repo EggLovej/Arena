@@ -160,7 +160,7 @@ window too big for the screen is shrunk to fit.
 - `arena_game.py`: Graphite as the Arena plays it, for tournaments and the website
 - `ais/`: one-file agents
 - `maps/`: dynamically selectable JSON maps
-- `tests/`: rule, loading, generality, and replay tests
+- `tests/`: tests of the rules, maps, bots and window
 - `checkpoints/`: the networks the neural AIs play (see `checkpoints/README.md`)
 - `ml/`: the learned agent, its training and evaluation (see `ml/README.md`)
 

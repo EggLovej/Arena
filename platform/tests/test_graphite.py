@@ -12,6 +12,12 @@ def graphite():
     return load_game("graphite")
 
 
+def test_the_large_maps_have_their_own_group_and_time_limit(graphite):
+    maps = {map_info.id: map_info for map_info in graphite.maps()}
+    assert (maps["classic"].group, maps["classic"].max_ticks) == ("", None)
+    assert (maps["threefold_crucible"].group, maps["threefold_crucible"].max_ticks) == ("Large maps", 6000)
+
+
 @pytest.mark.parametrize("bot", ["neural_ai", "beast_ai"])
 def test_the_neural_bots_play_their_committed_networks_the_same_way_twice(graphite, bot):
     # The networks draw their moves by chance, from the match's seed: a seeded match can be played again.
