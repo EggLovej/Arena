@@ -38,6 +38,8 @@ export type PlayView = {
   Controls: ComponentType<PlayControlsProps>;
   /** The board's viewBox in a match, as its Board draws it, so the page can lay the controls over it. */
   viewBox: (board: unknown) => [number, number, number, number];
+  /** The board a quarter turn round, for a game whose pieces can be laid out so: the page turns a wide map to fill a tall screen. */
+  turn?: (board: unknown) => unknown;
   /** How to play, one short line each. */
   help: string[];
   /** The map the play page starts on (the first map if not given). */

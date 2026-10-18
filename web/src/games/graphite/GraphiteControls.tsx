@@ -19,8 +19,9 @@ import { LARGE_MAP, baseRadii, formatRate, type BaseState, type GraphiteBoardDat
 
 type Theme = { colors: Record<string, string>; players: Record<string, { fill: string; dark: string }> };
 
-// How far outside a base's circle a click still counts, in map units: a finger is less precise than a mouse.
-const MARGIN = { mouse: 6, touch: 16 };
+// How far outside a base's circle a click or tap still counts, in pixels on the screen: a finger is less precise
+// than a mouse. Where several bases are in reach, the one whose edge is nearest counts.
+const REACH = { mouse: 6, touch: 24 };
 
 export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, seat, person, active, send, tools, layer, toBoard }: PlayControlsProps) {
   const board = rawBoard as GraphiteBoardData;
@@ -58,15 +59,16 @@ export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, s
 
   const baseAt = (event: MouseEvent): string | null => {
     const point = toBoard(event);
-    if (!point) return null;
-    const margin = touch.current ? MARGIN.touch : MARGIN.mouse;
+    const beside = toBoard({ clientX: event.clientX + 1, clientY: event.clientY }); // a pixel to the right, for the board's scale
+    if (!point || !beside) return null;
+    const margin = (touch.current ? REACH.touch : REACH.mouse) * Math.hypot(beside.x - point.x, beside.y - point.y);
     let best: string | null = null;
     let nearest = Infinity;
     for (const base of board.bases) {
-      const distance = Math.hypot(point.x - base.x, point.y - base.y);
-      if (distance <= radii[base.id] + margin && distance < nearest) {
+      const gap = Math.hypot(point.x - base.x, point.y - base.y) - radii[base.id]; // below 0 inside the base
+      if (gap <= margin && gap < nearest) {
         best = base.id;
-        nearest = distance;
+        nearest = gap;
       }
     }
     return best;

@@ -1192,10 +1192,11 @@ select:hover {
   max-height: max(320px, calc(100vh - 260px));
 }
 
+/* On a phone: a column for each seat, then the clock. */
 @container main (max-width: 640px) {
   .scoreboard {
     display: grid;
-    grid-template-columns: repeat(var(--seats, 2), minmax(0, 1fr));
+    grid-template-columns: repeat(var(--seats, 2), minmax(0, 1fr)) auto;
     gap: 0.4rem;
   }
 
@@ -1217,8 +1218,8 @@ select:hover {
   }
 
   .scoreboard-stats {
-    flex-direction: column;
-    gap: 0;
+    flex-wrap: wrap;
+    gap: 0 0.5rem;
     font-size: 0.8rem;
   }
 
@@ -1227,14 +1228,15 @@ select:hover {
   }
 
   .scoreboard-clock {
-    grid-column: 1 / -1;
-    flex-direction: row;
-    gap: 0.6rem;
-    justify-content: flex-start;
+    min-width: 0;
   }
 
   .scoreboard-clock span {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
+  }
+
+  .scoreboard-clock small {
+    font-size: 0.75rem;
   }
 }
 
@@ -1683,10 +1685,16 @@ tbody tr + tr th {
 
 /* Playing against the bots */
 
+/* A match fills the screen below the site's header: the scoreboard, the board as large as the
+   space left allows, then the controls. How to play is below it. */
 .play {
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-auto-rows: auto;
   gap: 0.8rem;
-  scroll-margin-top: 4.5rem; /* below the sticky header */
+  height: calc(100dvh - var(--header) - 1.6rem);
+  min-height: 340px;
+  scroll-margin-top: calc(var(--header) + 0.8rem); /* below the sticky header */
 }
 
 .play-setup {
@@ -1755,12 +1763,25 @@ tbody tr + tr th {
 }
 
 .play-loading {
-  min-height: 320px;
+  grid-row: span 2;
+}
+
+/* The board's share of the screen; the board is sized to fit it, in the middle. */
+.play-space {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .play-board {
   user-select: none;
   -webkit-user-select: none;
+}
+
+.play-board > svg {
+  max-height: none;
 }
 
 .play-controls-layer {
@@ -1813,18 +1834,35 @@ tbody tr + tr th {
   box-shadow: 0 0 0 2px var(--seat);
 }
 
-.play-notes {
-  color: var(--muted);
-  font-size: 0.9rem;
+/* A note over the top of the board, such as a move that was not sent: it never moves the board. */
+.play-note {
+  position: absolute;
+  top: 0.6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 92%;
+  margin: 0;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  background: rgb(20 20 22 / 0.8);
+  color: #fff;
+  font-size: 0.85rem;
+  text-align: center;
+  pointer-events: none;
+}
+
+.play-note:empty {
+  opacity: 0;
 }
 
 .play-refused {
-  color: #c4372f;
+  color: #ffb4a9;
   font-weight: 600;
 }
 
 .play-help {
-  margin: 0;
+  margin: 1.6rem 0 0; /* out of sight while the match fills the screen */
   padding-left: 1.2rem;
   color: var(--muted);
   font-size: 0.85rem;
@@ -1855,12 +1893,37 @@ tbody tr + tr th {
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
 }
 
-/* Full screen: the scoreboard, the board as large as the screen allows, then the controls.
-   .is-full is the same over the page, where the browser has no full screen of its own. */
+/* On a phone: the result above its buttons, and the controls in two even rows. */
+@container main (max-width: 640px) {
+  .play-result {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .play-result-actions button {
+    flex: 1;
+  }
+
+  .play-controls {
+    gap: 0.4rem;
+  }
+
+  .play-controls button,
+  .play-controls .replay-speed {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .play-controls button {
+    min-width: 0;
+    padding-inline: 0.5rem;
+  }
+}
+
+/* Full screen: the match over the whole screen. .is-full covers the page instead, where the
+   browser has no full screen of its own. */
 .play:fullscreen,
 .play.is-full {
-  grid-template-rows: auto minmax(0, 1fr);
-  grid-auto-rows: auto;
   padding: 0.8rem;
   background: var(--bg);
   overflow: auto;
@@ -1870,34 +1933,42 @@ tbody tr + tr th {
   position: fixed;
   inset: 0;
   z-index: 50;
+  height: auto;
+  min-height: 0;
 }
 
 :root:has(.play.is-full) {
   overflow: hidden;
 }
 
-.play:fullscreen .replay-board,
-.play.is-full .replay-board {
-  display: flex;
-  min-height: 0;
-}
+/* Phones on their side: the site's header scrolls away, and the board takes the screen's whole
+   height, with the scoreboard and controls beside it. */
+@media (orientation: landscape) and (max-height: 540px) {
+  .site-header {
+    position: static;
+  }
 
-.play:fullscreen .replay-board > svg,
-.play.is-full .replay-board > svg {
-  width: 100%;
-  height: 100%;
-  max-height: none;
-}
+  .play {
+    grid-template-columns: minmax(0, 1fr) minmax(170px, 30%);
+    align-items: start;
+    height: calc(100dvh - 1.6rem);
+    scroll-margin-top: 0.8rem;
+  }
 
-/* The next match being set out ("Play again") fills the screen meanwhile. */
-.play:fullscreen .play-loading,
-.play.is-full .play-loading {
-  grid-row: span 2;
-}
+  .play-space {
+    grid-row: 1 / -1;
+    align-self: stretch;
+  }
 
-.play:fullscreen .play-help,
-.play.is-full .play-help {
-  display: none;
+  .play > .scoreboard,
+  .play > .replay-controls,
+  .play > .notice {
+    grid-column: 2;
+  }
+
+  .play-loading {
+    grid-column: 1 / -1;
+  }
 }
 
 /* Narrow screens */
@@ -1986,6 +2057,15 @@ tbody tr + tr th {
 
   .play-setup {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* The choices and the Play button first, so they show without scrolling; the map below them. */
+  .play-setup-map {
+    order: 1;
+  }
+
+  .play-start {
+    justify-self: stretch;
   }
 
   .play-countdown {

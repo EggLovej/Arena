@@ -1,7 +1,7 @@
 import type { Snapshot } from "@/lib/types.ts";
 
 import type { GameView, SeatStat } from "../types.ts";
-import { GraphiteBoard, viewBox, type BaseState, type FleetState, type GraphiteBoardData } from "./GraphiteBoard.tsx";
+import { GraphiteBoard, turned, viewBox, type BaseState, type FleetState, type GraphiteBoardData } from "./GraphiteBoard.tsx";
 import { GraphiteControls } from "./GraphiteControls.tsx";
 import { look } from "./look.ts";
 
@@ -44,10 +44,11 @@ export const graphite: GameView = {
   play: {
     Controls: GraphiteControls,
     viewBox: (board) => viewBox(board as GraphiteBoardData, false),
+    turn: (board) => turned(board as GraphiteBoardData),
     help: [
-      "Click one of your bases, then a base next to it: half its units go there.",
-      "Shift-click the second base instead (or turn Stream on) to send it everything the first base has, every tick, until you shift-click the first base again.",
-      "You send one fleet a tick, like the bots. To let go of a selected base, click it again or right-click. Escape does too, except in full screen, where it leaves full screen.",
+      "Tap or click one of your bases, then a base next to it: half its units go there.",
+      "Turn Stream on (or hold Shift) as you pick the second base to send it everything the first base has, every tick, until you pick the first base that way again.",
+      "You send one fleet a tick, like the bots. To let go of a selected base, pick it again or right-click. Escape does too, except in full screen, where it leaves full screen.",
       "With a keyboard, Tab moves between the bases and Enter acts as a click (Shift+Enter as a Shift-click).",
     ],
     map: "crossroads",
