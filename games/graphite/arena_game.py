@@ -50,10 +50,10 @@ HIDDEN = {"atlas_ai"}
 # Bots that use a neural network.
 NEURAL = {"neural_ai", "beast_ai"}
 # Map groups a bot leaves out of tournaments. On the large maps Atlas Clean's search
-# takes over half a second a move, and the networks spend over 15 minutes on one match
-# (they were trained on maps of at most 30 bases and three-minute matches).
+# takes over a third of a second a move, several times a tick. The networks take about
+# 15 ms a move there on one thread, so they play them.
 LARGE_MAPS = "Large maps"
-SITS_OUT = {name: (LARGE_MAPS,) for name in ("atlas_clean_ai", "neural_ai", "beast_ai")}
+SITS_OUT = {"atlas_clean_ai": (LARGE_MAPS,)}
 # What the website says about each bot. A bot not listed here is described by the
 # first paragraph of its module's docstring.
 BLURBS = {
