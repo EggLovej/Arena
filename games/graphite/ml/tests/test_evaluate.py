@@ -13,13 +13,11 @@ from ml.evaluation.evaluate import (
     MatchResult,
     evaluate,
     evaluation_maps,
-    fresh_ai,
-    keeps_memory,
-    load_player,
     outcome_for,
     play_match,
 )
 from ml.models.checkpoint import init_model, save_checkpoint
+from ml.play.players import fresh_ai, keeps_memory, load_player
 
 
 def duel_map():

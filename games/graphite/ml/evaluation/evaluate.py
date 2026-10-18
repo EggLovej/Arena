@@ -4,7 +4,7 @@ The maps are ones training never sees: the hand-made 1v1 maps in ``maps/``
 plus generated maps from seeds reserved for evaluation. Every pairing is
 played from both seats, so an unfair map cannot flatter either side.
 
-A player is named by a short text:
+A player is named by a short text (all of them are in ml/play/players.py):
 
     untrained            a network with random weights (untrained:7 picks the seed)
     path/to/model.pt     a saved checkpoint
@@ -33,10 +33,11 @@ from multiprocessing import Pool
 from pathlib import Path
 
 from game import Game
-from game_types import BLUE, RED, GameView, MapDefinition, SendAction
-from loading import available_maps, load_ai, load_map
+from game_types import BLUE, RED, MapDefinition
+from loading import available_maps, load_map
 
 from ml.map_generator import generate_map
+from ml.play.players import UNTRAINED, Controller, load_player
 
 
 # Generated maps from these seeds are for evaluation only. Training must draw
@@ -47,9 +48,6 @@ DEFAULT_OPPONENTS = ("aggressive_ai", "careful_ai", "strategic_ai")
 # A strong player should never lose to these; such a loss is saved for a closer look.
 DEFAULT_SAVE_LOSSES_AGAINST = ("aggressive_ai",)
 MATCH_SECONDS = 180.0
-UNTRAINED = "untrained"
-
-Controller = Callable[[GameView], SendAction | None]
 
 
 @dataclass(frozen=True)
@@ -206,50 +204,6 @@ def evaluation_maps(
     return maps
 
 
-def keeps_memory(name: str) -> bool:
-    """Whether an AI in ais/ remembers things during a match, and so needs its own player per match.
-
-    Such an AI defines ``new_player()``, which returns a player with fresh
-    memory. Its plain ``choose_action`` is meant for one match at a time.
-    """
-
-    if not name.removesuffix(".py").isidentifier():
-        return False
-    choose_action = load_ai(name)
-    return callable(getattr(sys.modules[choose_action.__module__], "new_player", None))
-
-
-def fresh_ai(name: str) -> Controller:
-    """An AI from ais/, with fresh memory if it keeps any (see ``keeps_memory``)."""
-
-    choose_action = load_ai(name)
-    if keeps_memory(name):
-        return sys.modules[choose_action.__module__].new_player()
-    return choose_action
-
-
-def load_player(name: str, greedy: bool = False, seed: int | None = None) -> Controller:
-    """Turn a player's name into something that chooses actions."""
-
-    from ml.play.players import is_network_player, network_player
-
-    if is_network_player(name):
-        return network_player(name, seed)
-    if name == UNTRAINED or name.startswith(UNTRAINED + ":") or name.endswith(".pt"):
-        from ml.play.agent import NeuralAgent
-
-        if name not in _models:
-            from ml.models.checkpoint import init_model
-
-            if name.endswith(".pt"):
-                _models[name] = init_model(name).model
-            else:
-                weights_seed = int(name.partition(":")[2] or 0)
-                _models[name] = init_model("random", seed=weights_seed).model
-        return NeuralAgent(_models[name], greedy, seed)
-    return fresh_ai(name)
-
-
 def play_match(
     definition: MapDefinition,
     red: Controller,
@@ -280,10 +234,6 @@ def outcome_for(game: Game, seat: int) -> str:
     if seat not in game.living_players() or game.winner() is not None:
         return "loss"
     return "draw"
-
-
-# Models already loaded in this process, so each worker reads a checkpoint only once.
-_models: dict = {}
 
 
 def _prepare_worker() -> None:

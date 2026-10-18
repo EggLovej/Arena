@@ -54,10 +54,11 @@ from ml.encoding.state_encoder import (
     build_layout,
     encode_state,
 )
-from ml.evaluation.evaluate import MATCH_SECONDS, fresh_ai, keeps_memory, outcome_for
+from ml.evaluation.evaluate import MATCH_SECONDS, outcome_for
 from ml.map_generator import generate_map
 from ml.models import PolicyValueModel, build_model, name_of
 from ml.play.inference import BufferShape, InferenceServer, LocalInference, RemoteInference, Request
+from ml.play.players import keeps_memory, load_player
 
 
 WAIT = -1  # stored in place of a source, target, and amount when the choice was to wait
@@ -292,9 +293,9 @@ def _positions_to_decide(
                 if seat not in run.players:
                     # An AI that remembers things during a match gets its own player in every game.
                     if spec.player not in scripted:
-                        scripted[spec.player] = (_load_scripted(spec.player), keeps_memory(spec.player))
+                        scripted[spec.player] = (load_player(spec.player), keeps_memory(spec.player))
                     player, per_game = scripted[spec.player]
-                    run.players[seat] = _load_scripted(spec.player) if per_game else player
+                    run.players[seat] = load_player(spec.player) if per_game else player
                 player = run.players[seat]
                 run.moves[seat] = player(state)
                 if not run.may_send(seat):
@@ -627,14 +628,6 @@ class _RunningGame:
             for seat, recorder in self.recorders.items()
         ]
         return GameRecord(self.matchup, self.game.winner(), self.game.tick, self.actions, trajectories)
-
-
-def _load_scripted(name: str):
-    """An AI file from ais/, or a network that thinks first (``value:PATH``, ``lookahead:PATH``)."""
-
-    from ml.play.players import is_network_player, network_player
-
-    return network_player(name) if is_network_player(name) else fresh_ai(name)
 
 
 def _prepare_worker() -> None:

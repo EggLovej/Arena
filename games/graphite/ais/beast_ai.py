@@ -37,7 +37,7 @@ def _build(entry):
         if entry is None:
             raise ValueError("beast_ai: without PyTorch, Beast needs its file (checkpoints/beast.json)")
         return network_player(entry["player"], seed=0)
-    from ml.evaluation.evaluate import load_player
+    from ml.play.players import load_player
 
     if entry is None:
         print("beast_ai: no ml/runs/beast.json, playing ml/runs/latest.pt like Neural AI", file=sys.stderr)

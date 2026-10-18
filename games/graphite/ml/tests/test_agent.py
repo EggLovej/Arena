@@ -15,6 +15,7 @@ from ml.map_generator import generate_map
 from ml.models.checkpoint import history_entry, init_model, save_checkpoint
 from ml.models.policy import choose
 from ml.play.agent import NeuralAgent
+from ml.play.players import load_player, network_player
 
 
 def play(definition, red, blue, ticks=300):
@@ -125,15 +126,14 @@ class NeuralAgentTests(unittest.TestCase):
         self.assertEqual(saved, original)
 
     def test_a_network_name_carries_its_temperature(self):
-        from ml.evaluation.evaluate import load_player
-        from ml.play.players import network_player
-
         with tempfile.TemporaryDirectory() as directory:
             path = save_checkpoint(Path(directory) / "model.pt", self.model)
             agent = load_player(f"network:{path}?temperature=0.2", seed=3)
             self.assertIsInstance(agent, NeuralAgent)
             self.assertEqual(agent.temperature, 0.2)
             self.assertEqual(network_player(f"network:{path}").temperature, 1.0)
+            # The evaluator's --greedy reaches it.
+            self.assertTrue(load_player(f"network:{path}", greedy=True).greedy)
             with self.assertRaises(ValueError):
                 network_player(f"network:{path}?temperature=0")
             definition = generate_map(2).definition
