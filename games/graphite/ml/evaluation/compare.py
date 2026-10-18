@@ -41,10 +41,10 @@ from ml.evaluation.evaluate import evaluation_maps
 from ml.judge.progress import ProgressBlock, bar, duration
 from ml.map_generator import generate_map
 from ml.models.checkpoint import load_checkpoint
-from ml.play.players import is_network_player
+from ml.play.players import is_network_player, min_send_gap
 from ml.play.rollout import Matchup, RolloutPool, Seat
 from ml.training.league import fit_ratings
-from ml.training.runlog import min_send_gap, read_metrics
+from ml.training.runlog import read_metrics
 
 
 REFERENCE = "strategic_ai"

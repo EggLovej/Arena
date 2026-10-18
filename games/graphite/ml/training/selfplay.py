@@ -264,6 +264,14 @@ def run_training(
     log = RunLog(run_name, settings, overwrite, resume=resume)
     torch.manual_seed(settings.seed)
 
+    def history(rounds: int) -> list[dict]:
+        """The model's history after this many rounds of this run. The run's entry carries
+        its send limit from round 0 on, so every checkpoint plays under it (``players.min_send_gap``)."""
+
+        gap = {"min_send_gap": settings.min_send_gap} if settings.min_send_gap else {}
+        entry = history_entry(label, rounds=rounds, games=rounds * settings.games_per_round, run=run_name, **gap)
+        return checkpoint.history + [entry]
+
     if resume:
         checkpoint = load_checkpoint(log.folder / "latest.pt")
         state = checkpoint.training_state or {}
@@ -293,7 +301,7 @@ def run_training(
         learning_rate = settings.learning_rate
         best_score = -1.0
         log.say(f"Run '{run_name}': {label} starting from {init}, learning on {device}")
-        best = log.save(0, model, checkpoint.history)
+        best = log.save(0, model, history(0))
         log.mark_best(best)
 
     if settings.inference not in ("workers", "server"):
@@ -354,16 +362,6 @@ def run_training(
                 f"(always saying 0: {value_errors['value error/always saying 0']:.3f})"
             )
 
-            history = checkpoint.history + [
-                history_entry(
-                    label,
-                    rounds=round_number,
-                    games=round_number * settings.games_per_round,
-                    run=run_name,
-                    **({"min_send_gap": settings.min_send_gap} if settings.min_send_gap else {}),
-                )
-            ]
-
             evaluation = overall = None
             if settings.evaluation_maps > 0 and (
                 round_number % settings.evaluate_every == 0 or round_number == settings.rounds
@@ -392,7 +390,7 @@ def run_training(
                 "best_score": best_score,
                 "opponents": opponents.state(),
             }
-            path = log.save(round_number, model, history, state)
+            path = log.save(round_number, model, history(round_number), state)
             if is_best:
                 log.mark_best(path)
             log.log(round_number, in_chart_order(metrics), summary)

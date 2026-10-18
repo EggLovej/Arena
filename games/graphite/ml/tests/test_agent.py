@@ -12,7 +12,7 @@ from game_types import BLUE, RED, BaseDefinition, EdgeDefinition, MapDefinition
 from loading import available_ais, load_ai
 
 from ml.map_generator import generate_map
-from ml.models.checkpoint import init_model, save_checkpoint
+from ml.models.checkpoint import history_entry, init_model, save_checkpoint
 from ml.models.policy import choose
 from ml.play.agent import NeuralAgent
 
@@ -197,9 +197,10 @@ class NeuralAiFileTests(unittest.TestCase):
         self.assertTrue(all((loaded[name] == weight).all() for name, weight in model.state_dict().items()))
 
     def test_a_network_from_a_limited_run_plays_under_its_limit(self):
+        start = init_model("random", seed=4)
         with tempfile.TemporaryDirectory() as directory:
-            (Path(directory) / "settings.json").write_text('{"min_send_gap": 10}')
-            path = save_checkpoint(Path(directory) / "round_0001.pt", init_model("random", seed=4).model)
+            limited = start.history + [history_entry("self-play", min_send_gap=10)]
+            path = save_checkpoint(Path(directory) / "latest.pt", start.model, limited)
             with mock.patch.dict(os.environ, {"NEURAL_AI_CHECKPOINT": str(path)}):
                 with contextlib.redirect_stderr(io.StringIO()):
                     play(generate_map(1).definition, load_ai("neural_ai"), load_ai("strategic_ai"), ticks=20)

@@ -33,9 +33,9 @@ from ml.map_generator import generate_map
 from ml.models import amounts
 from ml.models.checkpoint import load_checkpoint
 from ml.models.policy import _amount_logits_for, _free_amounts_for
+from ml.play.players import min_send_gap
 from ml.play.rollout import WAIT, GameRecord, Matchup, RolloutPool, Seat, Trajectory
 from ml.training.dataset import DecisionSet
-from ml.training.runlog import min_send_gap
 from ml.training.selfplay import behaviour as send_behaviour
 
 # Fresh maps, past those used by training, evaluation, comparisons and saved checks.

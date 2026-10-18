@@ -493,7 +493,8 @@ class SelfPlayRunTests(unittest.TestCase):
         self.assertNotIn("entropy/of the policy", rounds[0])
         self.assertEqual(list(rounds[2])[2].split("/")[0], "score")
 
-        self.assertEqual([entry["step"] for entry in start.history], ["random start"])
+        # Round 0 is the starting model, already listed under this run.
+        self.assertEqual([(entry["step"], entry.get("rounds")) for entry in start.history], [("random start", None), ("self-play", 0)])
         self.assertEqual([entry["step"] for entry in latest.history], ["random start", "self-play"])
         self.assertEqual(latest.history[-1]["rounds"], 2)
         self.assertIn("optimizer", latest.training_state)

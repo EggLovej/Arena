@@ -8,6 +8,9 @@ temperature (``network:``). Settings can follow the path:
 """
 
 from dataclasses import dataclass, fields
+from pathlib import Path
+
+from ml.play.numpy_model import read_checkpoint
 
 
 NETWORK = "network:"
@@ -68,6 +71,18 @@ def parse_name(text: str, settings_class):
             raise ValueError(f"'{key}' is not a setting here. Settings: {', '.join(defaults)}")
         changes[key] = type(defaults[key])(value)
     return path, settings_class(**changes)
+
+
+def min_send_gap(checkpoint: str | Path) -> int:
+    """The send limit (``--min-send-gap``) a network was trained under, from its own history; 0 for none.
+
+    Every self-play checkpoint, round 0 included, says so in its last history
+    entry, so a copy plays under the same limit wherever it goes. Measurements
+    and Neural AI play a network under its limit. Read without PyTorch.
+    """
+
+    history = read_checkpoint(checkpoint)["history"]
+    return history[-1].get("min_send_gap", 0) if history else 0
 
 
 def name_with_settings(prefix: str, path, settings) -> str:

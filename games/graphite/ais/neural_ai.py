@@ -52,13 +52,14 @@ def choose_action(state):
 def _load_agent(path):
     # Imported here so that choosing another AI never loads PyTorch. Without PyTorch (as on the
     # Arena website, which plays in the browser) the same network plays through numpy.
+    from ml.play.players import min_send_gap
+
     try:
         from ml.play.agent import NeuralAgent
-        from ml.training.runlog import min_send_gap
     except ModuleNotFoundError as error:
         if error.name != "torch":
             raise
-        from ml.play.numpy_agent import NumpyAgent as NeuralAgent, min_send_gap
+        from ml.play.numpy_agent import NumpyAgent as NeuralAgent
 
     if path.exists():
         gap = min_send_gap(path)

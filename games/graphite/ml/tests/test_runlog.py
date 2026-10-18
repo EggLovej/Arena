@@ -5,8 +5,9 @@ from pathlib import Path
 from unittest import mock
 
 import ml.training.runlog
-from ml.models.checkpoint import init_model, load_checkpoint
-from ml.training.runlog import RunLog, format_duration, min_send_gap, read_metrics
+from ml.models.checkpoint import history_entry, init_model, load_checkpoint, save_checkpoint
+from ml.play.players import min_send_gap
+from ml.training.runlog import RunLog, format_duration, read_metrics
 
 
 class RunLogTests(unittest.TestCase):
@@ -92,12 +93,16 @@ class RunLogTests(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             RunLog("never_started", {}, resume=True)
 
-    def test_a_checkpoint_has_the_send_gap_of_its_run(self):
-        with mock.patch("builtins.print"):
-            limited = RunLog("limited", {"min_send_gap": 10})
-        self.assertEqual(min_send_gap(limited.folder / "round_0000.pt"), 10)
-        self.assertEqual(min_send_gap(self.quiet_log().folder / "round_0003.pt"), 0)  # a run from before the setting
-        self.assertEqual(min_send_gap(self.root / "loose.pt"), 0)  # not in a run folder
+    def test_a_network_keeps_its_send_limit_wherever_it_is_copied(self):
+        start = init_model("random", seed=1)
+        limited = start.history + [history_entry("self-play", run="demo", min_send_gap=10)]
+        self.quiet_log().save(1, start.model, limited)
+        # The shared ml/runs/latest.pt has no run folder next to it, only its own history.
+        self.assertEqual(min_send_gap(self.root / "latest.pt"), 10)
+        # Training on without a limit lifts it; a network that never had one has none.
+        lifted = limited + [history_entry("self-play", run="later")]
+        self.assertEqual(min_send_gap(save_checkpoint(self.root / "lifted.pt", start.model, lifted)), 0)
+        self.assertEqual(min_send_gap(save_checkpoint(self.root / "plain.pt", start.model, start.history)), 0)
 
     def test_durations_read_naturally(self):
         self.assertEqual(format_duration(5), "5s")

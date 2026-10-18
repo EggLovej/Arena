@@ -107,18 +107,6 @@ def read_metrics(run: str | Path) -> list[dict]:
     return rounds
 
 
-def min_send_gap(checkpoint: str | Path) -> int:
-    """The send limit (``min_send_gap``) of the run a checkpoint belongs to; 0 for none or no run.
-
-    Measurements play a run's networks under the limit the run trained under, round 0 included.
-    """
-
-    settings = Path(checkpoint).parent / "settings.json"
-    if not settings.is_file():
-        return 0
-    return int(json.loads(settings.read_text()).get("min_send_gap", 0))
-
-
 def format_duration(seconds: float) -> str:
     seconds = int(seconds)
     if seconds < 60:

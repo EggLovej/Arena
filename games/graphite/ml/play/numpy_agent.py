@@ -11,7 +11,6 @@ Only ``network:`` players play without PyTorch; the look-ahead players
 (``lookahead:``, ``value:``) need it.
 """
 
-import json
 from pathlib import Path
 
 import numpy as np
@@ -86,12 +85,3 @@ def network_player(name: str, seed: int | None = None) -> NumpyAgent:
         raise ValueError(f"'{name}' needs PyTorch: without it, only network: players play")
     path, settings = parse_name(name.removeprefix(NETWORK), NetworkSettings)
     return NumpyAgent.from_init(path, seed=seed, temperature=settings.temperature)
-
-
-def min_send_gap(checkpoint: str | Path) -> int:
-    """``ml.training.runlog.min_send_gap``, which cannot be imported without PyTorch."""
-
-    settings = Path(checkpoint).parent / "settings.json"
-    if not settings.is_file():
-        return 0
-    return int(json.loads(settings.read_text()).get("min_send_gap", 0))

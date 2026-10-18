@@ -12,14 +12,16 @@ from ml.models.checkpoint import history_entry, init_model
 from ml.training.runlog import RunLog
 
 
-def fake_run(name, seconds_per_round, rounds=(0, 1, 2), earlier_run=None, seed=0, settings=None):
+def fake_run(name, seconds_per_round, rounds=(0, 1, 2), earlier_run=None, seed=0, min_send_gap=0):
     """A run folder with a checkpoint and a logged time for each round."""
 
-    log = RunLog(name, settings or {})
+    log = RunLog(name, {})
     start = init_model("random", seed=seed)
     history = list(start.history)
     if earlier_run:
         history.append(history_entry("imitation", run=earlier_run))
+    if min_send_gap:
+        history.append(history_entry("self-play", run=name, min_send_gap=min_send_gap))
     for round_number in rounds:
         log.save(round_number, start.model, history)
     with (log.folder / "metrics.jsonl").open("w") as file:
@@ -70,7 +72,7 @@ class CompareTests(unittest.TestCase):
 
     def test_a_run_trained_under_a_send_gap_plays_under_it(self):
         runs = {
-            ("limited", "seed 0"): fake_run("limited", 10.0, rounds=(0, 1), settings={"min_send_gap": 10}),
+            ("limited", "seed 0"): fake_run("limited", 10.0, rounds=(0, 1), min_send_gap=10),
             ("free", "seed 0"): fake_run("free", 10.0, rounds=(0, 1), seed=1),
         }
         panel = ["strategic_ai", str(runs[("limited", "seed 0")] / "round_0001.pt")]
@@ -85,7 +87,7 @@ class CompareTests(unittest.TestCase):
         self.assertIn("Limited to one send every N ticks", describe(report))
 
     def test_unlimited_lifts_every_send_gap(self):
-        runs = {("limited", "seed 0"): fake_run("limited", 10.0, rounds=(0,), settings={"min_send_gap": 10})}
+        runs = {("limited", "seed 0"): fake_run("limited", 10.0, rounds=(0,), min_send_gap=10)}
         with mock.patch("ml.evaluation.compare.Seat", wraps=Seat) as seat:
             report = compare("lifted", runs, rounds=[0], panel=["strategic_ai"], games=2, workers=2, unlimited=True)
         self.assertEqual(report["send gaps"], {})
