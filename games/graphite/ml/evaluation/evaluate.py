@@ -231,7 +231,7 @@ def fresh_ai(name: str) -> Controller:
 def load_player(name: str, greedy: bool = False, seed: int | None = None) -> Controller:
     """Turn a player's name into something that chooses actions."""
 
-    from ml.play.players import is_network_player, network_player
+    from ml.play.players import game_path, is_network_player, network_player
 
     if is_network_player(name):
         return network_player(name, seed)
@@ -242,7 +242,7 @@ def load_player(name: str, greedy: bool = False, seed: int | None = None) -> Con
             from ml.models.checkpoint import init_model
 
             if name.endswith(".pt"):
-                _models[name] = init_model(name).model
+                _models[name] = init_model(game_path(name)).model
             else:
                 weights_seed = int(name.partition(":")[2] or 0)
                 _models[name] = init_model("random", seed=weights_seed).model

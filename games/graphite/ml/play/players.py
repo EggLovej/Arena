@@ -12,6 +12,7 @@ from pathlib import Path
 
 
 NETWORK = "network:"
+GAME_FOLDER = Path(__file__).resolve().parents[2]
 
 
 @dataclass(frozen=True)
@@ -58,10 +59,8 @@ def network_player(name: str, seed: int | None = None):
 
 
 def parse_name(text: str, settings_class):
-    """``PATH?key=value&...`` as the path and a settings object, each value read as its setting's type.
-
-    A relative path is read from the game folder, wherever the program runs.
-    """
+    """``PATH?key=value&...`` as the path (see ``game_path``) and a settings object, each value read
+    as its setting's type."""
 
     path, _, options = text.partition("?")
     defaults = {setting.name: setting.default for setting in fields(settings_class)}
@@ -71,7 +70,14 @@ def parse_name(text: str, settings_class):
         if key not in defaults:
             raise ValueError(f"'{key}' is not a setting here. Settings: {', '.join(defaults)}")
         changes[key] = type(defaults[key])(value)
-    return str(Path(__file__).resolve().parents[2] / path), settings_class(**changes)
+    return game_path(path), settings_class(**changes)
+
+
+def game_path(path: str) -> str:
+    """A checkpoint named in a player's name: a relative path is read from the game folder,
+    wherever the program runs, and "random" stays untrained weights."""
+
+    return path if path == "random" else str(GAME_FOLDER / path)
 
 
 def name_with_settings(prefix: str, path, settings) -> str:

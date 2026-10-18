@@ -54,19 +54,22 @@ CANDIDATES.extend([{'horizon': 50.0,
   'rally': 1.0,
   'overwhelm': 1.5}])
 _MODEL = None
+_CHECKPOINT_BYTES = None
 CHECKPOINT_INFO = None
 
 def configure_checkpoint(path=None):
-    """Pick the public checkpoint for the new match; the network is loaded again when the file changed."""
-    global _MODEL, CHECKPOINT_INFO
+    """Pin the public checkpoint for the new match; the network is loaded again when the file changed."""
+    global _MODEL, _CHECKPOINT_BYTES, CHECKPOINT_INFO
     import os, hashlib
     root=Path(__file__).resolve().parent.parent
     default=root/'ml/runs/latest.pt'
     if not default.exists():default=root/'checkpoints/neural_ai.pt'
     selected=Path(path or os.environ.get('ATLAS_OPPONENT_CHECKPOINT',os.environ.get('NEURAL_AI_CHECKPOINT',str(default))))
-    digest=hashlib.sha256(selected.read_bytes()).hexdigest()
+    data=selected.read_bytes()
+    digest=hashlib.sha256(data).hexdigest()
     if CHECKPOINT_INFO is None or digest!=CHECKPOINT_INFO['sha256']:
         _MODEL=None
+    _CHECKPOINT_BYTES=data
     CHECKPOINT_INFO=dict(path=str(selected.resolve()),sha256=digest)
     return dict(CHECKPOINT_INFO)
 
@@ -84,9 +87,9 @@ def model():
         import torch
         from ml.models.checkpoint import load_checkpoint
         torch.set_num_threads(1)
-        if CHECKPOINT_INFO is None:configure_checkpoint()
+        if _CHECKPOINT_BYTES is None:configure_checkpoint()
         with torch.random.fork_rng(devices=[]):
-            _MODEL=load_checkpoint(CHECKPOINT_INFO['path']).model.eval()
+            _MODEL=load_checkpoint(CHECKPOINT_INFO['path'],data=_CHECKPOINT_BYTES).model.eval()
     return _MODEL
 
 def known(amounts):
