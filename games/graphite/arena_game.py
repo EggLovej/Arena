@@ -5,15 +5,12 @@ bots, new matches, what to draw for each tick, and actions as JSON. The rules
 themselves stay in ``game.py`` and the bots in ``ais/``, unchanged.
 
 Graphite's modules import each other by their plain names (``from game import
-Game``) and read files relative to this folder, so loading this adapter puts
-this folder first on ``sys.path`` and makes it the working directory. That is
-also why one process plays one game's matches.
+Game``), so loading this adapter puts this folder first on ``sys.path``. That
+is also why one process plays one game's matches.
 """
 
 from __future__ import annotations
 
-import ast
-import hashlib
 import importlib
 import json
 import os
@@ -23,7 +20,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-os.chdir(ROOT)
 
 # Leaderboard matches play the networks committed in checkpoints/, not whatever a
 # local training run last wrote to ml/runs/. Setting these beforehand plays others.
@@ -37,7 +33,7 @@ from human_controller import SEND_FRACTION, HumanController  # noqa: E402
 from loading import available_ais, available_maps, load_map  # noqa: E402
 from sizing import LARGE_MAP  # noqa: E402
 
-from arena.contract import BotInfo, GameInfo, MapInfo, Outcome, SeatInfo, bot_from_module  # noqa: E402
+from arena.contract import BotInfo, GameInfo, MapInfo, Outcome, SeatInfo, bot_from_module, summary  # noqa: E402
 
 
 SEAT_OF = {RED: "red", BLUE: "blue", GREEN: "green"}
@@ -70,10 +66,6 @@ BLURBS = {
     "atlas_clean_ai": "Atlas's look-ahead search without copies of its opponents: it forecasts each one "
     "with whichever of its own ten styles best explains the fleets it has seen.",
 }
-# What a replay depends on: the rules and the maps. Bots don't matter, since a
-# replay keeps every action they took.
-RULE_FILES = ("game.py", "game_types.py", "loading.py")
-
 INFO = GameInfo(
     id="graphite",
     name="Graphite",
@@ -227,7 +219,7 @@ class GraphiteGame:
             BotInfo(
                 id=name,
                 name=bot_name(name),
-                description=BLURBS.get(name) or _summary(ROOT / "ais" / f"{name}.py"),
+                description=BLURBS.get(name) or summary(ROOT / "ais" / f"{name}.py"),
                 kind="neural" if name in NEURAL else "scripted",
                 sits_out=SITS_OUT.get(name, ()),
             )
@@ -243,63 +235,19 @@ class GraphiteGame:
         # Graphite's rules have no chance in them, so the seed only matters to bots.
         return GraphiteMatch(map_id, Engine(load_map(map_id), seconds_per_tick=INFO.tick_seconds))
 
-    def restore_match(self, map_id: str, state: dict) -> GraphiteMatch:
-        from game import Fleet
-
-        match = self.new_match(map_id, 0)
-        engine = match.engine
-        engine.tick = state["tick"]
-        engine.time_seconds = engine.tick * engine.seconds_per_tick
-        for base_id, (owner, units) in state["bases"].items():
-            engine.bases[base_id].owner = owner
-            engine.bases[base_id].units = units
-        engine.fleets = []
-        for fleet_id, departed, owner, units, source, target, remaining, total in state["fleets"]:
-            fleet = Fleet(owner, units, source, target, remaining, total)
-            engine.fleets.append(fleet)
-            match._fleets[id(fleet)] = (fleet, fleet_id)
-            match._fleet_departures[fleet_id] = departed
-        match.eliminated = dict(state["eliminated"])
-        match._next_fleet = state["next_fleet"]
-        return match
-
     def action_to_json(self, action) -> list:
         if not isinstance(action, SendAction):
             raise TypeError(f"expected SendAction or None, got {type(action).__name__}")
         for name in ("source_id", "target_id"):
             if not isinstance(getattr(action, name), str):
                 raise TypeError(f"{name} must be a base id (a string), got {type(getattr(action, name)).__name__}")
-        if not isinstance(action.units, (int, float)) or isinstance(action.units, bool):
-            raise TypeError(f"units must be a number, got {type(action.units).__name__}")
+        if not isinstance(action.units, int) or isinstance(action.units, bool):
+            raise TypeError(f"units must be a whole number, got {type(action.units).__name__}")
         return [action.source_id, action.target_id, action.units]
 
     def action_from_json(self, data: list) -> SendAction:
         source, target, units = data
         return SendAction(source, target, units)
-
-    def observation_to_json(self, view) -> dict:
-        return {
-            "seat": SEAT_OF[view.player_id],
-            "tick": view.tick,
-            "time": view.time_seconds,
-            "tick_seconds": view.seconds_per_tick,
-            "bases": [
-                {"id": b.id, "owner": _seat(b.owner), "units": b.units, "production": b.production_rate, "x": b.x, "y": b.y}
-                for b in view.bases
-            ],
-            "edges": [{"a": e.a, "b": e.b, "time": e.travel_time} for e in view.edges],
-            "fleets": [
-                {
-                    "owner": SEAT_OF[f.owner],
-                    "units": f.units,
-                    "from": f.source_id,
-                    "to": f.target_id,
-                    "remaining": f.remaining_time,
-                    "total": f.total_time,
-                }
-                for f in view.fleets
-            ],
-        }
 
     def person(self, seat: str) -> "WebPerson":
         return WebPerson(PLAYER_OF[seat])
@@ -316,17 +264,8 @@ class GraphiteGame:
             return {}
         return {"packages": ["numpy"], "files": [checkpoint.resolve().relative_to(ROOT).as_posix()]}
 
-    def rules(self) -> str:
-        return (ROOT / "RULES.md").read_text()
-
     def theme(self) -> dict:
         return THEME
-
-    def fingerprint(self) -> str:
-        digest = hashlib.sha256()
-        for path in [ROOT / name for name in RULE_FILES] + sorted((ROOT / "maps").glob("*.json")):
-            digest.update(path.name.encode() + b"\0" + path.read_bytes())
-        return digest.hexdigest()[:16]
 
 
 class WebPerson(HumanController):
@@ -386,13 +325,6 @@ def _title(name: str) -> str:
     small = {"and", "of", "the", "on", "in"}
     words = name.replace("_", " ").split()
     return " ".join(word if number and word in small else word.capitalize() for number, word in enumerate(words))
-
-
-def _summary(path: Path) -> str:
-    """The first paragraph of a module's docstring, read without importing it (and so without PyTorch)."""
-
-    docstring = ast.get_docstring(ast.parse(path.read_text())) or ""
-    return " ".join(docstring.split("\n\n")[0].split())
 
 
 GAME = GraphiteGame()

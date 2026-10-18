@@ -27,6 +27,7 @@ from ml.play.numpy_model import read_checkpoint
 
 
 NETWORK = "network:"
+GAME_FOLDER = Path(__file__).resolve().parents[2]
 UNTRAINED = "untrained"
 
 Controller = Callable[[GameView], SendAction | None]
@@ -126,7 +127,7 @@ def load_player(name: str, greedy: bool = False, seed: int | None = None) -> Con
             from ml.models.checkpoint import init_model
 
             if name.endswith(".pt"):
-                _models[name] = init_model(name).model
+                _models[name] = init_model(game_path(name)).model
             else:
                 weights_seed = int(name.partition(":")[2] or 0)
                 _models[name] = init_model("random", seed=weights_seed).model
@@ -194,7 +195,8 @@ def network_player(name: str, seed: int | None = None, greedy: bool = False):
 
 
 def parse_name(text: str, settings_class):
-    """``PATH?key=value&...`` as the path and a settings object, each value read as its setting's type."""
+    """``PATH?key=value&...`` as the path (see ``game_path``) and a settings object, each value read
+    as its setting's type."""
 
     path, _, options = text.partition("?")
     defaults = {setting.name: setting.default for setting in fields(settings_class)}
@@ -204,7 +206,14 @@ def parse_name(text: str, settings_class):
         if key not in defaults:
             raise ValueError(f"'{key}' is not a setting here. Settings: {', '.join(defaults)}")
         changes[key] = type(defaults[key])(value)
-    return path, settings_class(**changes)
+    return game_path(path), settings_class(**changes)
+
+
+def game_path(path: str) -> str:
+    """A checkpoint named in a player's name: a relative path is read from the game folder,
+    wherever the program runs, and "random" stays untrained weights."""
+
+    return path if path == "random" else str(GAME_FOLDER / path)
 
 
 def min_send_gap(checkpoint: str | Path) -> int:

@@ -132,12 +132,6 @@ def play_visual(
     return winner, return_home
 
 
-def controller_label(name: str) -> str:
-    """How an AI file is shown to people: ``strategic_ai`` -> ``Strategic``."""
-
-    return bot_name(name)
-
-
 def player_name(player_id: int | None) -> str:
     if player_id == RED:
         return "Red"
@@ -223,9 +217,9 @@ def main() -> None:
                 green_controller = human_controller.choose_action
         max_seconds = args.max_seconds or game.map_definition.time_limit or 180
         max_ticks = int(max_seconds / args.tick_seconds)
-        names = {RED: controller_label(args.red_ai), BLUE: controller_label(args.blue_ai)}
+        names = {RED: bot_name(args.red_ai), BLUE: bot_name(args.blue_ai)}
         if GREEN in game.players:
-            names[GREEN] = controller_label(args.green_ai)
+            names[GREEN] = bot_name(args.green_ai)
         if human_controller is not None:
             names[human_player] = "You"
 

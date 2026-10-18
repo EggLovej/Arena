@@ -1,5 +1,4 @@
 from collections import defaultdict
-from dataclasses import replace
 from game_types import BaseView, FleetView, GameView
 from ais._atlas_policy import arrival_ticks, resolve
 
@@ -14,7 +13,6 @@ original tick, even between decisions. Forecasts never mutate the real game."""
         self.index = {b.id: i for i, b in enumerate(state.bases)}
         self.owners = [b.owner for b in state.bases]
         self.units = [b.units for b in state.bases]
-        self.events = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
         self.tick = 0
         self._cached_tick = None
         self._cached_view = None
@@ -77,13 +75,11 @@ original tick, even between decisions. Forecasts never mutate the real game."""
     def value(self, me):
         """Heuristic terminal value: army plus production, relative to the strongest rival."""
         strength = {p: 0.0 for p in self.players}
-        production = {p: 0.0 for p in self.players}
         alive = set()
         for i, b in enumerate(self.state.bases):
             p = self.owners[i]
             if p:
                 strength[p] += self.units[i] + 28 * b.production_rate + 3
-                production[p] += b.production_rate
                 alive.add(p)
         for _, f in self.fleets:
             strength[f.owner] += f.units

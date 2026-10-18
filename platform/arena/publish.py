@@ -1,6 +1,6 @@
 """The JSON files the website reads, written to ``web/public/data/``.
 
-    games.json                    every game: name, tagline, seats, counts
+    games.json                    the games' ids
     <game>/game.json              rules, theme, seats, maps (with their layout) and bots
     <game>/results.json           every match of the last tournament, in full: the source of the two below
     <game>/leaderboard.json       one table per match size, and how the tournament ran
@@ -16,9 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import shutil
-import subprocess
 import tomllib
 from dataclasses import asdict
 from datetime import datetime, timezone
@@ -26,7 +24,7 @@ from pathlib import Path
 
 from arena.contract import Game
 from arena.leaderboard import standings
-from arena.registry import repo_root
+from arena.registry import game_files, games_directory, hash_files, repo_root
 from arena.replay import write_replay
 
 
@@ -50,7 +48,7 @@ def publish_game(game: Game, output: Path) -> None:
         "tick_seconds": info.tick_seconds,
         "max_ticks": info.max_ticks,
         "rating_anchor": list(info.rating_anchor) if info.rating_anchor else None,
-        "rules": game.rules(),
+        "rules": (games_directory() / info.id / "RULES.md").read_text(),
         "theme": game.theme(),
         "maps": maps,
         "bots": [asdict(bot) for bot in game.bots()],
@@ -59,17 +57,7 @@ def publish_game(game: Game, output: Path) -> None:
 
     index_path = output / "games.json"
     games = json.loads(index_path.read_text()) if index_path.exists() else []
-    games = [entry for entry in games if entry["id"] != info.id]
-    games.append(
-        {
-            "id": info.id,
-            "name": info.name,
-            "tagline": info.tagline,
-            "seats": [seat.id for seat in info.seats],
-            "maps": len(maps),
-            "bots": len(data["bots"]),
-        }
-    )
+    games = [entry for entry in games if entry["id"] != info.id] + [{"id": info.id}]
     _write(index_path, sorted(games, key=lambda entry: entry["id"]))
 
 
@@ -96,7 +84,6 @@ def publish_results(
             "game": game.info.id,
             "updated": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
             "inputs": inputs,
-            "fingerprint": game.fingerprint(),
             "settings": settings,
             "wall_seconds": round(seconds),
             "results": results,
@@ -115,17 +102,7 @@ def publish_tables(game: Game, output: Path) -> bool:
     run = json.loads(path.read_text())
     results = run["results"]
     kept = {replay.stem for replay in (folder / "replays").glob("*.json")}
-    _write(
-        folder / "leaderboard.json",
-        {
-            **{key: run[key] for key in ("game", "updated", "inputs", "fingerprint", "settings")},
-            "matches": len(results),
-            "replays": len(kept),
-            "cpu_seconds": round(sum(row["wall_seconds"] for row in results)),
-            "wall_seconds": run["wall_seconds"],
-            "tables": standings(game, results),
-        },
-    )
+    _write(folder / "leaderboard.json", {"updated": run["updated"], "matches": len(results), "tables": standings(game, results)})
     _write(
         folder / "matches.json",
         [
@@ -134,7 +111,6 @@ def publish_tables(game: Game, output: Path) -> bool:
                 "map": row["map"],
                 "lineup": row["lineup"],
                 "ranking": row["outcome"]["ranking"],
-                "reason": row["outcome"]["reason"],
                 "ticks": row["outcome"]["ticks"],
                 "replay": row["id"] in kept,
             }
@@ -151,40 +127,22 @@ def published_inputs(game: Game, output: Path) -> str | None:
     return json.loads(path.read_text()).get("inputs") if path.exists() else None
 
 
-# Files that cannot change how bots play: notes, notebooks, tests and training scripts,
-# lock files, and the shared code that only rates, checks or publishes finished matches,
-# or plays matches with people on the website.
-_IGNORED_SUFFIXES = (".md", ".ipynb", ".txt", ".png", ".jpg", ".lock")
-_IGNORED_PARTS = ("tests", "scripts", "runs", "colab", "docs", "__pycache__", ".venv")
-_IGNORED_FILES = {
-    f"platform/arena/{name}"
-    for name in ("__init__.py", "__main__.py", "cli.py", "leaderboard.py", "live.py", "publish.py", "ratings.py", "replay.py")
-}
+# The shared code that only rates, checks or publishes finished matches, or plays matches with
+# people on the website: it cannot change a tournament's results.
+_NOT_INPUTS = {"__init__.py", "__main__.py", "cli.py", "leaderboard.py", "live.py", "publish.py", "ratings.py", "replay.py"}
 
 
 def inputs_fingerprint(game: Game, settings: dict) -> str:
     """A hash of everything a tournament's results depend on: the shared code, the game's files
-    (rules, maps, bots, checkpoints), the packages it pins (such as torch) and the tournament
-    settings. Unchanged inputs mean that playing the tournament again only reshuffles the luck
-    of the neural bots."""
+    (``files.json``: rules, maps, bots and what they load), the packages it pins (such as torch)
+    and the tournament settings. Unchanged inputs mean that playing the tournament again only
+    reshuffles the luck of any bots that play by chance."""
 
     root = repo_root()
+    platform = [path for path in sorted((root / "platform" / "arena").glob("*.py")) if path.name not in _NOT_INPUTS]
     digest = hashlib.sha256(json.dumps(settings, sort_keys=True).encode())
     digest.update(_dependencies(root))
-    hashed = 0
-    for path in _input_files(root, [Path("platform") / "arena", Path("games") / game.info.id]):
-        relative = path.relative_to(root)
-        if (
-            path.suffix in _IGNORED_SUFFIXES
-            or any(part in _IGNORED_PARTS for part in relative.parts)
-            or relative.as_posix() in _IGNORED_FILES
-        ):
-            continue
-        digest.update(relative.as_posix().encode() + b"\0" + path.read_bytes())
-        hashed += 1
-    if not hashed:
-        raise RuntimeError(f"Found no files of {game.info.id} under {root}: is ARENA_ROOT right?")
-    return digest.hexdigest()[:16]
+    return hash_files(platform + game_files(game.info.id, "rules", "bots"), root, digest)
 
 
 def _dependencies(root: Path) -> bytes:
@@ -195,28 +153,6 @@ def _dependencies(root: Path) -> bytes:
         return b""
     project = tomllib.loads(path.read_text()).get("project", {})
     return json.dumps({key: project.get(key) for key in ("dependencies", "optional-dependencies")}, sort_keys=True).encode()
-
-
-def _input_files(root: Path, folders: list[Path]) -> list[Path]:
-    """Files git tracks in these folders (so local training output never counts), else every file."""
-
-    try:
-        listed = subprocess.run(
-            ["git", "-C", str(root), "ls-files", "-z", "--", *map(str, folders)],
-            capture_output=True,
-            check=True,
-        ).stdout.decode()
-        files = [root / name for name in listed.split("\0") if name]
-        if files:
-            return sorted(path for path in files if path.is_file())
-    except (OSError, subprocess.CalledProcessError):
-        pass
-    found = []
-    for folder in folders:
-        for directory, subdirectories, names in os.walk(root / folder):
-            subdirectories[:] = sorted(name for name in subdirectories if name not in _IGNORED_PARTS)
-            found += [Path(directory) / name for name in names]
-    return sorted(found)
 
 
 def _write(path: Path, data) -> None:

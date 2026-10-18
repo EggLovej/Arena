@@ -22,6 +22,7 @@ From the game directory:
 import argparse
 from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime
+from io import BytesIO
 from pathlib import Path
 
 import torch
@@ -95,12 +96,14 @@ def save_checkpoint(
     return path
 
 
-def load_checkpoint(path: str | Path, device: torch.device | str = "cpu") -> Checkpoint:
+def load_checkpoint(path: str | Path, device: torch.device | str = "cpu", data: bytes | None = None) -> Checkpoint:
+    """The checkpoint at ``path``, or in ``data``: the bytes read from ``path`` earlier."""
+
     path = Path(path)
-    if not path.exists():
+    if data is None and not path.exists():
         raise FileNotFoundError(f"No checkpoint at {path}")
     # weights_only refuses files that contain code, so a checkpoint cannot run anything on load.
-    contents = torch.load(path, map_location="cpu", weights_only=True)
+    contents = torch.load(path if data is None else BytesIO(data), map_location="cpu", weights_only=True)
 
     if contents.get("format_version") != FORMAT_VERSION:
         raise ValueError(f"{path} uses checkpoint format {contents.get('format_version')}, expected {FORMAT_VERSION}")

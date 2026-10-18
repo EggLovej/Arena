@@ -1,0 +1,13 @@
+{
+  "rules": ["src/ricochet/game", "maps"],
+  "bots": [
+    "ais",
+    "src/ricochet/__init__.py",
+    "src/ricochet/api.py",
+    "src/ricochet/bot.py",
+    "src/ricochet/resources.py",
+    "src/ricochet/runtime/__init__.py",
+    "src/ricochet/runtime/loading.py",
+    "src/ricochet/themes/__init__.py"
+  ]
+}

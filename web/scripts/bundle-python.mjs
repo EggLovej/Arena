@@ -5,10 +5,9 @@
 //   public/play/<game>/files/...     the game's other files, such as a network's weights, fetched
 //                                    only when a bot needs them (the game's web_needs)
 //
-// Notes, tests, training scripts and pictures stay out, as they do from a tournament's inputs
-// (platform/arena/publish.py). Nothing here is committed: it is rebuilt from the games every time.
+// A game's files are its arena_game.py and what its files.json lists, the same files a tournament
+// depends on (platform/arena/contract.py). Nothing here is committed: it is rebuilt every time.
 
-import { execFileSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,36 +17,25 @@ const ROOT = path.resolve(WEB, "..");
 const OUTPUT = path.join(WEB, "public", "play");
 
 const TEXT = new Set([".py", ".json"]);
-const SKIPPED = new Set([".md", ".ipynb", ".txt", ".png", ".jpg", ".pyc"]);
-const SKIPPED_PARTS = new Set(["tests", "scripts", "runs", "colab", "docs", "__pycache__", ".venv"]);
 
-/** Files under a folder of the repository, relative to the repository: the ones git tracks or would
- * (so local training output it ignores stays out), else all of them. */
-function listFiles(folder) {
-  try {
-    const listed = execFileSync("git", ["-C", ROOT, "ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", folder], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
-    const files = listed.split("\0").filter((name) => name && existsSync(path.join(ROOT, name)));
-    if (files.length) return files;
-  } catch {
-    // No git here (a deployment may build from a plain copy): walk the folder instead.
-  }
-  const found = [];
-  const walk = (relative) => {
-    for (const entry of readdirSync(path.join(ROOT, relative), { withFileTypes: true })) {
-      const name = path.posix.join(relative, entry.name);
-      if (entry.isDirectory()) {
-        if (!SKIPPED_PARTS.has(entry.name)) walk(name);
-      } else if (entry.isFile()) {
-        found.push(name);
+/** The game's files, relative to the repository: arena_game.py and every file files.json lists,
+ * a listed folder standing for every file in it. As arena.registry.game_files reads them. */
+function gameFiles(game) {
+  const folder = path.join(ROOT, "games", game);
+  const listed = JSON.parse(readFileSync(path.join(folder, "files.json"), "utf8"));
+  const files = new Set(["arena_game.py"]);
+  for (const entry of [...listed.rules, ...listed.bots]) {
+    const target = path.join(folder, entry);
+    if (!existsSync(target)) throw new Error(`games/${game}/files.json lists ${entry}, which does not exist`);
+    if (!statSync(target).isDirectory()) files.add(entry);
+    else {
+      for (const found of readdirSync(target, { recursive: true, withFileTypes: true })) {
+        const name = path.relative(folder, path.join(found.parentPath, found.name)).split(path.sep).join("/");
+        if (found.isFile() && !name.split("/").includes("__pycache__")) files.add(name);
       }
     }
-  };
-  walk(folder);
-  return found;
-}
-
-function wanted(file) {
-  return !file.split("/").some((part) => SKIPPED_PARTS.has(part)) && !SKIPPED.has(path.extname(file));
+  }
+  return [...files].sort().map((name) => `games/${game}/${name}`);
 }
 
 if (!existsSync(path.join(ROOT, "games")) || !existsSync(path.join(ROOT, "platform", "arena"))) {
@@ -57,16 +45,17 @@ if (!existsSync(path.join(ROOT, "games")) || !existsSync(path.join(ROOT, "platfo
   );
 }
 
-const platform = listFiles("platform/arena").filter((file) => file.endsWith(".py") && wanted(file));
+const platform = readdirSync(path.join(ROOT, "platform", "arena"))
+  .filter((name) => name.endsWith(".py"))
+  .map((name) => `platform/arena/${name}`);
 const games = readdirSync(path.join(ROOT, "games")).filter((name) => existsSync(path.join(ROOT, "games", name, "arena_game.py")));
 
 rmSync(OUTPUT, { recursive: true, force: true });
 for (const game of games) {
   const folder = `games/${game}`;
-  const files = listFiles(folder).filter(wanted);
   const text = {};
   let binary = 0;
-  for (const file of [...platform, ...files]) {
+  for (const file of [...platform, ...gameFiles(game)]) {
     if (TEXT.has(path.extname(file))) {
       text[file] = readFileSync(path.join(ROOT, file), "utf8");
     } else {

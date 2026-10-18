@@ -1,0 +1,33 @@
+{
+  "rules": ["game.py", "game_types.py", "loading.py", "maps"],
+  "bots": [
+    "ais",
+    "bot_names.py",
+    "human_controller.py",
+    "sizing.py",
+    "themes/paper_atlas.json",
+    "checkpoints/beast.json",
+    "checkpoints/beast_ai.pt",
+    "checkpoints/neural_ai.pt",
+    "ml/__init__.py",
+    "ml/encoding/__init__.py",
+    "ml/encoding/action_encoder.py",
+    "ml/encoding/forecast.py",
+    "ml/encoding/state_encoder.py",
+    "ml/models/__init__.py",
+    "ml/models/amounts.py",
+    "ml/models/checkpoint.py",
+    "ml/models/graph_transformer.py",
+    "ml/models/interface.py",
+    "ml/models/judge.py",
+    "ml/models/policy.py",
+    "ml/play/__init__.py",
+    "ml/play/agent.py",
+    "ml/play/beast.py",
+    "ml/play/lookahead.py",
+    "ml/play/numpy_agent.py",
+    "ml/play/numpy_model.py",
+    "ml/play/players.py",
+    "ml/play/value_player.py"
+  ]
+}

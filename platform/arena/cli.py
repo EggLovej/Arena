@@ -10,7 +10,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 import time
 from pathlib import Path
@@ -51,12 +50,6 @@ def main(argv: list[str] | None = None) -> int:
     publish.add_argument("--output", type=Path, help="Data folder (default: web/public/data)")
 
     args = parser.parse_args(argv)
-    # Loading a game can change the working directory, so fix every path first.
-    for name in ("replay", "output"):
-        if getattr(args, name, None) is not None:
-            setattr(args, name, getattr(args, name).resolve())
-    if getattr(args, "replays", None):
-        args.replays = [path.resolve() for path in args.replays]
     return {"games": _games, "match": _match, "tournament": _tournament, "verify": _verify, "publish": _publish}[
         args.command
     ](args)
@@ -169,8 +162,8 @@ def _verify(args) -> int:
     exact = len(args.replays) - failed - stale
     print(f"{exact} of {len(args.replays)} replays play back exactly")
     if stale:
-        # A rules or map change may change how old matches play; that is not an error.
-        print(f"{stale} recorded before the game's rules or maps changed no longer do; the next tournament replaces them")
+        # A change to the rules, maps or adapter may change how old matches play; that is not an error.
+        print(f"{stale} recorded before the game's rules, maps or adapter changed no longer do; the next tournament replaces them")
     return 1 if failed else 0
 
 

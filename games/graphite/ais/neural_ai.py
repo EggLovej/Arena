@@ -30,7 +30,6 @@ COMMITTED_CHECKPOINT = Path(__file__).resolve().parent.parent / "checkpoints" / 
 # 0.2 (the user's choice, 2026-10-10): it plays its favourite route about 72% of the time,
 # against 28% drawing by the network's own odds (1.0), which shuffled units back and forth far
 # more and lost 33.5% to 66.5% to always playing the favourite. 0.8 changed too little (33%).
-# See ml/history.md, "Playing the favourite instead of drawing by chance".
 TEMPERATURE = 0.2
 
 _agent = None
@@ -38,15 +37,37 @@ _loaded_version = None
 
 
 def choose_action(state):
+    """The game window's player: one agent for every seat it plays."""
+
     global _agent, _loaded_version
     if _agent is None or state.tick == 0:
-        default = DEFAULT_CHECKPOINT if DEFAULT_CHECKPOINT.exists() else COMMITTED_CHECKPOINT
-        path = Path(os.environ.get("NEURAL_AI_CHECKPOINT", default))
+        path = _checkpoint()
         version = (path, path.stat().st_mtime) if path.exists() else (path, None)
         if _agent is None or version != _loaded_version:
             _agent = _load_agent(path)
             _loaded_version = version
     return _agent.choose_action(state)
+
+
+def create_bot():
+    """The Arena's player: an agent of its own that draws its moves from the match's seed,
+    so a seeded match plays the same way again."""
+
+    return _Bot()
+
+
+class _Bot:
+    def reset(self, context):
+        self.agent = _load_agent(_checkpoint())
+        self.agent.reseed(context.seed)
+
+    def act(self, state):
+        return self.agent.choose_action(state)
+
+
+def _checkpoint() -> Path:
+    default = DEFAULT_CHECKPOINT if DEFAULT_CHECKPOINT.exists() else COMMITTED_CHECKPOINT
+    return Path(os.environ.get("NEURAL_AI_CHECKPOINT", default))
 
 
 def _load_agent(path):

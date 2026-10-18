@@ -11,8 +11,8 @@ a tank duel where every shot may bounce once.
 
 | Folder | What it holds |
 | --- | --- |
-| `games/<game>/` | One game: its rules engine, maps, bots (`ais/`), training code (`ml/`) and `arena_game.py`, the adapter the platform talks to |
-| `games/<game>/checkpoints/` | The one network each neural bot plays (training output in `ml/runs/` stays out of git) |
+| `games/<game>/` | One game: its rules engine, maps, bots (`ais/`), training code, and `arena_game.py`, the adapter the platform talks to, with `files.json`, the files its matches load |
+| `games/<game>/checkpoints/` | The one network each neural bot plays (training output stays out of git) |
 | `platform/arena/` | What every game shares: the game contract, match runner, replays, tournaments, ratings, and the files the website reads |
 | `platform/tests/` | Tests for the platform, with a tiny Race game that is also a template for new games |
 | `web/` | The website (Next.js). Vercel deploys this folder; its build also copies the games' Python for the play page |
@@ -21,7 +21,7 @@ a tank duel where every shot may bounce once.
 
 ## Running it
 
-Python 3.12 or newer, and Node 20.9 or newer.
+Python 3.12 or newer, and Node 22.6 or newer.
 
 ```sh
 python -m venv .venv && source .venv/bin/activate
@@ -41,10 +41,11 @@ cd web && npm install && npm run dev                    # the site, at http://lo
 
 A tournament plays every group of bots on every map in every seating, keeps
 one replay of each group on each map, and checks that every kept replay plays
-back exactly. It does nothing if the bots, maps, rules, shared match code and
-pinned packages are unchanged since the published one (`--force` plays it
-anyway). CI plays the published replays back too; one recorded before a change
-to the game's rules or maps may no longer match, which is only noted, since
+back exactly. It does nothing if the files its matches load (the game's
+`arena_game.py` and `files.json`), the shared match code and the pinned
+packages are unchanged since the published one (`--force` plays it anyway). CI
+plays the published replays back too; one recorded before a change to the
+game's rules, maps or adapter may no longer match, which is only noted, since
 the next tournament replaces it. A full Graphite tournament is about 700
 matches; most take under a second, but the search bots take up to a few
 minutes a match, so it runs for an hour or two on four cores. Ricochet's 240
@@ -71,9 +72,10 @@ See `platform/arena/ratings.py`.
 `.github/workflows/tournament.yml` runs on every push to `main` that touches
 `games/`, `platform/arena/`, `pyproject.toml` or the workflow itself, every
 Monday, and on demand (Actions > Tournament > Run workflow, with "force" to
-replay unchanged games); a run waits for one already playing. It plays each
-game's tournament, refreshes the tables, and commits `web/public/data` to
-`main`, which Vercel then deploys. It needs to push to `main`: if `main` gets
+replay unchanged games); a run waits for one already playing, then plays the
+latest `main`. It plays each game's tournament, then takes the latest `main`
+again, puts in the results it played, publishes every game's files from there
+and commits `web/public/data` to `main`, which Vercel then deploys. It needs to push to `main`: if `main` gets
 branch protection, allow GitHub Actions to bypass it.
 
 ## Playing against the bots
@@ -91,8 +93,9 @@ other live, and shows the match full screen (the F key). A bot that sits out a
 group of maps in the tournaments (`BotInfo.sits_out`, such as Graphite's large
 maps) isn't offered for them there either, and each map keeps its own time
 limit (`MapInfo.max_ticks`).
-Before each build, `web/scripts/bundle-python.mjs` copies the game's code and
-checkpoints into `web/public/play/` (not committed).
+Before each build, `web/scripts/bundle-python.mjs` copies the files the game's
+`files.json` lists into `web/public/play/` (not committed), and a test checks
+that every file a match imports, with or without PyTorch, is listed.
 
 Neural bots play without PyTorch there: `games/graphite/ml/play/numpy_model.py`
 reads the checkpoint and runs the same network in numpy, and the tests check
@@ -113,21 +116,25 @@ in the Build Step** on (the default).
 ## Adding a bot to Graphite
 
 Add `games/graphite/ais/<name>.py` with a `choose_action(state)` function (see
-`ais/careful_ai.py`), or a `create_bot()` returning an object with
-`reset(context)` and `act(state)`. Its docstring's first paragraph describes
+`ais/careful_ai.py`), which the game's own window plays. It may also define a
+`create_bot()` returning an object with `reset(context)` and `act(state)`,
+which the Arena then plays instead (`ais/neural_ai.py` does, to draw its moves
+from the match's seed). Its docstring's first paragraph describes
 it on the site unless `BLURBS` in `arena_game.py` has a line for it. A bot may
 think for up to two minutes on a move and half an hour over a match
 (`move_time_limit` and `match_time_limit` in the game's `GameInfo`); one that
 runs out of time, or fails to load, forfeits the match. A neural bot also
-commits the one checkpoint it plays to `checkpoints/`. Open a pull request;
-once merged, the Tournament workflow rates it.
+commits the one checkpoint it plays to `checkpoints/`, and lists it and any other
+files it loads in `files.json`. Open a pull request; once merged, the Tournament
+workflow rates it.
 
 ## Adding a game
 
 1. Put the game in `games/<id>/`, with its rules separate from any user interface.
-2. Write `games/<id>/arena_game.py` defining `GAME`, following `platform/arena/contract.py`.
-   `platform/tests/fixtures/games/race/arena_game.py` is a complete small example,
-   and `games/graphite/arena_game.py` a real one.
+2. Write `games/<id>/arena_game.py` defining `GAME`, and beside it `RULES.md` and
+   `files.json`, following `platform/arena/contract.py`. `platform/tests/fixtures/games/race/`
+   is a complete small example, and `games/ricochet/` a real one. `platform/tests/test_games.py`
+   then checks the game the way it checks every other.
 3. Add a board for it to the website: `web/src/games/<id>/` with a component that
    draws one snapshot, registered in `web/src/games/index.ts` (see
    `web/src/games/types.ts`), plus a genre for the game list. The home page's
@@ -138,7 +145,6 @@ once merged, the Tournament workflow rates it.
    play it, give the view a `play` entry with the controls that lie over the
    board (Graphite's clicks are in `web/src/games/graphite/GraphiteControls.tsx`,
    Ricochet's keyboard and mouse in `web/src/games/ricochet/RicochetControls.tsx`).
-   They send the game's own actions, or simpler commands that a `person(seat)`
-   on `GAME` turns into actions.
+   They send commands that a `person(seat)` on `GAME` turns into actions.
 4. Run `python -m arena tournament <id>` and commit `web/public/data`, or let the
    Tournament workflow do it after merging.

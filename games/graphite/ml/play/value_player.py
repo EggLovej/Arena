@@ -62,8 +62,9 @@ class ValuePlayer:
     @classmethod
     def from_init(cls, init: str | Path, settings: ValueSettings = ValueSettings()) -> "ValuePlayer":
         from ml.models.checkpoint import init_model
+        from ml.play.players import game_path
 
-        judge = init_model(settings.judge).model if settings.judge else None
+        judge = init_model(game_path(settings.judge)).model if settings.judge else None
         return cls(init_model(init).model, settings, judge)
 
     def choose_action(self, state: GameView) -> SendAction | None:

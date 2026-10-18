@@ -11,9 +11,6 @@ directory: maps and bots are always read from this folder by path.
 
 from __future__ import annotations
 
-import ast
-import hashlib
-import json
 import math
 import sys
 from pathlib import Path
@@ -30,7 +27,7 @@ from ricochet.game.types import PLAYERS, ControlAction, MapDefinition, MatchCont
 from ricochet.runtime.loading import available_ais, controller_label, load_controller  # noqa: E402
 from ricochet.themes import NEON_CIRCUIT  # noqa: E402
 
-from arena.contract import BotContext, BotInfo, GameInfo, MapInfo, Outcome, SeatInfo  # noqa: E402
+from arena.contract import BotContext, BotInfo, GameInfo, MapInfo, Outcome, SeatInfo, summary  # noqa: E402
 
 RULES = RulesConfig()
 SEATS = ("cyan", "coral")  # player 0 and player 1, in Neon Circuit's colours
@@ -43,7 +40,7 @@ GENERATED = (3, 8, 12, 18, 21)
 # Bots in ais/ that the Arena leaves out: the template is where a new bot starts.
 HIDDEN = {"template_ai"}
 # What the website says about each bot. A bot not listed here is described by the
-# first line of its module's docstring.
+# first paragraph of its module's docstring.
 BLURBS = {
     "bank_shot_ai": "Shoots straight when it can see you, and banks shots off the top and bottom walls "
     "when it can't. Raises its shield when a shot comes close.",
@@ -55,9 +52,6 @@ BLURBS = {
     "sentinel_ai": "Our strongest bot. Plans routes around walls, aims where you will be, also off one wall, "
     "and dodges by tracing every shot a moment ahead. It never uses its shield.",
 }
-# What a replay depends on: the rules, the physics and the maps. Bots don't matter,
-# since a replay keeps every action they took.
-RULE_FILES = sorted((ROOT / "src" / "ricochet" / "game").glob("*.py"))
 
 def _number(value: float) -> float | int:
     """A float for JSON, written as an integer when it is one (0 rather than 0.0)."""
@@ -255,7 +249,7 @@ class RicochetGame:
 
     def bots(self) -> tuple[BotInfo, ...]:
         return tuple(
-            BotInfo(id=name, name=controller_label(name), description=BLURBS.get(name) or _summary(name))
+            BotInfo(id=name, name=controller_label(name), description=BLURBS.get(name) or summary(ROOT / "ais" / f"{name}.py"))
             for name in _roster()
         )
 
@@ -267,12 +261,6 @@ class RicochetGame:
     def new_match(self, map_id: str, seed: int) -> RicochetMatch:
         # Ricochet's rules have no chance in them, so the seed only matters to bots.
         return RicochetMatch(map_id, GameEngine(MAPS[map_id], RULES, seed, verification=False))
-
-    def restore_match(self, map_id: str, state: dict) -> RicochetMatch:
-        match = RicochetMatch(map_id, GameEngine.from_state(state["engine"], verification=False))
-        match.shots = {key: list(shot) for key, shot in state["shots"].items()}
-        match.last_hit = dict(state["last_hit"])
-        return match
 
     def person(self, seat: str) -> WebPerson:
         return WebPerson()
@@ -298,45 +286,6 @@ class RicochetGame:
             Vec2(float(move_x), float(move_y)), Vec2(float(aim_x), float(aim_y)), bool(flags & 1), bool(flags & 2)
         )
 
-    def observation_to_json(self, observation) -> dict:
-        return {
-            "seat": SEAT_OF[observation.player_id],
-            "tick": observation.tick,
-            "time": observation.time_seconds,
-            "max_time": observation.max_seconds,
-            "width": observation.width,
-            "height": observation.height,
-            "tanks": [
-                {
-                    "seat": SEAT_OF[tank.player_id],
-                    "position": tank.position.to_list(),
-                    "velocity": tank.velocity.to_list(),
-                    "aim": tank.aim.to_list(),
-                    "health": tank.health,
-                    "energy": tank.energy,
-                    "cooldown": tank.cooldown_remaining,
-                    "shield": tank.shield_active,
-                    "shield_ticks": tank.shield_ticks_remaining,
-                }
-                for tank in observation.tanks
-            ],
-            "walls": [[wall.x, wall.y, wall.width, wall.height] for wall in observation.walls],
-            "shots": [
-                {
-                    "id": shot.id,
-                    "seat": SEAT_OF[shot.owner_id],
-                    "position": shot.position.to_list(),
-                    "velocity": shot.velocity.to_list(),
-                    "bounced": shot.bounced,
-                    "lifetime": shot.remaining_lifetime,
-                }
-                for shot in observation.projectiles
-            ],
-        }
-
-    def rules(self) -> str:
-        return (ROOT / "RULES.md").read_text()
-
     def theme(self) -> dict:
         theme = NEON_CIRCUIT
         return {
@@ -348,13 +297,6 @@ class RicochetGame:
             "players": dict(zip(SEATS, map(_hex, theme.players))),
         }
 
-    def fingerprint(self) -> str:
-        digest = hashlib.sha256()
-        for path in RULE_FILES + sorted((ROOT / "maps").glob("*.json")):
-            digest.update(path.name.encode() + b"\0" + path.read_bytes())
-        digest.update(json.dumps(GENERATED).encode())
-        return digest.hexdigest()[:16]
-
 
 def _roster() -> tuple[str, ...]:
     return tuple(name for name in available_ais(ROOT / "ais") if name not in HIDDEN)
@@ -365,13 +307,6 @@ def _describe(definition: MapDefinition) -> str:
     if definition.id.startswith("generated:"):
         return f"Generated from seed {definition.id.split(':')[1]}, {walls}"
     return walls
-
-
-def _summary(name: str) -> str:
-    """The first line of a bot module's docstring, read without importing it."""
-
-    docstring = ast.get_docstring(ast.parse((ROOT / "ais" / f"{name}.py").read_text())) or ""
-    return docstring.split("\n\n")[0].strip()
 
 
 GAME = RicochetGame()
