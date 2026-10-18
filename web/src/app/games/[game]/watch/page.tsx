@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import Link from "next/link";
+
 import { MatchList } from "@/components/MatchList.tsx";
+import { gameView } from "@/games/index.ts";
 import { botNames, getGame, getMatches } from "@/lib/data.ts";
 
 type Params = { params: Promise<{ game: string }> };
@@ -19,7 +22,14 @@ export default async function Watch({ params }: Params) {
   return (
     <>
       <p className="small">
-        One replay of every pairing on every map from the last tournament. Pick one to watch it play out.
+        One replay of every pairing on every map from the last tournament. Pick one to watch it play out
+        {gameView(id).play ? (
+          <>
+            , or <Link href={`/games/${id}/play?watch`}>pick any bots and a map and watch them play live</Link>.
+          </>
+        ) : (
+          "."
+        )}
       </p>
       {rows.length ? (
         <Suspense>

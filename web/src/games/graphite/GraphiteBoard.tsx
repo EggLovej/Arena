@@ -26,7 +26,7 @@ type FleetState = [string, number, string, string, number, number];
 const FONT = '"DejaVu Sans Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif';
 
 /** Maps with this many bases draw small bases with only their units on them (games/graphite/sizing.py). */
-const LARGE_MAP = 80;
+export const LARGE_MAP = 80;
 
 /** Smallest and largest radius; crowded maps use smaller bases (games/graphite/sizing.py). */
 function radiusRange(count: number): [number, number] {
@@ -75,7 +75,7 @@ function textWidth(text: string, size: number): number {
   return text.length * size * 0.56;
 }
 
-function formatRate(rate: number): string {
+export function formatRate(rate: number): string {
   return rate > 0 ? `+${Number(rate.toPrecision(6))}/s` : "0/s";
 }
 

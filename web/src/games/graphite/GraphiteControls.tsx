@@ -12,7 +12,7 @@ import { useEffect, useRef, useState, type KeyboardEvent as KeyPress, type Mouse
 import { createPortal } from "react-dom";
 
 import type { PlayControlsProps } from "../types.ts";
-import { baseRadii, viewBox, type GraphiteBoardData } from "./GraphiteBoard.tsx";
+import { LARGE_MAP, baseRadii, formatRate, viewBox, type GraphiteBoardData } from "./GraphiteBoard.tsx";
 
 type BaseState = [string, number];
 type Theme = { colors: Record<string, string>; players: Record<string, { fill: string; dark: string }> };
@@ -32,6 +32,9 @@ export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, s
   const bases = (snapshot.bases ?? {}) as Record<string, BaseState>;
   const streams = ((person as { streams?: Record<string, string> } | undefined)?.streams ?? {}) as Record<string, string>;
   const radii = baseRadii(board);
+  // Large maps pack small bases close together, so the rings around them sit closer too.
+  const large = board.bases.length >= LARGE_MAP;
+  const ring = large ? { target: 5, selected: 6, key: 3, stream: 4 } : { target: 7, selected: 9, key: 13, stream: 6 };
   const byId = Object.fromEntries(board.bases.map((base) => [base.id, base]));
   const neighbours: Record<string, Set<string>> = {};
   for (const edge of board.edges) {
@@ -155,22 +158,22 @@ export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, s
               x2={a.x + ux * end}
               y2={a.y + uy * end}
               stroke={colour}
-              strokeWidth={6}
+              strokeWidth={ring.stream}
               markerEnd="url(#stream-head)"
             />
           );
         })}
         {source &&
           [...(neighbours[source] ?? [])].map((id) => (
-            <circle key={`target-${id}`} className="play-target" cx={byId[id].x} cy={byId[id].y} r={radii[id] + 7} stroke={colour} />
+            <circle key={`target-${id}`} className="play-target" cx={byId[id].x} cy={byId[id].y} r={radii[id] + ring.target} stroke={colour} />
           ))}
         {hovered && active && hovered !== source && (source ? neighbours[source]?.has(hovered) : mine(hovered)) && (
-          <circle cx={byId[hovered].x} cy={byId[hovered].y} r={radii[hovered] + 7} fill="none" stroke={ink} strokeWidth={3} opacity={0.5} />
+          <circle cx={byId[hovered].x} cy={byId[hovered].y} r={radii[hovered] + ring.target} fill="none" stroke={ink} strokeWidth={3} opacity={0.5} />
         )}
         {source && (
           <g>
-            <circle cx={byId[source].x} cy={byId[source].y} r={radii[source] + 9} fill="none" stroke={ink} strokeWidth={8} />
-            <circle cx={byId[source].x} cy={byId[source].y} r={radii[source] + 9} fill="none" stroke={theme.colors.highlight ?? "#ffd54a"} strokeWidth={4} />
+            <circle cx={byId[source].x} cy={byId[source].y} r={radii[source] + ring.selected} fill="none" stroke={ink} strokeWidth={large ? 6 : 8} />
+            <circle cx={byId[source].x} cy={byId[source].y} r={radii[source] + ring.selected} fill="none" stroke={theme.colors.highlight ?? "#ffd54a"} strokeWidth={large ? 3 : 4} />
           </g>
         )}
         {board.bases.map((base) => (
@@ -179,14 +182,17 @@ export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, s
             className="play-base-key"
             cx={base.x}
             cy={base.y}
-            r={radii[base.id] + 13}
+            r={radii[base.id] + ring.key}
             stroke={ink}
             tabIndex={active ? 0 : -1}
             role="button"
             aria-label={describe(base.id)}
             onKeyDown={press(base.id)}
             onMouseDown={(event) => event.preventDefault()} // a click does not take the keyboard's focus, so Space still pauses
-          />
+          >
+            {/* Large maps show only units on the bases; the rest shows on hover, as on the board. */}
+            {large && <title>{`${base.id} · ${formatRate(base.production)}`}</title>}
+          </circle>
         ))}
       </svg>
       {tools &&

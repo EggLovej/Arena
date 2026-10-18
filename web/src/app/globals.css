@@ -1922,6 +1922,70 @@ tbody tr + tr th {
   font-size: 0.85rem;
 }
 
+/* Play against the bots, or watch them play each other. */
+.play-mode {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.play-mode button {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.play-mode button[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+}
+
+/* Full screen: the scoreboard, the board as large as the screen allows, then the controls.
+   .is-full is the same over the page, where the browser has no full screen of its own. */
+.play:fullscreen,
+.play.is-full {
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-auto-rows: auto;
+  padding: 0.8rem;
+  background: var(--bg);
+  overflow: auto;
+}
+
+.play.is-full {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+
+:root:has(.play.is-full) {
+  overflow: hidden;
+}
+
+.play:fullscreen .replay-board,
+.play.is-full .replay-board {
+  display: flex;
+  min-height: 0;
+}
+
+.play:fullscreen .replay-board > svg,
+.play.is-full .replay-board > svg {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+}
+
+.play:fullscreen .play-help,
+.play.is-full .play-help {
+  display: none;
+}
+
 @media (max-width: 760px) {
   .play-setup {
     grid-template-columns: minmax(0, 1fr);
