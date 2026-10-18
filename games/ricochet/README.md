@@ -30,21 +30,16 @@ Copy `ais/template_ai.py`, subclass `BaseController` and implement `act(observat
 ricochet match --headless --record replays/example.json
 ricochet replay replays/example.json --headless
 ricochet replay replays/example.json
-ricochet tournament --bots all --maps all --seeds 0,1,2
 ```
 
-### Generated maps and automatic tournaments
+### Generated maps
 
-`generated:SEED` works anywhere a map name does. Each seed deterministically builds a mirror- or half-turn-symmetric arena, then shifts every free wall edge and both spawns by up to 16 px, so maps are nearly but not exactly symmetric. A map is accepted only if it is playable: walls at least 24 px thick, every gap closed or wide enough for a tank, room around the spawns, and the tanks able to reach each other.
+`generated:SEED` works anywhere a map name does. Each seed deterministically builds a mirror- or half-turn-symmetric arena, then shifts every free wall edge and both spawns by up to 16 px, so maps are nearly but not exactly symmetric. A map is accepted only if it is playable: walls at least 24 px thick, every gap closed or wide enough for a tank, room around the spawns, and the tanks able to reach each other. `GeneratorConfig` in `ricochet/game/mapgen.py` tunes the generator.
 
 ```bash
 ricochet match --map generated:42 --p1 human --p2 bank_shot_ai
 ricochet generate-map --seed 42 --output maps/arena_42.json  # Keep one for the menu.
-ricochet auto-tournament                      # All bots, 100 rounds per pairing.
-ricochet auto-tournament --bots direct_ai bank_shot_ai --rounds 20 --seed 1000
 ```
-
-In the automatic tournament, round `r` of every pairing uses map and match seed `seed + r` and is played from both seats. Every pairing therefore meets the same maps, and the slight asymmetry cannot favor either bot. Games run in parallel processes (`--workers`, default: all CPUs), and the results do not depend on the worker count. Output is the usual standings, a head-to-head score matrix, and JSON/CSV under `results/auto_tournament.*`. Tune the generator through `GeneratorConfig` in `ricochet/game/mapgen.py`.
 
 Replay controls: Space pauses, `.` advances a tick, Left/Right seek five seconds, Up/Down change speed, Home restarts, and Escape exits. V2 replays embed the original map, rules and state. V1 recordings require the old `afc5ee0` revision because the physics changed.
 
@@ -77,8 +72,6 @@ Resume into a new directory with `train --resume PATH --output NEW_DIRECTORY`. O
 ```bash
 pytest
 ruff check .
-ricochet benchmark
-ricochet balance --output results/shield_comparison.json
 ```
 
 Bots and checkpoints are trusted local code. This release has no network multiplayer or public upload service.

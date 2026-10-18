@@ -14,8 +14,6 @@ Each tick: regenerate energy and prepare shields/aim; propose both tanks' moveme
 - After commitment, holding costs 1.2 energy/tick. Release or insufficient energy ends the shield. Reactivation pays again. No extra activation delay or cooldown exists.
 - Shielding blocks shots in every direction, prevents firing and reduces movement speed to 60%. Regeneration continues.
 
-`RulesConfig.preset("legacy_shield")` has no activation charge or minimum commitment beyond the current tick. It exists for controlled comparisons and still uses corrected v2 physics.
-
 ## Geometry
 
 Tanks are circles of radius 18 and projectiles have radius 4. Shots spawn at the tank center and move at 420 units/second; the visual muzzle does not move the collision origin. The projectile ignores its owner until its first bounce. It can then hit its owner, including immediately when the owner shoots into a nearby wall.

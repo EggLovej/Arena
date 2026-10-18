@@ -3,7 +3,7 @@
 ## Boundaries
 
 - `game`: deterministic simulation, immutable public types (including action validation, event kinds and map serialization), configuration, geometry, map validation, spawn jitter and the seeded map generator (`mapgen.py`, reached through `load_map("generated:SEED")`). Standard library only; it imports nothing above it.
-- `runtime`: bot loading, match lifecycle, controller faults/timing, tournament scheduling (fixed maps or generated round robins, optionally in parallel processes), action replays and command routing. Display/learning libraries are imported only by the commands that need them.
+- `runtime`: bot loading, match lifecycle, controller faults/timing, action replays and command routing. Tournaments are the Arena's (`python -m arena tournament ricochet` from the repository root). Display/learning libraries are imported only by the commands that need them.
 - `training`: encoders, Gymnasium/Parallel adapters, PPO training, checkpoint controllers and evaluation. Reward shaping and neural representation belong here.
 - `display`: input bindings (`controls.py`), viewport conversion, immutable snapshot rendering, effects, local cosmetic RNG and audio. It never mutates the game engine. Rendering consumes `RenderSnapshot` and `GameEvent`; contact events carry positions/normals where relevant. Drawing styles live in `display/styles/` (see [themes](themes.md)).
 - `api` / `bot`: the controller protocol, plus the optional `BaseController` and shared observation helpers for bots.

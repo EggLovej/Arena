@@ -13,7 +13,6 @@ from ricochet.game.types import ControlAction, Vec2, WallDefinition
 from ricochet.runtime.loading import load_controller
 from ricochet.runtime.match import run_headless
 from ricochet.runtime.replay import load_replay, replay_steps, verify_replay
-from ricochet.runtime.tournament import standings
 from ricochet.training.encoding import OBSERVATION_SIZE, encode_observation
 from ricochet.training.gym_env import RicochetEnv
 
@@ -159,7 +158,7 @@ def test_dataclass_plugin_and_startup_failures(tmp_path):
     one = run_headless("missing_ai", "direct_ai")
     assert one.winner == 1 and not one.invalid
     both = run_headless("missing_ai", "missing_ai")
-    assert both.invalid and standings([both]) == []
+    assert both.invalid
 
 
 def test_replay_embeds_map_and_seeking_matches(tmp_path, monkeypatch):

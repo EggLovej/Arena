@@ -49,14 +49,6 @@ class RulesConfig:
     def shield_min_ticks(self) -> int:
         return max(1, math.ceil(self.shield_min_seconds * self.ticks_per_second))
 
-    @classmethod
-    def preset(cls, name: str) -> "RulesConfig":
-        if name == "default":
-            return cls()
-        if name == "legacy_shield":
-            return cls(shield_activation_cost=0, shield_min_seconds=0)
-        raise ValueError(f"unknown rules preset: {name}")
-
     @property
     def dt(self) -> float:
         return 1.0 / self.ticks_per_second

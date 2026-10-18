@@ -47,7 +47,7 @@ def test_checkpoint_pool_and_version_contract(tmp_path):
     assert str(path) in names and len(names) > 1
     with pytest.raises(ValueError, match="rules"):
         controller.reset(
-            MatchContext("classic", 0, 1, 0, 30, 2700, RulesConfig.preset("legacy_shield"))
+            MatchContext("classic", 0, 1, 0, 30, 2700, RulesConfig(shield_activation_cost=0))
         )
     metadata["encoder_version"] = 999
     metadata_path(path).write_text(json.dumps(metadata))
