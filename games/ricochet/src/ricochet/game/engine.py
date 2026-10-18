@@ -282,7 +282,7 @@ class GameEngine:
             )
             if not can_fire:
                 continue
-            tank.energy -= self.rules.fire_energy
+            tank.energy = max(0.0, tank.energy - self.rules.fire_energy)
             tank.cooldown_remaining = self.rules.fire_cooldown_seconds
             projectile = _ProjectileState(
                 id=self._next_projectile_id,

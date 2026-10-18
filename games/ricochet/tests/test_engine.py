@@ -33,6 +33,15 @@ def test_energy_is_shared_by_movement_and_firing() -> None:
     assert engine.tanks[0].energy == pytest.approx(expected)
 
 
+def test_firing_never_leaves_energy_below_zero() -> None:
+    engine = GameEngine(load_map("classic"))
+    rules = engine.rules
+    # Regeneration adds up in floats, so a tank can be a hair short of the cost and still fire.
+    engine.tanks[0].energy = rules.fire_energy - rules.energy_regen_per_second * rules.dt - 1e-12
+    engine.step({0: ControlAction(fire=True)})
+    assert engine.projectiles and engine.tanks[0].energy == 0
+
+
 def test_shield_blocks_projectile_damage() -> None:
     engine = GameEngine(load_map("crossfire"))
     engine.tanks[0].position = Vec2(380, 320)
