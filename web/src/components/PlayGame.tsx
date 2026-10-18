@@ -260,6 +260,17 @@ function Match({
     return () => window.removeEventListener("keydown", onKey);
   }, [phase, pause, resume, pauseKey, toggleFull]);
 
+  // A person's match pauses while the page is hidden (another tab, a minimised window); bots being watched carry on.
+  useEffect(() => {
+    if (!person || phase !== "playing") return;
+    const away = () => {
+      if (document.hidden) pause();
+    };
+    away(); // a match that started while the page was hidden waits too
+    document.addEventListener("visibilitychange", away);
+    return () => document.removeEventListener("visibilitychange", away);
+  }, [person, phase, pause]);
+
   // A refused move is shown for a moment.
   const [, setTick] = useState(0);
   useEffect(() => {
