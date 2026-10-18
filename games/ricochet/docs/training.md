@@ -13,10 +13,10 @@ Initially opponents are uniformly Random, Template, Direct, Bank Shot and Reacti
 Install `learn` plus any display/dev extras required, or use the README's all-extras setup.
 
 ```bash
-uv run --no-sync ricochet train --output runs/my_smoke --smoke
-uv run --no-sync ricochet train --config configs/ppo_three_seeds.json --output runs/experiment
-uv run --no-sync ricochet train --resume runs/experiment/seed_0/latest.zip --seed 10 --output runs/continued
-uv run --no-sync ricochet evaluate runs/continued/best.zip --suite test --output results/test.json
+ricochet train --output runs/my_smoke --smoke
+ricochet train --config configs/ppo_three_seeds.json --output runs/experiment
+ricochet train --resume runs/experiment/seed_0/latest.zip --seed 10 --output runs/continued
+ricochet evaluate runs/continued/best.zip --suite test --output results/test.json
 ```
 
 A JSON config can override fields of `TrainConfig`; `--seed`, `--steps` and `--smoke` override relevant fields. `--seeds 0,1,2` or the supplied config launches separate seed directories serially. Step counts and checkpoint intervals must align to complete rollouts. Existing run directories are rejected to preserve lineage.
