@@ -2,15 +2,13 @@
 // sends, and the small sums the play page does with it. The worker runs the match in
 // Python (platform/arena/live.py); the page draws it and sends the person's commands.
 
-import type { Delta, Snapshot } from "./types.ts";
+import type { Delta, Outcome, Snapshot } from "./types.ts";
 
 /** Where Python for the browser (Pyodide) comes from. Set NEXT_PUBLIC_PYODIDE_URL to serve it from elsewhere. */
 export const PYODIDE_URL = process.env.NEXT_PUBLIC_PYODIDE_URL || "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/";
 
 /** Stands in for a bot id where a person plays a seat, as PERSON in platform/arena/live.py. */
 export const PERSON = "person";
-
-export type Outcome = { ranking: string[][]; reason: string; ticks: number };
 
 export type MatchStart = {
   board: unknown;
@@ -23,7 +21,6 @@ export type MatchUpdate = {
   tick: number;
   delta: Delta;
   refused: Record<string, string>; // why a person's action was refused this tick, by seat
-  thinking_ms: Record<string, number>; // each bot's last move
   errors: Record<string, string>; // the first error of each bot that has had one
   outcome: Outcome | null; // once the match is over
   people: Record<string, unknown>;
@@ -32,7 +29,7 @@ export type MatchUpdate = {
 /** `id` is the page's id for the match a message is about; a load error has none. */
 export type WorkerMessage =
   | { type: "progress"; text: string }
-  | { type: "loaded"; seconds: number }
+  | { type: "loaded" }
   | { type: "started"; id: number; start: MatchStart }
   | { type: "tick"; id: number; update: MatchUpdate; pace: number }
   | { type: "refused"; id: number; reason: string }
@@ -43,7 +40,7 @@ export type WorkerMessage =
  * share of the next one that has passed, never more than one tick ahead.
  */
 export function drawnTick(tick: number, playedAt: number, now: number, tickMs: number, moving: boolean): number {
-  if (!moving || tickMs <= 0) return tick;
+  if (!moving) return tick;
   return tick + Math.min(1, Math.max(0, (now - playedAt) / tickMs));
 }
 

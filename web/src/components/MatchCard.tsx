@@ -13,7 +13,7 @@ export function MatchCard({ game, row, botNames }: { game: GameData; row: MatchR
   const colors = Object.fromEntries(game.seats.map((seat) => [seat.id, seat.color]));
   const winner = row.ranking[0]?.length === 1 ? row.ranking[0][0] : null;
   return (
-    <Link href={`/games/${game.id}/matches/${row.id}`} className="card match-card">
+    <Link href={`/games/${game.id}/matches/${row.id}`} className="card game-card match-card">
       <div className="match-card-art">{map && <MapPreview game={game} map={map} />}</div>
       <div className="match-card-body">
         <strong>{map?.name ?? row.map}</strong>

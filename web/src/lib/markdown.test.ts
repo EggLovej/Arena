@@ -21,5 +21,6 @@ test("any line ending, and lines that only look like a block", () => {
       { kind: "paragraph", text: "Each tick is a tenth of a second." },
     ]);
   }
-  assert.deepEqual(parseMarkdown("## Ti cks"), [{ kind: "paragraph", text: "## Ti cks" }]);
+  // A line separator (U+2028) in a heading: the heading pattern's "." stops at it, so the line is a paragraph, and the parser still moves on.
+  assert.deepEqual(parseMarkdown("## Ti\u2028cks"), [{ kind: "paragraph", text: "## Ti\u2028cks" }]);
 });

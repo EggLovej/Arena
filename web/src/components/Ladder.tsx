@@ -7,6 +7,7 @@ import { useState } from "react";
 
 import { BotAvatar } from "./BotAvatar.tsx";
 import { BotName } from "./BotName.tsx";
+import { Chevron } from "./Chevron.tsx";
 
 export type LadderTable = {
   players: number;
@@ -58,9 +59,7 @@ export function Ladder({ gameId, tables, note }: { gameId: string; tables: Ladde
       )}
       <Link href={`/games/${gameId}/leaderboard`} className="button button-ghost ladder-all">
         View all bots
-        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M6 3 L11 8 L6 13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <Chevron />
       </Link>
       {note && <p className="ladder-note">{note}</p>}
     </aside>

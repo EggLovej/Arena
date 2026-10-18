@@ -60,7 +60,6 @@ export function RicochetBoard({ board: rawBoard, snapshot, next, tick, tickSecon
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
-      className="ricochet-board"
       role="img"
       aria-label={`${board.name} arena`}
       // A preview fills its frame, the arena's floor colour round the edges where the shapes differ.

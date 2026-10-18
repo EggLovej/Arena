@@ -1,12 +1,9 @@
 import type { Snapshot } from "@/lib/types.ts";
 
 import type { GameView, SeatStat } from "../types.ts";
-import { GraphiteBoard } from "./GraphiteBoard.tsx";
+import { GraphiteBoard, viewBox, type BaseState, type FleetState, type GraphiteBoardData } from "./GraphiteBoard.tsx";
 import { GraphiteControls } from "./GraphiteControls.tsx";
 import { look } from "./look.ts";
-
-type BaseState = [string, number];
-type FleetState = [string, number, string, string, number, number];
 
 function totals(snapshot: Snapshot): Record<string, { units: number; bases: number }> {
   const result: Record<string, { units: number; bases: number }> = {};
@@ -26,7 +23,7 @@ export const graphite: GameView = {
   Board: GraphiteBoard,
   genre: "Real-time strategy",
   cardMap: "crossroads",
-  botIcons: ["aggressive_ai", "careful_ai", "strategic_ai", "neural_ai", "beast_ai", "atlas_clean_ai", "atlas_ai"],
+  botIcons: ["aggressive_ai", "careful_ai", "strategic_ai", "neural_ai", "beast_ai", "atlas_clean_ai"],
   accent: "#d3a42f", // the paper theme's highlight gold
   liveMap: "crossroads", // Instinct and Apex trade the lead three times
   look,
@@ -46,6 +43,7 @@ export const graphite: GameView = {
   strengthLabel: "Units, including fleets on the way",
   play: {
     Controls: GraphiteControls,
+    viewBox: (board) => viewBox(board as GraphiteBoardData, false),
     help: [
       "Click one of your bases, then a base next to it: half its units go there.",
       "Shift-click the second base instead (or turn Stream on) to send it everything the first base has, every tick, until you shift-click the first base again.",

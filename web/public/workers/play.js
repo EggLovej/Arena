@@ -52,7 +52,6 @@ function fail(error, id) {
 }
 
 async function load({ pyodideUrl, bundleUrl, gameId }) {
-  const started = performance.now();
   game = gameId;
   files = `${bundleUrl}files/`;
   progress("Loading Python");
@@ -73,7 +72,7 @@ async function load({ pyodideUrl, bundleUrl, gameId }) {
   }
   pyodide.runPython('import os, sys\nos.environ["ARENA_ROOT"] = "/arena"\nsys.path.insert(0, "/arena/platform")');
   session = pyodide.pyimport("arena.live").Session(gameId);
-  self.postMessage({ type: "loaded", seconds: (performance.now() - started) / 1000 });
+  self.postMessage({ type: "loaded" });
 }
 
 async function start({ id, map, lineup, seed, tickSeconds: seconds }) {
