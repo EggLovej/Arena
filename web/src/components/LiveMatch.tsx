@@ -8,9 +8,10 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { gameView } from "@/games/index.ts";
 import { describeOutcome, formatClock } from "@/lib/format.ts";
-import type { MapEntry, Seat } from "@/lib/types.ts";
+import type { MapEntry, Seat, Theme } from "@/lib/types.ts";
 
 import { BotName } from "./BotName.tsx";
+import { ThemedBoard } from "./ThemedBoard.tsx";
 import { useAnimationClock, useReplay } from "./usePlayback.ts";
 
 const HOLD_SECONDS = 5; // how long the result shows before the match starts again
@@ -24,12 +25,12 @@ type Props = {
   lineup: Record<string, string>; // seat to bot
   seats: Seat[];
   botNames: Record<string, string>;
-  theme: unknown;
+  themes: Theme[];
   tickSeconds: number;
   speed: number;
 };
 
-export function LiveMatch({ gameId, gameName, replayUrl, map, lineup, seats, botNames, theme, tickSeconds, speed }: Props) {
+export function LiveMatch({ gameId, gameName, replayUrl, map, lineup, seats, botNames, themes, tickSeconds, speed }: Props) {
   const view = gameView(gameId);
   const { replay, snapshots } = useReplay(replayUrl);
   const [position, setPosition] = useState(0);
@@ -79,7 +80,6 @@ export function LiveMatch({ gameId, gameName, replayUrl, map, lineup, seats, bot
   const seatInfo = Object.fromEntries(seats.map((seat) => [seat.id, seat]));
   const order = Object.keys(lineup);
   const half = Math.ceil(order.length / 2);
-  const Board = view.Board;
 
   const panel = (seat: string, right: boolean) => (
     <div key={seat} className={`hud-seat${right ? " is-right" : ""}`} style={{ "--seat": seatInfo[seat]?.color } as CSSProperties}>
@@ -106,13 +106,14 @@ export function LiveMatch({ gameId, gameName, replayUrl, map, lineup, seats, bot
         {order.slice(half).map((seat) => panel(seat, true))}
       </div>
       <div className="stage-board">
-        <Board
+        <ThemedBoard
+          gameId={gameId}
+          themes={themes}
           board={board}
           snapshot={snapshot}
           next={replay ? snapshots[tick + 1] : undefined}
           tick={replay ? position : 0}
           tickSeconds={tickSeconds}
-          theme={theme}
           seats={seats}
         />
         {finished && replay && (

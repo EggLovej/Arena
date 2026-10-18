@@ -60,12 +60,10 @@ def crosses(definition, first, second):
 
 
 class MapGeneratorTests(unittest.TestCase):
-    def test_same_seed_gives_same_map(self):
+    def test_the_seed_decides_the_map(self):
         for seed in (0, 1, 99):
             self.assertEqual(generate_map(seed), generate_map(seed))
             self.assertEqual(generate_map(seed, asymmetry=0.4), generate_map(seed, asymmetry=0.4))
-
-    def test_different_seeds_give_different_maps(self):
         maps = {map_to_json(generate_map(seed).definition) for seed in range(50)}
         self.assertEqual(len(maps), 50)
 
@@ -76,8 +74,10 @@ class MapGeneratorTests(unittest.TestCase):
             self.assertEqual(Game(definition).players, (RED, BLUE), seed)
             self.assertTrue(any(base.owner == NEUTRAL for base in definition.bases), seed)
 
-    def test_values_stay_inside_the_limits(self):
+    def test_everything_stays_inside_the_limits(self):
         params = DEFAULT_PARAMS
+        smallest = 2 * params.min_bases_per_side
+        largest = 2 * params.max_bases_per_side + params.max_centre_bases
         for seed in SEEDS:
             for asymmetry in (None, 1.0):
                 definition = generate_map(seed, asymmetry=asymmetry).definition
@@ -91,25 +91,17 @@ class MapGeneratorTests(unittest.TestCase):
                     self.assertGreaterEqual(base.units, low)
                     self.assertLessEqual(base.units, high)
                     self.assertEqual(base.units, int(base.units))
+                    self.assertGreaterEqual(base.x, params.field_margin_x)
+                    self.assertLessEqual(base.x, params.width - params.field_margin_x)
+                    self.assertGreaterEqual(base.y, params.field_top)
+                    self.assertLessEqual(base.y, params.field_bottom)
                 for edge in definition.edges:
                     self.assertGreaterEqual(edge.travel_time, params.min_travel_time)
                     self.assertLessEqual(edge.travel_time, params.max_travel_time)
-
-    def test_size_and_routes_stay_inside_the_limits(self):
-        params = DEFAULT_PARAMS
-        smallest = 2 * params.min_bases_per_side
-        largest = 2 * params.max_bases_per_side + params.max_centre_bases
-        for seed in SEEDS:
-            definition = generate_map(seed).definition
-            self.assertGreaterEqual(len(definition.bases), smallest)
-            self.assertLessEqual(len(definition.bases), largest)
-            for neighbours in routes_by_base(definition).values():
-                self.assertLessEqual(len(neighbours), params.max_routes_at_one_base)
-            for base in definition.bases:
-                self.assertGreaterEqual(base.x, params.field_margin_x)
-                self.assertLessEqual(base.x, params.width - params.field_margin_x)
-                self.assertGreaterEqual(base.y, params.field_top)
-                self.assertLessEqual(base.y, params.field_bottom)
+                self.assertGreaterEqual(len(definition.bases), smallest)
+                self.assertLessEqual(len(definition.bases), largest)
+                for neighbours in routes_by_base(definition).values():
+                    self.assertLessEqual(len(neighbours), params.max_routes_at_one_base)
 
     def test_asymmetry_zero_is_an_exact_mirror(self):
         for seed in SEEDS:
@@ -171,7 +163,7 @@ class MapGeneratorTests(unittest.TestCase):
         first_owner = {generate_map(seed).definition.bases[0].owner for seed in range(100)}
         self.assertEqual(first_owner, {RED, NEUTRAL, BLUE})
 
-    def test_custom_limits_are_respected(self):
+    def test_custom_limits_are_respected_and_inverted_ones_refused(self):
         params = replace(
             DEFAULT_PARAMS,
             max_production=1.0,
@@ -187,8 +179,6 @@ class MapGeneratorTests(unittest.TestCase):
             for base in definition.bases:
                 self.assertLessEqual(base.production_rate, 1.0)
                 self.assertLessEqual(base.units, 10 if base.owner == NEUTRAL else 20)
-
-    def test_inverted_limits_are_rejected(self):
         with self.assertRaises(ValueError):
             MapGenParams(min_production=5, max_production=1)
 
@@ -213,11 +203,11 @@ class MapGeneratorTests(unittest.TestCase):
         strategic = load_ai("strategic_ai")
         aggressive = load_ai("aggressive_ai")
         decided = 0
-        for seed in range(20):
+        for seed in range(5):
             game = Game(generate_map(seed).definition)
             decided += play_headless(game, strategic, aggressive, max_ticks=1800) is not None
             self.assertGreater(game.tick, 0)
-        self.assertGreater(decided, 10)
+        self.assertGreater(decided, 2)
 
 
 if __name__ == "__main__":

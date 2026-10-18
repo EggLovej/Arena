@@ -20,10 +20,10 @@ def release_cached_memory(device: torch.device | str, limit: int = CACHE_LIMIT) 
     """Give the GPU's cache of freed buffers back to the system once the GPU holds more than ``limit`` bytes.
 
     PyTorch keeps freed GPU buffers to use again. Batches from maps of different sizes need
-    buffers of different sizes, and the cache keeps them all, so a long run grew by gigabytes
-    (history.md, "What the memory that builds up actually is"). Releasing has a price: the next
-    round allocates its buffers afresh, which made learning about 30% slower when it was done
-    every round. So the cache is only released once it is large. ``limit=0`` always releases.
+    buffers of different sizes, and the cache keeps them all, so a long run grew by gigabytes.
+    Releasing has a price: the next round allocates its buffers afresh, which made learning
+    about 30% slower when it was done every round. So the cache is only released once it is
+    large. ``limit=0`` always releases.
     On the CPU there is nothing to do.
     """
 

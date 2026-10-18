@@ -30,7 +30,6 @@ COMMITTED_CHECKPOINT = Path(__file__).resolve().parent.parent / "checkpoints" / 
 # 0.2 (the user's choice, 2026-10-10): it plays its favourite route about 72% of the time,
 # against 28% drawing by the network's own odds (1.0), which shuffled units back and forth far
 # more and lost 33.5% to 66.5% to always playing the favourite. 0.8 changed too little (33%).
-# See ml/history.md, "Playing the favourite instead of drawing by chance".
 TEMPERATURE = 0.2
 
 _agent = None
@@ -74,13 +73,14 @@ def _checkpoint() -> Path:
 def _load_agent(path):
     # Imported here so that choosing another AI never loads PyTorch. Without PyTorch (as on the
     # Arena website, which plays in the browser) the same network plays through numpy.
+    from ml.play.players import min_send_gap
+
     try:
         from ml.play.agent import NeuralAgent
-        from ml.training.runlog import min_send_gap
     except ModuleNotFoundError as error:
         if error.name != "torch":
             raise
-        from ml.play.numpy_agent import NumpyAgent as NeuralAgent, min_send_gap
+        from ml.play.numpy_agent import NumpyAgent as NeuralAgent
 
     if path.exists():
         gap = min_send_gap(path)

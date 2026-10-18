@@ -12,6 +12,7 @@ from ml.map_generator import generate_map
 from ml.play.rollout import Matchup, Seat, play_games
 from ml.training.imitation import ImitationSettings, split_decisions, train_imitation
 from ml.training.runlog import read_metrics
+from ml.training.selfplay import SelfPlaySettings
 from ml.training.train import parse_args
 
 
@@ -89,45 +90,39 @@ class SplitTests(unittest.TestCase):
     def split(self, games, share):
         return split_decisions(games, 300, share, np.random.default_rng(0))
 
-    def test_every_tenth_game_is_held_out(self):
+    def test_every_tenth_game_is_held_out_and_at_least_one(self):
         training, validation = self.split(self.games, 0.1)
-        held_out = sum(len(trajectory) for trajectory in self.games[9])
-        self.assertEqual(len(validation), held_out)
+        self.assertEqual(len(validation), sum(len(trajectory) for trajectory in self.games[9]))
         self.assertEqual(len(training) + len(validation), sum(len(t) for game in self.games for t in game))
-
-    def test_too_few_games_for_the_share_still_hold_one_out(self):
+        # Too few games for the share still hold one out; no share holds out none.
         training, validation = self.split(self.games[:4], 0.1)
         self.assertEqual(len(validation), sum(len(trajectory) for trajectory in self.games[3]))
         self.assertGreater(len(training), 0)
-
-    def test_no_share_holds_nothing_out(self):
-        _, validation = self.split(self.games[:4], 0.0)
-        self.assertEqual(len(validation), 0)
+        self.assertEqual(len(self.split(self.games[:4], 0.0)[1]), 0)
 
 
 class TrainCommandTests(unittest.TestCase):
-    def parse(self, *arguments):
-        with mock.patch.object(sys, "argv", ["train", *arguments]):
-            return parse_args()
+    def test_every_setting_of_a_trainer_is_an_option_with_its_default(self):
+        def parse(*arguments):
+            with mock.patch.object(sys, "argv", ["train", *arguments]):
+                return parse_args()
 
-    def test_settings_default_to_the_trainer_defaults(self):
-        args = self.parse("imitation", "--run", "x")
+        args = parse("imitation", "--run", "x")
         defaults = ImitationSettings()
-        self.assertEqual(args.run, "x")
-        self.assertEqual(args.init, "random")
-        self.assertEqual(args.games, defaults.games)
-        self.assertEqual(args.learning_rate, defaults.learning_rate)
+        self.assertEqual((args.run, args.init), ("x", "random"))
+        self.assertEqual((args.games, args.learning_rate), (defaults.games, defaults.learning_rate))
         self.assertEqual(tuple(args.opponents), defaults.opponents)
 
-    def test_every_setting_can_be_changed_from_the_command_line(self):
-        args = self.parse(
+        args = parse(
             "imitation", "--run", "x", "--games", "50", "--learning-rate", "0.01",
             "--opponents", "careful_ai", "aggressive_ai", "--init", "some/model.pt",
         )
-        self.assertEqual(args.games, 50)
-        self.assertEqual(args.learning_rate, 0.01)
+        self.assertEqual((args.games, args.learning_rate, args.init), (50, 0.01, "some/model.pt"))
         self.assertEqual(args.opponents, ["careful_ai", "aggressive_ai"])
-        self.assertEqual(args.init, "some/model.pt")
+
+        args = parse("selfplay", "--run", "x", "--rounds", "7", "--opponents", "self", "careful_ai")
+        self.assertEqual((args.trainer, args.rounds, args.opponents), ("selfplay", 7, ["self", "careful_ai"]))
+        self.assertEqual(args.learning_rate, SelfPlaySettings().learning_rate)
 
 
 if __name__ == "__main__":

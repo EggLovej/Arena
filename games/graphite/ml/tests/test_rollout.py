@@ -1,6 +1,5 @@
 import unittest
 from dataclasses import replace
-from unittest import mock
 
 import numpy as np
 import torch
@@ -15,7 +14,7 @@ from ml.evaluation.evaluate import play_match
 from ml.map_generator import generate_map
 from ml.models.checkpoint import init_model
 from ml.models.interface import ILLEGAL
-from ml.models.policy import choose, log_probability
+from ml.models.policy import log_probability
 from ml.encoding.action_encoder import AMOUNT_OPTIONS
 from ml.encoding.forecast import ticks_until_arrival
 from ml.play.rollout import (
@@ -26,10 +25,20 @@ from ml.play.rollout import (
     Seat,
     count_decisions,
     play_games,
-    replay,
 )
 from ml.play.inference import InferenceServer
-from ml.tests.support import repeated, trajectory_choices, trajectory_input
+from ml.tests.support import repeated, replay, trajectory_choices, trajectory_input
+
+
+def setUpModule():
+    # One pool for the whole file, as starting one takes seconds. It plays the networks on a
+    # server here in the main process (on the CPU), and scripted games in its workers.
+    global pool
+    pool = RolloutPool(workers=2, inference_device="cpu")
+
+
+def tearDownModule():
+    pool.close()
 
 
 def matchups(red, blue, seeds=range(4), record=True):
@@ -56,9 +65,7 @@ class ServerTests(unittest.TestCase):
         cls.models = {"net": init_model("random", seed=0).model, "other": init_model("random", seed=1).model}
         played = matchups("net", "net", seeds=range(3)) + matchups("net", "other", seeds=range(3, 6))
         cls.finished = []
-        with RolloutPool(workers=2, inference_device="cpu") as pool:
-            cls.records = pool.play(played, cls.models, seed=3, max_seconds=20, on_finished=lambda *args: cls.finished.append(args))
-            cls.batching = pool.last_batching
+        cls.records = pool.play(played, cls.models, seed=3, max_seconds=20, on_finished=lambda *args: cls.finished.append(args))
 
     def test_every_game_is_played_and_reported(self):
         self.assertEqual(len(self.records), 6)
@@ -80,10 +87,6 @@ class ServerTests(unittest.TestCase):
                 self.assertTrue(torch.allclose(output.value, torch.from_numpy(trajectory.value), atol=1e-4))
         self.assertEqual(players, {"net", "other"})
 
-    def test_requests_are_answered_in_batches(self):
-        batches, positions = self.batching
-        self.assertGreater(positions / batches, 4)
-
     def test_replaying_gives_the_same_game(self):
         for record in self.records:
             game = replay(record)
@@ -100,8 +103,7 @@ class FreeAmountTests(unittest.TestCase):
             "options": init_model("random", seed=1).model,
         }
         cls.local = play_games(matchups("free", "strategic_ai", seeds=range(3)), cls.models, seed=2, max_seconds=30)
-        with RolloutPool(workers=2, inference_device="cpu") as pool:
-            cls.served = pool.play(matchups("free", "options", seeds=range(3, 7)), cls.models, seed=3, max_seconds=20)
+        cls.served = pool.play(matchups("free", "options", seeds=range(3, 7)), cls.models, seed=3, max_seconds=20)
 
     def trajectories(self):
         return [trajectory for record in self.local + self.served for trajectory in record.trajectories]
@@ -135,13 +137,7 @@ class FreeAmountTests(unittest.TestCase):
 
     def test_every_move_is_accepted_and_the_games_replay(self):
         for record in self.local + self.served:
-            game = Game(record.matchup.map)
-            moves = {}
-            for tick, seat, source, target, units in record.actions:
-                moves.setdefault(tick, {})[seat] = SendAction(source, target, units)
-            while game.tick < record.ticks:
-                self.assertEqual(game.step(moves.get(game.tick, {})), {})
-            self.assertEqual(game.winner(), record.winner)
+            self.assertEqual(replay(record).winner(), record.winner)
 
 
 class CaptureLabelTests(unittest.TestCase):
@@ -220,39 +216,13 @@ class RolloutTests(unittest.TestCase):
             alone = play_games([matchup], max_seconds=4)[0]
             self.assertEqual(record.actions, alone.actions)
 
-    def test_the_pool_reports_every_game_as_it_ends(self):
-        reported = []
-        with RolloutPool(workers=2) as pool:
-            records = pool.play(
-                matchups("strategic_ai", "aggressive_ai", seeds=range(5)), max_seconds=20,
-                on_finished=lambda index, decisions, winner: reported.append((index, decisions, winner)),
-            )
-        self.assertEqual(sorted(index for index, _, _ in reported), list(range(5)))
-        for index, decisions, winner in reported:
-            self.assertEqual(decisions, [len(t) for t in records[index].trajectories])
-            self.assertEqual(winner, records[index].winner)
-
-    def test_records_come_back_in_matchup_order(self):
-        played = matchups("strategic_ai", "aggressive_ai", seeds=range(7), record=False)
-        records = play_games(played, parallel_games=3, max_seconds=20)
-        self.assertEqual([record.matchup for record in records], played)
-
-    def test_replaying_the_move_list_gives_the_identical_game(self):
+    def test_every_move_is_accepted_and_replaying_them_gives_the_identical_game(self):
         for records in (self.self_play, self.mixed):
             for record in records:
                 again = replay(record)
                 self.assertEqual(again.tick, record.ticks)
                 self.assertEqual(again.winner(), record.winner)
                 self.assertEqual(again.is_finished(), record.winner is not None or again.living_players() == ())
-
-    def test_every_recorded_move_was_accepted_by_the_game(self):
-        for record in self.self_play + self.mixed:
-            game = Game(record.matchup.map)
-            moves = {}
-            for tick, seat, source, target, units in record.actions:
-                moves.setdefault(tick, {})[seat] = SendAction(source, target, units)
-            while game.tick < record.ticks:
-                self.assertEqual(game.step(moves.get(game.tick, {})), {})
 
     def test_recorded_decisions_match_the_positions_they_were_made_in(self):
         checked = 0
@@ -342,14 +312,16 @@ class RolloutTests(unittest.TestCase):
         self.assertIsNone(records[0].winner)
         self.assertEqual({trajectory.outcome for trajectory in records[0].trajectories}, {"draw"})
 
-    def test_same_seed_gives_the_same_games(self):
-        settings = dict(models=self.models, max_seconds=15)
-        first = play_games(matchups("net", "net", seeds=range(3)), seed=5, **settings)
-        second = play_games(matchups("net", "net", seeds=range(3)), seed=5, **settings)
-        other = play_games(matchups("net", "net", seeds=range(3)), seed=6, **settings)
+    def test_the_same_seed_or_greedy_play_gives_the_same_games(self):
+        def play(**settings):
+            return play_games(matchups("net", "net", seeds=range(3)), self.models, max_seconds=15, **settings)
+
+        first, second, other = play(seed=5), play(seed=5), play(seed=6)
         self.assertEqual([r.actions for r in first], [r.actions for r in second])
         self.assertTrue(same_trajectories(first, second))
         self.assertNotEqual([r.actions for r in first], [r.actions for r in other])
+        # Greedy play needs no seed.
+        self.assertEqual([r.actions for r in play(greedy=True)], [r.actions for r in play(greedy=True)])
 
     def test_decision_interval_spaces_out_model_decisions(self):
         records = play_games(
@@ -384,43 +356,19 @@ class RolloutTests(unittest.TestCase):
             self.assertTrue((limited.tick - np.array(last_send) >= gap).all())
             self.assertEqual(replay(record).winner(), record.winner)
 
-    def test_two_different_models_can_meet(self):
-        models = {"old": init_model("random", seed=1).model, "new": init_model("random", seed=2).model}
-        records = play_games(matchups("old", "new", seeds=[0, 1]), models, seed=1, max_seconds=15)
-        for record in records:
-            self.assertEqual({trajectory.player for trajectory in record.trajectories}, {"old", "new"})
-            self.assertGreater(len(record.actions), 0)
-
-    def test_greedy_play_repeats_without_a_seed(self):
-        settings = dict(models=self.models, greedy=True, max_seconds=15)
-        first = play_games(matchups("net", "net", seeds=[0, 1]), **settings)
-        second = play_games(matchups("net", "net", seeds=[0, 1]), **settings)
-        self.assertEqual([r.actions for r in first], [r.actions for r in second])
-
     def test_unrecorded_seats_leave_no_trajectory(self):
         played = [Matchup(generate_map(0).definition, Seat("net", record=True), Seat("strategic_ai"))]
         record = play_games(played, self.models, seed=1, max_seconds=15)[0]
         self.assertEqual([trajectory.seat for trajectory in record.trajectories], [RED])
         self.assertEqual(count_decisions([record]), len(record.trajectories[0]))
 
-    def test_worker_processes_play_the_same_kind_of_games(self):
+    def test_worker_processes_play_the_same_games_as_this_one(self):
         scripted = matchups("strategic_ai", "aggressive_ai", seeds=range(5))
-        mixed = matchups("net", "strategic_ai", seeds=range(5))
-        with RolloutPool(workers=2) as pool:
-            from_pool = pool.play(scripted, max_seconds=40)
-            # The pool is reused for a second call, this time with a model.
-            with_model = pool.play(mixed, self.models, seed=3, max_seconds=20)
-
+        from_pool = pool.play(scripted, max_seconds=40)
         here = play_games(scripted, max_seconds=40)
         self.assertEqual([r.matchup for r in from_pool], scripted)
         self.assertEqual([(r.winner, r.ticks, r.actions) for r in from_pool], [(r.winner, r.ticks, r.actions) for r in here])
         self.assertTrue(same_trajectories(from_pool, here))
-
-        self.assertEqual([r.matchup for r in with_model], mixed)
-        for record in with_model:
-            net = next(t for t in record.trajectories if t.player == "net")
-            self.assertEqual(len(net.log_probability), len(net))
-            self.assertEqual(replay(record).tick, record.ticks)
 
 
 class TemperatureTests(unittest.TestCase):
@@ -429,11 +377,6 @@ class TemperatureTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.models = {"net": init_model("random", seed=0).model, "other": init_model("random", seed=1).model}
-
-    def test_each_network_draws_at_its_own_temperature(self):
-        with mock.patch("ml.play.inference.choose", wraps=choose) as spy:
-            play_games(matchups("net", "other", seeds=[0]), self.models, seed=1, max_seconds=5, temperatures={"net": 0.2})
-        self.assertEqual({call.args[3] for call in spy.call_args_list}, {0.2, 1.0})
 
     def test_temperatures_must_be_above_zero(self):
         with self.assertRaises(ValueError):

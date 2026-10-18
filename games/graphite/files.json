@@ -14,10 +14,6 @@
     "ml/encoding/action_encoder.py",
     "ml/encoding/forecast.py",
     "ml/encoding/state_encoder.py",
-    "ml/evaluation/__init__.py",
-    "ml/evaluation/evaluate.py",
-    "ml/map_generator/__init__.py",
-    "ml/map_generator/generator.py",
     "ml/models/__init__.py",
     "ml/models/amounts.py",
     "ml/models/checkpoint.py",
@@ -32,8 +28,6 @@
     "ml/play/numpy_agent.py",
     "ml/play/numpy_model.py",
     "ml/play/players.py",
-    "ml/play/value_player.py",
-    "ml/training/__init__.py",
-    "ml/training/runlog.py"
+    "ml/play/value_player.py"
   ]
 }

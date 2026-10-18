@@ -129,18 +129,6 @@ def to_choices(route: Tensor, amount: Tensor, bases: int) -> list[SendChoice | N
     return choices
 
 
-def from_choices(
-    choices: list[SendChoice | None],
-    bases: int,
-    device: torch.device | str = "cpu",
-) -> tuple[Tensor, Tensor]:
-    """The reverse of ``to_choices``, for scoring choices that were made earlier."""
-
-    route = [0 if choice is None else 1 + choice.source * bases + choice.target for choice in choices]
-    amount = [0 if choice is None else choice.amount for choice in choices]
-    return torch.tensor(route, device=device), torch.tensor(amount, device=device)
-
-
 def _free_amounts_for(output: ModelOutput, route: Tensor) -> tuple[Tensor, Tensor, Tensor]:
     """The curves, ``most`` and ``needed`` of each position's chosen route ("wait" borrows route 0's)."""
 

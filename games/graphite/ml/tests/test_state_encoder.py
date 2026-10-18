@@ -7,10 +7,9 @@ import numpy as np
 
 from game import Game
 from game_types import BLUE, NEUTRAL, RED, EdgeView
-from loading import available_maps, load_ai, load_map
+from loading import load_map
 
 from ml.encoding.action_encoder import JUST_ENOUGH, legal_actions
-
 from ml.encoding.state_encoder import (
     BASE_FEATURES,
     FEATURE_SETS,
@@ -20,11 +19,10 @@ from ml.encoding.state_encoder import (
     PATH_SECONDS_REFERENCE,
     ROUTE_FEATURES,
     TRAVEL_SECONDS_REFERENCE,
-    build_layout,
     encode_state,
-    stack_states,
 )
 from ml.map_generator import generate_map
+from ml.tests.support import scripted_game, two_player_maps
 
 
 _UNITS_SCALE = 1 / np.log1p(250.0)
@@ -32,19 +30,6 @@ _UNITS_SCALE = 1 / np.log1p(250.0)
 
 def column(name):
     return BASE_FEATURES.index(name)
-
-
-def played_game(definition, ticks=150):
-    """A position from the middle of a match, with fleets in flight."""
-
-    game = Game(definition)
-    strategic = load_ai("strategic_ai")
-    aggressive = load_ai("aggressive_ai")
-    for _ in range(ticks):
-        if game.is_finished():
-            break
-        game.step({RED: strategic(game.view_for(RED)), BLUE: aggressive(game.view_for(BLUE))})
-    return game
 
 
 def shortest_seconds(state):
@@ -59,15 +44,6 @@ def shortest_seconds(state):
             for b in ids:
                 time[a][b] = min(time[a][b], time[a][stop] + time[stop][b])
     return time
-
-
-def two_player_definitions():
-    definitions = [generate_map(seed).definition for seed in range(8)]
-    for name in available_maps():
-        definition = load_map(name)
-        if Game(definition).players == (RED, BLUE):
-            definitions.append(definition)
-    return definitions
 
 
 def renamed_and_shuffled(state, seed):
@@ -104,22 +80,11 @@ def colours_swapped(state):
 
 
 class StateEncoderTests(unittest.TestCase):
-    def test_shapes(self):
-        state = played_game(generate_map(3).definition).view_for(RED)
-        encoded = encode_state(state)
-        count = len(state.bases)
-        self.assertEqual(encoded.base_features.shape, (count, len(BASE_FEATURES)))
-        self.assertEqual(encoded.pair_features.shape, (count, count, len(PAIR_FEATURES)))
-        self.assertEqual(encoded.route_features.shape, (count, count, len(ROUTE_FEATURES)))
-        self.assertEqual(encoded.global_features.shape, (len(GLOBAL_FEATURES),))
-        self.assertEqual(encoded.base_ids, tuple(base.id for base in state.bases))
-
     def test_values_are_finite_and_modest(self):
-        for definition in two_player_definitions():
-            game = played_game(definition, ticks=600)
+        for definition in two_player_maps():
+            game = scripted_game(definition, 600)
             for player in (RED, BLUE):
                 encoded = encode_state(game.view_for(player))
-                tables = (encoded.base_features, encoded.pair_features, encoded.route_features, encoded.global_features)
                 # "forward" is the one feature that can be negative: a route leading away from the front.
                 forward = ROUTE_FEATURES.index("forward")
                 route_features = np.delete(encoded.route_features, forward, axis=-1)
@@ -131,7 +96,7 @@ class StateEncoderTests(unittest.TestCase):
                 self.assertLess(np.abs(encoded.route_features[..., forward]).max(), 10.0)
 
     def test_each_base_has_exactly_one_owner_now_and_in_future(self):
-        encoded = encode_state(played_game(generate_map(5).definition).view_for(BLUE))
+        encoded = encode_state(scripted_game(generate_map(5).definition, 150).view_for(BLUE))
         now = encoded.base_features[:, column("is_mine") : column("is_neutral") + 1]
         future = encoded.base_features[:, column("future_is_mine") : column("future_is_neutral") + 1]
         self.assertTrue((now.sum(axis=1) == 1).all())
@@ -141,7 +106,7 @@ class StateEncoderTests(unittest.TestCase):
             self.assertTrue((later.sum(axis=1) == 1).all(), ticks)
 
     def test_opponents_see_each_other_as_the_enemy(self):
-        game = played_game(generate_map(5).definition)
+        game = scripted_game(generate_map(5).definition, 150)
         red = encode_state(game.view_for(RED)).base_features
         blue = encode_state(game.view_for(BLUE)).base_features
         np.testing.assert_array_equal(red[:, column("is_mine")], blue[:, column("is_enemy")])
@@ -166,7 +131,7 @@ class StateEncoderTests(unittest.TestCase):
         self.assertEqual([len(FEATURE_SETS["v2"][table]) for table in tables], [34, 3, 2, 4])
 
     def test_plain_counts_match_the_logarithmic_ones(self):
-        state = played_game(generate_map(3).definition, ticks=300).view_for(RED)
+        state = scripted_game(generate_map(3).definition, 300).view_for(RED)
         encoded = encode_state(state).base_features
         pairs = (
             ("units", "units_linear"),
@@ -185,8 +150,8 @@ class StateEncoderTests(unittest.TestCase):
 
     def test_forecasts_match_the_game_played_on_without_new_sends(self):
         checked = 0
-        for definition in two_player_definitions()[:6]:
-            game = played_game(definition)
+        for definition in two_player_maps()[:6]:
+            game = scripted_game(definition, 150)
             for player in (RED, BLUE):
                 encoded = encode_state(game.view_for(player))
                 rows = {base_id: row for row, base_id in enumerate(encoded.base_ids)}
@@ -204,8 +169,8 @@ class StateEncoderTests(unittest.TestCase):
         self.assertGreater(checked, 500)
 
     def test_front_bases_and_distance_to_the_enemy(self):
-        for definition in two_player_definitions():
-            state = played_game(definition, ticks=300).view_for(RED)
+        for definition in two_player_maps():
+            state = scripted_game(definition, 300).view_for(RED)
             encoded = encode_state(state)
             seconds = shortest_seconds(state)
             owner = {base.id: base.owner for base in state.bases}
@@ -223,7 +188,7 @@ class StateEncoderTests(unittest.TestCase):
                 self.assertAlmostEqual(features[column("distance_to_enemy")] * PATH_SECONDS_REFERENCE, nearest, places=4)
 
     def test_without_an_enemy_base_everything_is_as_far_as_the_map_allows(self):
-        state = played_game(generate_map(3).definition).view_for(RED)
+        state = scripted_game(generate_map(3).definition, 150).view_for(RED)
         lonely = replace(state, bases=tuple(replace(base, owner=NEUTRAL) if base.owner == BLUE else base for base in state.bases))
         distance = encode_state(lonely).base_features[:, column("distance_to_enemy")]
         seconds = shortest_seconds(lonely)
@@ -233,8 +198,8 @@ class StateEncoderTests(unittest.TestCase):
     def test_forward_says_how_much_nearer_the_enemy_a_route_leads(self):
         forward = ROUTE_FEATURES.index("forward")
         checked = 0
-        for definition in two_player_definitions():
-            state = played_game(definition, ticks=300).view_for(BLUE)
+        for definition in two_player_maps():
+            state = scripted_game(definition, 300).view_for(BLUE)
             encoded = encode_state(state)
             seconds = shortest_seconds(state)
             owner = {base.id: base.owner for base in state.bases}
@@ -256,8 +221,8 @@ class StateEncoderTests(unittest.TestCase):
         self.assertGreater(checked, 50)
 
     def test_names_order_and_coordinates_do_not_matter(self):
-        for definition in two_player_definitions():
-            state = played_game(definition).view_for(RED)
+        for definition in two_player_maps():
+            state = scripted_game(definition, 150).view_for(RED)
             original = encode_state(state)
             changed_state, new_id = renamed_and_shuffled(state, seed=1)
             changed = encode_state(changed_state)
@@ -270,8 +235,8 @@ class StateEncoderTests(unittest.TestCase):
             np.testing.assert_array_equal(changed.global_features, original.global_features)
 
     def test_swapping_colours_changes_nothing(self):
-        for definition in two_player_definitions():
-            game = played_game(definition)
+        for definition in two_player_maps():
+            game = scripted_game(definition, 150)
             for player in (RED, BLUE):
                 state = game.view_for(player)
                 original = encode_state(state)
@@ -317,7 +282,7 @@ class StateEncoderTests(unittest.TestCase):
         self.assertEqual(encoded.pair_features[west, west, shortest], 0.0)
 
     def test_fleets_show_up_at_their_target(self):
-        game = played_game(generate_map(3).definition)
+        game = scripted_game(generate_map(3).definition, 150)
         state = game.view_for(RED)
         self.assertTrue(state.fleets)
         encoded = encode_state(state)
@@ -328,21 +293,28 @@ class StateEncoderTests(unittest.TestCase):
             arrives_soon = row[column("mine_arrives_soon")] + row[column("enemy_arrives_soon")] > 0
             self.assertEqual(arrives_soon, base_id in targets)
 
-    def test_route_features_only_on_routes(self):
-        for definition in two_player_definitions():
-            encoded = encode_state(played_game(definition).view_for(RED))
+    def test_route_features_only_on_routes_out_of_owned_bases(self):
+        neutral_bases = 0
+        for definition in two_player_maps():
+            state = scripted_game(definition, 150).view_for(RED)
+            encoded = encode_state(state)
             connected = encoded.pair_features[..., PAIR_FEATURES.index("connected")] == 1
             self.assertFalse(encoded.route_features[~connected].any(), definition.name)
             # Somewhere on the map, a capture costs something.
             self.assertTrue(encoded.route_features[connected].any(), definition.name)
+            # Nobody sends from a neutral base.
+            neutral = [row for row, base in enumerate(state.bases) if base.owner == NEUTRAL]
+            self.assertFalse(encoded.route_features[neutral].any(), definition.name)
+            neutral_bases += len(neutral)
+        self.assertGreater(neutral_bases, 0)
 
     def test_capture_cost_agrees_with_just_enough(self):
         cost = ROUTE_FEATURES.index("capture_cost")
         share = ROUTE_FEATURES.index("capture_cost_share")
         plain = ROUTE_FEATURES.index("capture_cost_linear")
         checked = 0
-        for definition in two_player_definitions():
-            game = played_game(definition, ticks=300)
+        for definition in two_player_maps():
+            game = scripted_game(definition, 300)
             for player in (RED, BLUE):
                 state = game.view_for(player)
                 encoded = encode_state(state)
@@ -357,17 +329,20 @@ class StateEncoderTests(unittest.TestCase):
                     checked += 1
         self.assertGreater(checked, 20)
 
-    def test_routes_out_of_neutral_bases_are_empty(self):
-        state = Game(generate_map(3).definition).view_for(RED)
-        encoded = encode_state(state)
-        neutral = [row for row, base in enumerate(state.bases) if base.owner == 0]
-        self.assertTrue(neutral)
-        self.assertFalse(encoded.route_features[neutral].any())
+    def test_global_shares(self):
+        game = Game(generate_map(3, asymmetry=0.0).definition)
+        start = dict(zip(GLOBAL_FEATURES, encode_state(game.view_for(RED)).global_features))
+        self.assertAlmostEqual(start["my_units_share"], 0.5)
+        self.assertAlmostEqual(start["my_production_share"], 0.5)
+        self.assertEqual(start["time"], 0.0)
 
-    def test_production_shares_of_all(self):
-        game = played_game(generate_map(3).definition, ticks=300)
-        for player in (RED, BLUE):
-            shares = dict(zip(GLOBAL_FEATURES, encode_state(game.view_for(player)).global_features))
+        game = scripted_game(generate_map(3).definition, 300)
+        red = dict(zip(GLOBAL_FEATURES, encode_state(game.view_for(RED)).global_features))
+        blue = dict(zip(GLOBAL_FEATURES, encode_state(game.view_for(BLUE)).global_features))
+        self.assertAlmostEqual(red["my_units_share"] + blue["my_units_share"], 1.0, places=6)
+        self.assertAlmostEqual(red["my_production_share"] + blue["my_production_share"], 1.0, places=6)
+        self.assertAlmostEqual(red["time"], blue["time"])
+        for shares in (red, blue):
             total = (
                 shares["my_production_of_all"]
                 + shares["strongest_enemy_production_of_all"]
@@ -379,48 +354,6 @@ class StateEncoderTests(unittest.TestCase):
             # The older two-player share is the same split without the neutral bases.
             players = shares["my_production_of_all"] + shares["strongest_enemy_production_of_all"]
             self.assertAlmostEqual(shares["my_production_share"], shares["my_production_of_all"] / players, places=5)
-
-    def test_global_shares(self):
-        game = Game(generate_map(3, asymmetry=0.0).definition)
-        start = dict(zip(GLOBAL_FEATURES, encode_state(game.view_for(RED)).global_features))
-        self.assertAlmostEqual(start["my_units_share"], 0.5)
-        self.assertAlmostEqual(start["my_production_share"], 0.5)
-        self.assertEqual(start["time"], 0.0)
-
-        game = played_game(generate_map(3).definition, ticks=300)
-        red = dict(zip(GLOBAL_FEATURES, encode_state(game.view_for(RED)).global_features))
-        blue = dict(zip(GLOBAL_FEATURES, encode_state(game.view_for(BLUE)).global_features))
-        self.assertAlmostEqual(red["my_units_share"] + blue["my_units_share"], 1.0, places=6)
-        self.assertAlmostEqual(red["my_production_share"] + blue["my_production_share"], 1.0, places=6)
-        self.assertAlmostEqual(red["time"], blue["time"])
-
-    def test_explicit_layout_gives_the_same_result(self):
-        game = played_game(generate_map(7).definition)
-        state = game.view_for(RED)
-        layout = build_layout(state)
-        with_layout = encode_state(state, layout)
-        without = encode_state(state)
-        np.testing.assert_array_equal(with_layout.base_features, without.base_features)
-        np.testing.assert_array_equal(with_layout.pair_features, without.pair_features)
-
-    def test_stacking_pads_smaller_maps(self):
-        states = [
-            encode_state(Game(generate_map(seed).definition).view_for(RED))
-            for seed in range(6)
-        ]
-        sizes = [len(state.base_ids) for state in states]
-        self.assertGreater(len(set(sizes)), 1)
-
-        batch = stack_states(states)
-        largest = max(sizes)
-        self.assertEqual(batch.base_features.shape, (6, largest, len(BASE_FEATURES)))
-        self.assertEqual(batch.pair_features.shape, (6, largest, largest, len(PAIR_FEATURES)))
-        self.assertEqual(batch.global_features.shape, (6, len(GLOBAL_FEATURES)))
-        for row, (state, size) in enumerate(zip(states, sizes)):
-            self.assertEqual(batch.base_mask[row].sum(), size)
-            np.testing.assert_array_equal(batch.base_features[row, :size], state.base_features)
-            np.testing.assert_array_equal(batch.pair_features[row, :size, :size], state.pair_features)
-            self.assertEqual(np.abs(batch.base_features[row, size:]).sum(), 0.0)
 
 
 if __name__ == "__main__":

@@ -38,6 +38,8 @@ from arena.contract import BotInfo, GameInfo, MapInfo, Outcome, SeatInfo, bot_fr
 
 SEAT_OF = {RED: "red", BLUE: "blue", GREEN: "green"}
 PLAYER_OF = {seat: player for player, seat in SEAT_OF.items()}
+# The game window's theme, which gives the seats their colours. The website can also draw
+# the board in the other themes in themes/ (see themes()).
 THEME_FILE = ROOT / "themes" / "paper_atlas.json"
 THEME = json.loads(THEME_FILE.read_text())
 
@@ -48,10 +50,10 @@ HIDDEN = {"atlas_ai"}
 # Bots that use a neural network.
 NEURAL = {"neural_ai", "beast_ai"}
 # Map groups a bot leaves out of tournaments. On the large maps Atlas Clean's search
-# takes over half a second a move, and the networks spend over 15 minutes on one match
-# (they were trained on maps of at most 30 bases and three-minute matches).
+# takes over a third of a second a move, several times a tick. The networks take about
+# 15 ms a move there on one thread, so they play them.
 LARGE_MAPS = "Large maps"
-SITS_OUT = {name: (LARGE_MAPS,) for name in ("atlas_clean_ai", "neural_ai", "beast_ai")}
+SITS_OUT = {"atlas_clean_ai": (LARGE_MAPS,)}
 # What the website says about each bot. A bot not listed here is described by the
 # first paragraph of its module's docstring.
 BLURBS = {
@@ -264,8 +266,9 @@ class GraphiteGame:
             return {}
         return {"packages": ["numpy"], "files": [checkpoint.resolve().relative_to(ROOT).as_posix()]}
 
-    def theme(self) -> dict:
-        return THEME
+    def themes(self) -> tuple[dict, ...]:
+        others = sorted(path for path in THEME_FILE.parent.glob("*.json") if path != THEME_FILE)
+        return (THEME, *(json.loads(path.read_text()) for path in others))
 
 
 class WebPerson(HumanController):

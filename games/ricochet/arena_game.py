@@ -25,7 +25,7 @@ from ricochet.game.mapgen import generate_map  # noqa: E402
 from ricochet.game.maps import available_maps, load_map  # noqa: E402
 from ricochet.game.types import PLAYERS, ControlAction, MapDefinition, MatchContext, Vec2, validate_action  # noqa: E402
 from ricochet.runtime.loading import available_ais, controller_label, load_controller  # noqa: E402
-from ricochet.themes import NEON_CIRCUIT  # noqa: E402
+from ricochet.themes import DEFAULT_THEME, NEON_CIRCUIT, Theme, available_themes, get_theme  # noqa: E402
 
 from arena.contract import BotContext, BotInfo, GameInfo, MapInfo, Outcome, SeatInfo, summary  # noqa: E402
 
@@ -286,16 +286,25 @@ class RicochetGame:
             Vec2(float(move_x), float(move_y)), Vec2(float(aim_x), float(aim_y)), bool(flags & 1), bool(flags & 2)
         )
 
-    def theme(self) -> dict:
-        theme = NEON_CIRCUIT
-        return {
-            "name": theme.name,
-            **{
-                name: _hex(getattr(theme, name))
-                for name in ("background", "panel", "text", "muted", "accent", "energy", "inactive", "shield")
-            },
-            "players": dict(zip(SEATS, map(_hex, theme.players))),
-        }
+    def themes(self) -> tuple[dict, ...]:
+        """The game's own themes (``ricochet.themes``), which the website draws in their styles."""
+
+        ids = sorted(available_themes(), key=lambda theme_id: theme_id != DEFAULT_THEME)
+        return tuple(_theme_json(get_theme(theme_id)) for theme_id in ids)
+
+
+def _theme_json(theme: Theme) -> dict:
+    return {
+        "id": theme.id,
+        "name": theme.name,
+        "description": theme.description,
+        "style": theme.arena_style,
+        **{
+            name: _hex(getattr(theme, name))
+            for name in ("background", "panel", "text", "muted", "accent", "energy", "inactive", "shield")
+        },
+        "players": dict(zip(SEATS, map(_hex, theme.players))),
+    }
 
 
 def _roster() -> tuple[str, ...]:

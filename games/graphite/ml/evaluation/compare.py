@@ -29,6 +29,7 @@ Results land in ``ml/runs/compare_NAME/``: a table, the raw numbers, and a
 
 import argparse
 import json
+import math
 import statistics
 import time
 from dataclasses import dataclass
@@ -41,13 +42,13 @@ from ml.evaluation.evaluate import evaluation_maps
 from ml.judge.progress import ProgressBlock, bar, duration
 from ml.map_generator import generate_map
 from ml.models.checkpoint import load_checkpoint
-from ml.play.players import is_network_player
+from ml.play.players import is_network_player, min_send_gap
 from ml.play.rollout import Matchup, RolloutPool, Seat
-from ml.training.league import fit_ratings
-from ml.training.runlog import min_send_gap, read_metrics
+from ml.training.runlog import read_metrics
 
 
 REFERENCE = "strategic_ai"
+ANCHOR_RATING = 1000.0  # the anchors of a rating fit (here, the reference) average this by definition
 # Fresh maps, past the ones trainers, evaluations, and tuning sweeps have used.
 FIRST_COMPARISON_MAP = 300
 
@@ -175,6 +176,48 @@ def compare(
     _write_chart_data(folder, rows)
     print("\n" + text, flush=True)
     return report
+
+
+def fit_ratings(
+    results: dict[tuple[str, str], list[float]],
+    anchors: tuple[str, ...] = (),
+) -> dict[str, float]:
+    """Find the ratings that best explain every recorded match at once.
+
+    A rating difference predicts a score: equal ratings mean 50%, 100 points
+    more mean about 64%, 200 about 76%, 400 about 91%. The ratings returned
+    are the ones whose predictions match each player's actual total. The
+    anchors are shifted to average 1000, which fixes the scale.
+    """
+
+    players = sorted({player for pair in results for player in pair})
+    played: dict[str, list[tuple[str, float, float]]] = {player: [] for player in players}
+    for (first, second), (points, games) in results.items():
+        played[first].append((second, points, games))
+        played[second].append((first, games - points, games))
+
+    def expected(own: float, other: float) -> float:
+        return 1 / (1 + 10 ** ((other - own) / 400))
+
+    rating = dict.fromkeys(players, 0.0)
+    scale = math.log(10) / 400
+    for _ in range(300):
+        for player in players:
+            # One imaginary win and one loss against an average player keep a
+            # rating finite even for someone who has won or lost every game.
+            even = expected(rating[player], 0.0)
+            scored, predicted, leverage = 1.0, 2 * even, 2 * even * (1 - even)
+            for other, points, games in played[player]:
+                chance = expected(rating[player], rating[other])
+                scored += points
+                predicted += games * chance
+                leverage += games * chance * (1 - chance)
+            step = (scored - predicted) / (scale * leverage)
+            rating[player] += max(-100.0, min(100.0, step))
+
+    reference = [rating[name] for name in anchors if name in rating] or list(rating.values())
+    shift = ANCHOR_RATING - sum(reference) / len(reference) if reference else 0.0
+    return {player: value + shift for player, value in rating.items()}
 
 
 class _LiveBoard:

@@ -160,18 +160,21 @@ class EpochGame:
     def person(self, seat: str) -> WebPerson:
         return WebPerson()
 
-    def theme(self) -> dict:
-        return THEME
+    def themes(self) -> tuple[dict, ...]:
+        """One look for now: the artwork's. Besides its sprites and lane backdrop, the board draws
+        with the sky above the backdrop, the art's ink and the cream of its panels."""
 
-
-# The colours the website draws with, besides its sprites and lane backdrop: the sky above the
-# backdrop, the art's ink and the cream of its panels.
-THEME = {
-    "sky": "#9ccfdf",
-    "ink": "#2b211c",
-    "panel": "#fff8e8",
-    "players": {seat.id: seat.color for seat in INFO.seats},
-}
+        return (
+            {
+                "id": "daylight",
+                "name": "Daylight",
+                "description": "The lane on a sunny day, as the artwork draws it.",
+                "sky": "#9ccfdf",
+                "ink": "#2b211c",
+                "panel": "#fff8e8",
+                "players": {seat.id: seat.color for seat in INFO.seats},
+            },
+        )
 
 
 def _roster() -> tuple[str, ...]:

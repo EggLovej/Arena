@@ -1,0 +1,34 @@
+{
+  "id": "graph_paper",
+  "name": "Graph Paper",
+  "description": "Pencil routes on squared paper, with felt-tip factions.",
+  "grid": 25,
+  "colors": {
+    "ink": "#3d4247",
+    "paper": "#fbfbf7",
+    "paper_light": "#ffffff",
+    "paper_dark": "#dde3e6",
+    "muted": "#6c757d",
+    "disabled": "#a5acb1",
+    "highlight": "#f0b323",
+    "white": "#ffffff",
+    "rule": "#d3e2ed"
+  },
+  "players": {
+    "red": {
+      "fill": "#cf4339",
+      "dark": "#962e27"
+    },
+    "blue": {
+      "fill": "#2f62bd",
+      "dark": "#214487"
+    },
+    "green": {
+      "fill": "#2f8c59",
+      "dark": "#20623e"
+    }
+  },
+  "neutral": {
+    "fill": "#dde3e6"
+  }
+}

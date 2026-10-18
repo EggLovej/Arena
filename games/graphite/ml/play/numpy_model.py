@@ -61,7 +61,6 @@ DEFAULTS = {
     "amount_curves": CURVES,
     "feature_set": "",
 }
-TABLES = ("base_features", "pair_features", "route_features", "global_features")
 
 
 # ---- Reading a checkpoint without PyTorch -------------------------------------------------

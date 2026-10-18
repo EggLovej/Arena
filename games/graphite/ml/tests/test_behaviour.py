@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 from ml.evaluation.behaviour import measure, table
-from ml.models.checkpoint import init_model, save_checkpoint
+from ml.models.checkpoint import history_entry, init_model, save_checkpoint
 
 
 class BehaviourTests(unittest.TestCase):
@@ -22,8 +22,8 @@ class BehaviourTests(unittest.TestCase):
 
     def test_a_network_from_a_limited_run_is_measured_under_its_limit(self):
         with tempfile.TemporaryDirectory() as directory:
-            (Path(directory) / "settings.json").write_text('{"min_send_gap": 10}')
-            path = str(save_checkpoint(Path(directory) / "round_0000.pt", init_model("random", seed=0, layers=1).model))
+            limited = [history_entry("self-play", min_send_gap=10)]
+            path = str(save_checkpoint(Path(directory) / "round_0000.pt", init_model("random", seed=0, layers=1).model, limited))
             result = measure(path, games=2, workers=1)
         self.assertEqual(result["send gap, ticks"], 10)
         self.assertLessEqual(result["sends per second"], 1.0)

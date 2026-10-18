@@ -20,5 +20,5 @@ Which file a bot plays, first match wins:
 The Arena adapter (`arena_game.py`) sets `NEURAL_AI_CHECKPOINT` and `BEAST_AI_FILE` to the files
 here unless they are already set, so leaderboard matches always play the committed networks.
 
-To publish a new network, copy it over the file here and commit it. Both runs above trained
-without a send limit, so no `settings.json` is needed next to them.
+To publish a new network, copy it over the file here and commit it. A network trained under a
+send limit records it in its own history and plays under it, so nothing else needs to come along.

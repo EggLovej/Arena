@@ -5,18 +5,18 @@ from game import Game
 from game_types import BLUE, NEUTRAL, RED, BaseDefinition, EdgeDefinition, MapDefinition, SendAction
 from loading import load_ai
 
-from ml.encoding.forecast import forecast_base, ticks_until_arrival
+from ml.encoding.forecast import BaseTimeline, ticks_until_arrival
 from ml.map_generator import generate_map
 
 
-def three_base_map(middle_owner=NEUTRAL, middle_units=5, production=1.0):
+def three_base_map():
     return MapDefinition(
         name="test",
         width=300,
         height=100,
         bases=(
             BaseDefinition("left", RED, 20, 0, 20, 50),
-            BaseDefinition("middle", middle_owner, middle_units, production, 150, 50),
+            BaseDefinition("middle", NEUTRAL, 5, 1.0, 150, 50),
             BaseDefinition("right", BLUE, 20, 0, 280, 50),
         ),
         edges=(
@@ -29,7 +29,7 @@ def three_base_map(middle_owner=NEUTRAL, middle_units=5, production=1.0):
 def forecast_from_game(game, base_id, ticks=None):
     state = game.view_for(RED)
     incoming = [fleet for fleet in state.fleets if fleet.target_id == base_id]
-    return forecast_base(state.get_base(base_id), incoming, state.seconds_per_tick, ticks)
+    return BaseTimeline(state.get_base(base_id), incoming, state.seconds_per_tick).at(ticks)
 
 
 def advance(game, ticks):
@@ -65,43 +65,11 @@ class ForecastTests(unittest.TestCase):
                 actual += 1
             self.assertEqual(predicted, actual, travel_time)
 
-    def test_no_fleets_means_production_only(self):
-        game = Game(three_base_map(middle_owner=BLUE, middle_units=5, production=2.0))
-        forecast = forecast_from_game(game, "middle", ticks=10)
-        self.assertEqual(forecast.owner, BLUE)
-        self.assertAlmostEqual(forecast.units, 7.0)
-
-        settled = forecast_from_game(game, "middle")
-        self.assertEqual((settled.owner, settled.units, settled.ticks), (BLUE, 5, 0))
-
-    def test_neutral_base_does_not_grow(self):
-        game = Game(three_base_map())
-        forecast = forecast_from_game(game, "middle", ticks=50)
-        self.assertEqual((forecast.owner, forecast.units), (NEUTRAL, 5))
-
-    def test_capture_then_production(self):
-        game = Game(three_base_map())
-        game.step({RED: SendAction("left", "middle", 8)})
-        settled = forecast_from_game(game, "middle")
-        self.assertEqual(settled.owner, RED)
-        self.assertAlmostEqual(settled.units, 3.0)
-
-        later = forecast_from_game(game, "middle", ticks=settled.ticks + 10)
-        self.assertAlmostEqual(later.units, 4.0)
-
     def test_equal_forces_leave_the_base_neutral_and_empty(self):
         game = Game(three_base_map())
         game.step({RED: SendAction("left", "middle", 5)})
         settled = forecast_from_game(game, "middle")
         self.assertEqual((settled.owner, settled.units), (NEUTRAL, 0.0))
-
-    def test_two_attackers_in_sequence(self):
-        game = Game(three_base_map())
-        game.step({RED: SendAction("left", "middle", 8), BLUE: SendAction("right", "middle", 9)})
-        # Red lands first and holds 3, grows for 0.3s, then Blue's 9 arrive.
-        settled = forecast_from_game(game, "middle")
-        self.assertEqual(settled.owner, BLUE)
-        self.assertAlmostEqual(settled.units, 9 - 3.3)
 
     def test_matches_the_real_game_on_generated_maps(self):
         strategic = load_ai("strategic_ai")

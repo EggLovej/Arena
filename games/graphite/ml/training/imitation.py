@@ -30,7 +30,7 @@ import torch
 from torch.nn.functional import mse_loss
 
 from ml.device import default_device, release_cached_memory
-from ml.evaluation.evaluate import DEFAULT_OPPONENTS, FIRST_EVALUATION_SEED, evaluate
+from ml.evaluation.evaluate import DEFAULT_OPPONENTS, FIRST_EVALUATION_SEED, evaluate, evaluate_model
 from ml.map_generator import generate_map
 from ml.models import DEFAULT_MODEL, ModelOutput, PolicyValueModel
 from ml.models.checkpoint import history_entry, init_model
@@ -98,71 +98,72 @@ def train_imitation(
     model = checkpoint.model.to(device)
     log.say(f"Run '{run_name}': imitating {settings.teacher}, starting from {init}, learning on {device}")
 
-    training, validation = collect_teacher_games(settings, rng, log, model.free_amounts)
-    log.say(f"Recorded {len(training):,} decisions to learn from and {len(validation):,} to check against")
+    with RolloutPool(settings.workers) as pool:
+        training, validation = collect_teacher_games(pool, settings, rng, log, model.free_amounts)
+        log.say(f"Recorded {len(training):,} decisions to learn from and {len(validation):,} to check against")
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=settings.learning_rate)
-    steps = settings.epochs * math.ceil(len(training) / settings.batch_size)
-    schedule = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, steps, settings.final_learning_rate)
+        optimizer = torch.optim.Adam(model.parameters(), lr=settings.learning_rate)
+        steps = settings.epochs * math.ceil(len(training) / settings.batch_size)
+        schedule = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, steps, settings.final_learning_rate)
 
-    best_score = -1.0
-    # Epoch 0: the starting model, measured the same way, before it has learned anything here.
-    start = log.save(0, model, checkpoint.history)
-    log.mark_best(start)
-    metrics = check(model, validation, settings.batch_size, device)
-    summary = f"before training  same move as teacher {metrics['agreement/all decisions']:.0%}"
-    if settings.evaluation_maps > 0:
-        scores, best_score = match_scores(str(start), settings)
-        metrics.update(scores)
-        summary += "  |  " + describe_scores(scores)
-    log.log(0, in_chart_order(metrics), summary)
-
-    for epoch in range(1, settings.epochs + 1):
-        move_loss, value_loss = learn_one_pass(
-            model, optimizer, schedule, training, settings.batch_size,
-            settings.value_weight, settings.max_gradient, rng, device,
-        )
-        metrics = {
-            "move loss/training": move_loss,
-            "value loss/training": value_loss,
-            **check(model, validation, settings.batch_size, device),
-        }
-        release_cached_memory(device)
-        summary = (
-            f"epoch {epoch:2d}/{settings.epochs}  move loss {metrics['move loss/training']:.3f} "
-            f"(check {metrics['move loss/validation']:.3f})  "
-            f"same move as teacher {metrics['agreement/all decisions']:.0%} "
-            f"(sends {metrics['agreement/when teacher sends']:.0%}, waits {metrics['agreement/when teacher waits']:.0%})"
-        )
-
-        history = checkpoint.history + [
-            history_entry(
-                "imitation",
-                teacher=settings.teacher,
-                games=settings.games,
-                decisions=len(training),
-                epochs=epoch,
-                run=run_name,
-            )
-        ]
-        state = {"optimizer": optimizer.state_dict(), "epoch": epoch}
-        path = log.save(epoch, model, history, state)
-
-        evaluated = settings.evaluation_maps > 0 and (
-            epoch % settings.evaluate_every == 0 or epoch == settings.epochs
-        )
-        if evaluated:
-            scores, overall = match_scores(str(path), settings)
+        best_score = -1.0
+        # Epoch 0: the starting model, measured the same way, before it has learned anything here.
+        start = log.save(0, model, checkpoint.history)
+        log.mark_best(start)
+        metrics = check(model, validation, settings.batch_size, device)
+        summary = f"before training  same move as teacher {metrics['agreement/all decisions']:.0%}"
+        if settings.evaluation_maps > 0:
+            scores, best_score = match_scores(pool, model, settings)
             metrics.update(scores)
             summary += "  |  " + describe_scores(scores)
-            if overall > best_score:
-                best_score = overall
-                log.mark_best(path)
-        elif settings.evaluation_maps == 0:
-            # Without matches to go by, the newest model counts as the best.
-            log.mark_best(path)
+        log.log(0, in_chart_order(metrics), summary)
 
-        log.log(epoch, in_chart_order(metrics), summary)
+        for epoch in range(1, settings.epochs + 1):
+            move_loss, value_loss = learn_one_pass(
+                model, optimizer, schedule, training, settings.batch_size,
+                settings.value_weight, settings.max_gradient, rng, device,
+            )
+            metrics = {
+                "move loss/training": move_loss,
+                "value loss/training": value_loss,
+                **check(model, validation, settings.batch_size, device),
+            }
+            release_cached_memory(device)
+            summary = (
+                f"epoch {epoch:2d}/{settings.epochs}  move loss {metrics['move loss/training']:.3f} "
+                f"(check {metrics['move loss/validation']:.3f})  "
+                f"same move as teacher {metrics['agreement/all decisions']:.0%} "
+                f"(sends {metrics['agreement/when teacher sends']:.0%}, waits {metrics['agreement/when teacher waits']:.0%})"
+            )
+
+            history = checkpoint.history + [
+                history_entry(
+                    "imitation",
+                    teacher=settings.teacher,
+                    games=settings.games,
+                    decisions=len(training),
+                    epochs=epoch,
+                    run=run_name,
+                )
+            ]
+            state = {"optimizer": optimizer.state_dict(), "epoch": epoch}
+            path = log.save(epoch, model, history, state)
+
+            evaluated = settings.evaluation_maps > 0 and (
+                epoch % settings.evaluate_every == 0 or epoch == settings.epochs
+            )
+            if evaluated:
+                scores, overall = match_scores(pool, model, settings)
+                metrics.update(scores)
+                summary += "  |  " + describe_scores(scores)
+                if overall > best_score:
+                    best_score = overall
+                    log.mark_best(path)
+            elif settings.evaluation_maps == 0:
+                # Without matches to go by, the newest model counts as the best.
+                log.mark_best(path)
+
+            log.log(epoch, in_chart_order(metrics), summary)
 
     best = log.folder / "best.pt"
     log.say(f"Done. Best model: {best}")
@@ -173,6 +174,7 @@ def train_imitation(
 
 
 def collect_teacher_games(
+    pool: RolloutPool,
     settings: ImitationSettings,
     rng: np.random.Generator,
     log: RunLog,
@@ -184,8 +186,7 @@ def collect_teacher_games(
     """
 
     matchups = teacher_matchups(settings.teacher, settings.opponents, settings.games, rng)
-    with RolloutPool(settings.workers) as pool:
-        trajectories = play_teacher_games(pool, matchups, settings.workers * 8, log)
+    trajectories = play_teacher_games(pool, matchups, settings.workers * 8, log)
     return split_decisions(trajectories, settings.decisions_per_game, settings.validation_share, rng, free_amounts)
 
 
@@ -275,15 +276,12 @@ def learn_one_pass(
     return move_loss / seen, value_loss / seen
 
 
-def match_scores(candidate: str, settings: ImitationSettings) -> tuple[dict[str, float], float]:
+def match_scores(
+    pool: RolloutPool, model: PolicyValueModel, settings: ImitationSettings
+) -> tuple[dict[str, float], float]:
     """Play the scripted AIs on the evaluation maps. Returns chart data and the overall score."""
 
-    results = evaluate(
-        candidate,
-        generated_maps=settings.evaluation_maps,
-        bundled_maps=False,
-        workers=settings.workers,
-    )
+    results = evaluate_model(pool, model, settings.evaluation_maps, seed=settings.seed)
     scores = {}
     for opponent in DEFAULT_OPPONENTS:
         part = results.summary(opponent=opponent)

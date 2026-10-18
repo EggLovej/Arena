@@ -186,8 +186,9 @@ class Game(Protocol):
 
     def action_from_json(self, data: JSON) -> Action: ...
 
-    def theme(self) -> JSON:
-        """Colours and style the website's renderer uses."""
+    def themes(self) -> tuple[JSON, ...]:
+        """The looks the website can draw the board in, the default first. Each has an ``id``, a
+        ``name`` and a ``description`` for the picker; the rest (colours, style) is the board's own."""
 
 
 def state_hash(state: JSON) -> str:

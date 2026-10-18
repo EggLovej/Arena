@@ -116,31 +116,6 @@ def build_timelines(state: GameView) -> dict[str, BaseTimeline]:
     }
 
 
-def forecast_base(
-    base: BaseView,
-    incoming: Iterable[FleetView],
-    seconds_per_tick: float,
-    ticks: int | None = None,
-) -> Forecast:
-    """The base's owner and units ``ticks`` from now, if nobody sends anything new.
-
-    Leave ``ticks`` unset to get the moment the last incoming fleet has landed.
-    """
-
-    return BaseTimeline(base, incoming, seconds_per_tick).at(ticks)
-
-
-def forces_on_arrival(
-    base: BaseView,
-    incoming: Iterable[FleetView],
-    seconds_per_tick: float,
-    tick: int,
-) -> tuple[int, dict[int, float]]:
-    """See ``BaseTimeline.forces_on``."""
-
-    return BaseTimeline(base, incoming, seconds_per_tick).forces_on(tick)
-
-
 def units_to_capture(
     target: BaseView,
     timeline: BaseTimeline | None,

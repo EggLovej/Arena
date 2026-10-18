@@ -15,7 +15,7 @@ import sys
 
 # command name -> (module, one line for the list)
 COMMANDS = {
-    "train": ("ml.training.train", "Train a network: imitation, selfplay, league or kickstart"),
+    "train": ("ml.training.train", "Train a network: imitation, selfplay or kickstart"),
     "monitor": ("ml.training.monitor", "Live charts for a training run"),
     "tensorboard": ("ml.training.board", "Training curves of one or several runs in TensorBoard, in the browser"),
     "evaluate": ("ml.evaluation.evaluate", "Play a player against opponents on fresh maps"),

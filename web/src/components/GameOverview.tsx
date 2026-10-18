@@ -5,7 +5,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
-import { gameView } from "@/games/index.ts";
+import { cardMap, gameView } from "@/games/index.ts";
 import { botNames, getGame, getLeaderboard, getMatches } from "@/lib/data.ts";
 import { featuredMatches, liveMatch } from "@/lib/featured.ts";
 import type { GameData, MatchRow } from "@/lib/types.ts";
@@ -119,7 +119,7 @@ export function GameOverview({ gameId }: { gameId: string }) {
 function Stage({ game, live, names }: { game: GameData; live: MatchRow | undefined; names: Record<string, string> }) {
   const map = live && game.maps.find((entry) => entry.id === live.map);
   const view = gameView(game.id);
-  const cardMap = game.maps.find((entry) => entry.id === view.cardMap) ?? game.maps[0];
+  const still = cardMap(game);
   const speed = view.liveSpeed ?? LIVE_SPEED;
   return (
     <>
@@ -132,12 +132,12 @@ function Stage({ game, live, names }: { game: GameData; live: MatchRow | undefin
           lineup={live.lineup}
           seats={game.seats}
           botNames={names}
-          theme={game.theme}
+          themes={game.themes}
           tickSeconds={game.tick_seconds}
           speed={speed}
         />
       ) : (
-        <div className="stage">{cardMap && <MapPreview game={game} map={cardMap} />}</div>
+        <div className="stage">{still && <MapPreview game={game} map={still} />}</div>
       )}
       <p className="stage-legend">
         {live && map ? (
