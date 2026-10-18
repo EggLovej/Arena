@@ -56,15 +56,12 @@ For direct command-line or automated runs:
 Map names come from JSON files in `maps/`. AI names come from Python files in
 `ais/`.
 
-To test one AI across every installed map and from every available player seat:
+To test an AI against others on every map and from every seat, run the
+Arena's tournament from the repository root (see the root README):
 
 ```bash
-.venv/bin/python evaluate.py --candidate aggressive_ai --opponent careful_ai
+python -m arena tournament graphite --bots my_ai careful_ai --output /tmp/my_ai
 ```
-
-The evaluator discovers maps and their active players dynamically. On a
-three-player map, the candidate takes each of the three seats while the chosen
-opponent controls both remaining players.
 
 ## Play against an AI
 
@@ -112,10 +109,6 @@ An AI can return one `SendAction` per tick or `None` to wait. It receives
 arbitrary base IDs and is not told the map filename. A robust AI should reason
 from the graph and live state rather than recognizing coordinates or IDs.
 
-The evaluator should use additional unseen maps. That is what makes a general
-strategy necessary; an interface alone cannot prevent a submitted AI from
-hard-coding the public examples.
-
 ## Tick rules
 
 Every match uses fixed-duration ticks:
@@ -160,7 +153,6 @@ window too big for the screen is shrunk to fit.
 - `assets/`: paper texture and faction brush marks
 - `human_controller.py`: mouse input translated into ordinary game actions
 - `main.py`: command-line match runner
-- `evaluate.py`: all-map, both-colors evaluator
 - `ais/`: one-file agents
 - `maps/`: dynamically selectable JSON maps
 - `tests/`: rule, loading, generality, and replay tests

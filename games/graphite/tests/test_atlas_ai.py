@@ -186,33 +186,4 @@ class ContinuationTests(unittest.TestCase):
   self.assertTrue(checked)
   self.assertEqual(g.winner(),RED)
 
- def test_eliminated_candidate_is_a_loss_before_overall_match_ends(self):
-  from benchmark_ai import outcome_for
-  g=Game(load_map('triangle'))
-  self.assertEqual(outcome_for(g,RED),'timeout')
-  for base in g.bases.values():
-   if base.owner==RED:base.owner=BLUE
-  self.assertFalse(g.is_finished())
-  self.assertEqual(outcome_for(g,RED),'loss')
-
-
-class EvaluatorTests(unittest.TestCase):
- def test_existing_evaluator_counts_eliminated_seat_as_loss(self):
-  import io
-  from contextlib import redirect_stdout
-  from unittest.mock import patch
-  import evaluate
-  definition=MapDefinition('evaluation',100,100,(
-   BaseDefinition('red',RED,0,0,0,0),
-   BaseDefinition('blue',BLUE,10,0,50,0),
-   BaseDefinition('green',GREEN,10,0,100,0)),(
-   EdgeDefinition('red','blue',.1),EdgeDefinition('blue','green',1)))
-  def enemy(state):
-   if state.player_id==BLUE and state.get_base('red').owner==RED:
-    return SendAction('blue','red',1)
-   return None
-  def load(name):return (lambda state:None) if name=='candidate' else enemy
-  with patch.object(evaluate,'available_maps',return_value=('scenario',)),patch.object(evaluate,'load_map',return_value=definition),patch.object(evaluate,'load_ai',side_effect=load),redirect_stdout(io.StringIO()):
-   self.assertEqual(evaluate.evaluate('candidate','opponent',.1,.1),(1.,3))
-
 if __name__=='__main__':unittest.main()
