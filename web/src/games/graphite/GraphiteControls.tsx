@@ -14,17 +14,16 @@ import { createPortal } from "react-dom";
 import { typing } from "@/components/usePlayback.ts";
 
 import type { PlayControlsProps } from "../types.ts";
-import { LARGE_MAP, baseRadii, formatRate, viewBox, type BaseState, type GraphiteBoardData } from "./GraphiteBoard.tsx";
+import { LARGE_MAP, baseRadii, formatRate, type BaseState, type GraphiteBoardData } from "./GraphiteBoard.tsx";
 
 type Theme = { colors: Record<string, string>; players: Record<string, { fill: string; dark: string }> };
 
 // How far outside a base's circle a click still counts, in map units: a finger is less precise than a mouse.
 const MARGIN = { mouse: 6, touch: 16 };
 
-export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, seat, person, active, send, tools }: PlayControlsProps) {
+export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, seat, person, active, send, tools, layer, toBoard }: PlayControlsProps) {
   const board = rawBoard as GraphiteBoardData;
   const theme = rawTheme as Theme;
-  const svg = useRef<SVGSVGElement>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const [streaming, setStreaming] = useState(false); // the Stream switch, for screens without a Shift key
@@ -57,10 +56,8 @@ export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, s
   }, []);
 
   const baseAt = (event: MouseEvent): string | null => {
-    const element = svg.current;
-    const matrix = element?.getScreenCTM();
-    if (!element || !matrix) return null;
-    const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
+    const point = toBoard(event);
+    if (!point) return null;
     const margin = touch.current ? MARGIN.touch : MARGIN.mouse;
     let best: string | null = null;
     let nearest = Infinity;
@@ -114,15 +111,12 @@ export function GraphiteControls({ board: rawBoard, snapshot, theme: rawTheme, s
     return `${id.replaceAll("_", " ")}: ${whose}, ${units} units${streams[id] ? `, streaming to ${streams[id].replaceAll("_", " ")}` : ""}${role}`;
   };
 
-  const [x0, y0, width, height] = viewBox(board, false);
   const pointer = hovered && (source ? neighbours[source]?.has(hovered) || mine(hovered) : mine(hovered) || streams[hovered]);
 
   return (
     <>
       <svg
-        ref={svg}
-        viewBox={`${x0} ${y0} ${width} ${height}`}
-        className="play-controls-layer"
+        {...layer}
         style={{ cursor: active && pointer ? "pointer" : "default" }}
         onPointerDown={(event) => (touch.current = event.pointerType !== "mouse")}
         onClick={click}

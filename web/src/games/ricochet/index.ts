@@ -1,7 +1,7 @@
 import type { Snapshot } from "@/lib/types.ts";
 
 import type { GameView, SeatStat } from "../types.ts";
-import { RicochetBoard, type StatusState } from "./RicochetBoard.tsx";
+import { RicochetBoard, type RicochetBoardData, type StatusState } from "./RicochetBoard.tsx";
 import { RicochetControls } from "./RicochetControls.tsx";
 import { look } from "./look.ts";
 
@@ -33,6 +33,7 @@ export const ricochet: GameView = {
   strengthLabel: "Health",
   play: {
     Controls: RicochetControls,
+    viewBox: (board) => [0, 0, (board as RicochetBoardData).width, (board as RicochetBoardData).height],
     help: [
       "W A S D move your tank (the arrow keys do too), and it aims at the pointer.",
       "Hold the left mouse button to fire. A shot bounces off the first wall it meets and stops at the second; after the bounce it can hit you too.",

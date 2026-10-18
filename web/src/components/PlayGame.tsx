@@ -212,6 +212,7 @@ function Match({
   // The board is brought into view as it is set out, so the whole map shows while playing.
   const area = useRef<HTMLDivElement>(null);
   const [tools, setTools] = useState<HTMLElement | null>(null); // where the game's own buttons go
+  const layer = useRef<SVGSVGElement>(null); // the game's controls, over the board
   const [full, toggleFull] = useFullScreen(area);
   useEffect(() => {
     if (phase === "countdown" && !full) area.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -318,6 +319,11 @@ function Match({
             active={phase === "playing"}
             send={(command) => live.command(person, command)}
             tools={tools}
+            layer={{ ref: layer, viewBox: play.viewBox(match.board).join(" "), className: "play-controls-layer" }}
+            toBoard={(event) => {
+              const matrix = layer.current?.getScreenCTM();
+              return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
+            }}
           />
         )}
         {phase === "countdown" && count > 0 && (
