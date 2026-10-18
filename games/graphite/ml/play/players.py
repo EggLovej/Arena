@@ -8,6 +8,7 @@ temperature (``network:``). Settings can follow the path:
 """
 
 from dataclasses import dataclass, fields
+from pathlib import Path
 
 
 NETWORK = "network:"
@@ -57,7 +58,10 @@ def network_player(name: str, seed: int | None = None):
 
 
 def parse_name(text: str, settings_class):
-    """``PATH?key=value&...`` as the path and a settings object, each value read as its setting's type."""
+    """``PATH?key=value&...`` as the path and a settings object, each value read as its setting's type.
+
+    A relative path is read from the game folder, wherever the program runs.
+    """
 
     path, _, options = text.partition("?")
     defaults = {setting.name: setting.default for setting in fields(settings_class)}
@@ -67,7 +71,7 @@ def parse_name(text: str, settings_class):
         if key not in defaults:
             raise ValueError(f"'{key}' is not a setting here. Settings: {', '.join(defaults)}")
         changes[key] = type(defaults[key])(value)
-    return path, settings_class(**changes)
+    return str(Path(__file__).resolve().parents[2] / path), settings_class(**changes)
 
 
 def name_with_settings(prefix: str, path, settings) -> str:
