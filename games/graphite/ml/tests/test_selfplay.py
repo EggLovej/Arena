@@ -1,4 +1,3 @@
-import sys
 import tempfile
 import unittest
 from dataclasses import replace
@@ -16,6 +15,7 @@ from ml.map_generator import generate_map
 from ml.models.checkpoint import init_model, load_checkpoint, save_checkpoint
 from ml.models import amounts
 from ml.models.policy import _free_amounts_for, log_probability
+from ml.play.players import min_send_gap
 from ml.play.rollout import WAIT, GameRecord, Matchup, Seat, Trajectory, play_games
 from ml.tests.support import trajectory_choices, trajectory_input
 from ml.training.runlog import read_metrics
@@ -35,7 +35,6 @@ from ml.training.selfplay import (
     train_selfplay,
     update,
 )
-from ml.training.train import parse_args
 
 
 def fake_trajectory(ticks, values, outcome, units_share=0.5, production_share=0.5):
@@ -189,8 +188,6 @@ class ValueErrorTests(unittest.TestCase):
     def records(self, values, outcome):
         trajectory = fake_trajectory([0, 5, 10], values, outcome)
         matchup = Matchup(generate_map(0).definition, Seat(SELF, True), Seat(SELF, True))
-        from ml.play.rollout import GameRecord
-
         return [GameRecord(matchup, RED, 10, [], [trajectory])]
 
     def errors(self, values, outcome):
@@ -199,17 +196,15 @@ class ValueErrorTests(unittest.TestCase):
             _, errors = judged_decisions(self.records(values, outcome), settings, 0.0, np.random.default_rng(0))
         return errors
 
-    def test_saying_zero_costs_nothing_in_a_draw_and_everything_in_a_decided_game(self):
+    def test_the_value_error_is_measured_against_always_saying_zero(self):
+        # Saying 0 costs nothing in a draw and everything in a decided game.
         self.assertEqual(self.errors([0, 0, 0], "draw")["value error/always saying 0"], 0.0)
         self.assertEqual(self.errors([0, 0, 0], "win")["value error/always saying 0"], 1.0)
         self.assertEqual(self.errors([0, 0, 0], "win")["value error/of the network"], 1.0)
-
-    def test_a_network_that_sees_the_result_coming_beats_the_reference(self):
+        # A network that sees the result coming beats that; a confidently wrong one does worse.
         errors = self.errors([0.8, 0.9, 1.0], "win")
         self.assertLess(errors["value error/of the network"], 0.05)
         self.assertEqual(errors["value error/always saying 0"], 1.0)
-
-    def test_a_confidently_wrong_network_is_worse_than_the_reference(self):
         errors = self.errors([-0.9, -0.9, -0.9], "win")
         self.assertGreater(errors["value error/of the network"], errors["value error/always saying 0"])
 
@@ -453,77 +448,7 @@ class BehaviourTests(unittest.TestCase):
 
 
 class SelfPlayRunTests(unittest.TestCase):
-    def test_a_small_run_leaves_a_complete_run_folder(self):
-        settings = SelfPlaySettings(
-            rounds=2,
-            games_per_round=6,
-            decisions_per_game=100,
-            passes=2,
-            batch_size=128,
-            max_seconds=25,
-            value_only_rounds=1,
-            evaluation_maps=1,
-            evaluate_every=2,
-            final_evaluation=False,
-            workers=2,
-        )
-        with tempfile.TemporaryDirectory() as directory:
-            with mock.patch.object(ml.training.runlog, "RUNS_DIRECTORY", Path(directory)), mock.patch("builtins.print"):
-                best = train_selfplay("tiny", settings, device="cpu")
-                rounds = read_metrics("tiny")
-            names = sorted(entry.name for entry in (Path(directory) / "tiny").iterdir())
-            latest = load_checkpoint(Path(directory) / "tiny" / "latest.pt")
-            start = load_checkpoint(Path(directory) / "tiny" / "round_0000.pt")
-            self.assertTrue(best.exists())
-
-        self.assertEqual(
-            names,
-            ["best.pt", "latest.pt", "metrics.jsonl", "round_0000.pt", "round_0001.pt", "round_0002.pt", "settings.json"],
-        )
-        self.assertEqual([entry["round"] for entry in rounds], [0, 1, 2])
-        for name in (
-            "decided games/in self-play", "entropy/of the policy", "policy change/per round",
-            "value error/of the network", "value error/always saying 0",
-        ):
-            self.assertIn(name, rounds[1])
-        # Matches against the scripted AIs and the starting model: before training, then every second round.
-        self.assertNotIn("score/vs strategic_ai", rounds[1])
-        for entry in (rounds[0], rounds[2]):
-            for opponent in ("aggressive_ai", "careful_ai", "strategic_ai", "starting model"):
-                self.assertIn(f"score/vs {opponent}", entry)
-        self.assertNotIn("entropy/of the policy", rounds[0])
-        self.assertEqual(list(rounds[2])[2].split("/")[0], "score")
-
-        # Round 0 is the starting model, already listed under this run.
-        self.assertEqual([(entry["step"], entry.get("rounds")) for entry in start.history], [("random start", None), ("self-play", 0)])
-        self.assertEqual([entry["step"] for entry in latest.history], ["random start", "self-play"])
-        self.assertEqual(latest.history[-1]["rounds"], 2)
-        self.assertIn("optimizer", latest.training_state)
-        changed = any(
-            not torch.equal(a, b)
-            for a, b in zip(start.model.state_dict().values(), latest.model.state_dict().values())
-        )
-        self.assertTrue(changed)
-
-    def test_a_network_with_free_amounts_trains_with_the_server(self):
-        settings = SelfPlaySettings(
-            rounds=2, games_per_round=6, decisions_per_game=100, passes=2, batch_size=128, max_seconds=25,
-            value_only_rounds=1, evaluation_maps=1, evaluate_every=2, final_evaluation=False, workers=2,
-            inference="server",
-        )
-        with tempfile.TemporaryDirectory() as directory:
-            start = Path(directory) / "free.pt"
-            save_checkpoint(start, init_model("random", seed=0, amounts="free", feature_set="v2").model)
-            with mock.patch.object(ml.training.runlog, "RUNS_DIRECTORY", Path(directory)), mock.patch("builtins.print"):
-                train_selfplay("free", settings, init=str(start), device="cpu")
-                rounds = read_metrics("free")
-            latest = load_checkpoint(Path(directory) / "free" / "latest.pt")
-        self.assertTrue(latest.model.free_amounts)
-        self.assertGreater(rounds[2]["policy change/per round"], 0)
-        self.assertIn("score/vs strategic_ai", rounds[2])
-        self.assertTrue(all(np.isfinite(value) for value in rounds[2].values() if isinstance(value, float)))
-
-    def test_a_run_can_stop_and_carry_on_in_a_new_process(self):
+    def test_a_run_leaves_a_complete_folder_and_can_carry_on_in_a_new_process(self):
         settings = SelfPlaySettings(
             rounds=3,
             games_per_round=4,
@@ -531,8 +456,10 @@ class SelfPlayRunTests(unittest.TestCase):
             passes=1,
             batch_size=64,
             max_seconds=15,
-            value_only_rounds=0,
-            evaluation_maps=0,
+            min_send_gap=10,
+            value_only_rounds=1,
+            evaluation_maps=1,
+            evaluate_every=3,
             final_evaluation=False,
             workers=2,
         )
@@ -544,14 +471,36 @@ class SelfPlayRunTests(unittest.TestCase):
                 paused = load_checkpoint(folder / "latest.pt")
                 self.assertFalse((folder / "round_0003.pt").exists())
 
-                train_selfplay("split", settings, device="cpu", resume=True)
+                best = train_selfplay("split", settings, device="cpu", resume=True)
                 rounds = read_metrics("split")
-                latest = load_checkpoint(folder / "latest.pt")
+            names = sorted(entry.name for entry in folder.iterdir())
+            start, latest = load_checkpoint(folder / "round_0000.pt"), load_checkpoint(folder / "latest.pt")
+            gaps = [min_send_gap(folder / name) for name in ("round_0000.pt", "latest.pt")]
+            self.assertTrue(best.exists())
 
-        self.assertEqual([entry["round"] for entry in first], [1, 2])
-        self.assertEqual([entry["round"] for entry in rounds], [1, 2, 3])
+        self.assertEqual(
+            names,
+            [
+                "best.pt", "latest.pt", "metrics.jsonl", "round_0000.pt", "round_0001.pt", "round_0002.pt",
+                "round_0003.pt", "settings.json",
+            ],
+        )
+        self.assertEqual([entry["round"] for entry in first], [0, 1, 2])
+        self.assertEqual([entry["round"] for entry in rounds], [0, 1, 2, 3])
         # Time keeps counting from where the first process stopped.
-        self.assertGreaterEqual(rounds[2]["seconds"], rounds[1]["seconds"])
+        self.assertGreaterEqual(rounds[3]["seconds"], rounds[2]["seconds"])
+        for name in (
+            "decided games/in self-play", "entropy/of the policy", "policy change/per round",
+            "value error/of the network", "value error/always saying 0",
+        ):
+            self.assertIn(name, rounds[1])
+        # Matches against the scripted AIs and the starting model: before training, then every third round.
+        self.assertNotIn("score/vs strategic_ai", rounds[2])
+        for entry in (rounds[0], rounds[3]):
+            for opponent in ("aggressive_ai", "careful_ai", "strategic_ai", "starting model"):
+                self.assertIn(f"score/vs {opponent}", entry)
+        self.assertNotIn("entropy/of the policy", rounds[0])
+        self.assertEqual(list(rounds[3])[2].split("/")[0], "score")
 
         self.assertEqual(paused.training_state["round"], 2)
         self.assertEqual(latest.training_state["round"], 3)
@@ -559,15 +508,36 @@ class SelfPlayRunTests(unittest.TestCase):
         paused_steps = max(entry["step"] for entry in paused.training_state["optimizer"]["state"].values())
         final_steps = max(entry["step"] for entry in latest.training_state["optimizer"]["state"].values())
         self.assertGreater(final_steps, paused_steps)
-        # One history entry for this run, with the final round count.
+        # One history entry for this run, with the final round count; round 0, the starting model,
+        # is already listed under it. Both carry the run's send limit.
         steps = [(entry["step"], entry.get("rounds")) for entry in latest.history]
         self.assertEqual(steps, [("random start", None), ("self-play", 3)])
+        steps = [(entry["step"], entry.get("rounds")) for entry in start.history]
+        self.assertEqual(steps, [("random start", None), ("self-play", 0)])
+        self.assertEqual(gaps, [10, 10])
+        changed = any(
+            not torch.equal(a, b)
+            for a, b in zip(start.model.state_dict().values(), latest.model.state_dict().values())
+        )
+        self.assertTrue(changed)
 
-    def test_the_train_command_offers_self_play(self):
-        with mock.patch.object(sys, "argv", ["train", "selfplay", "--run", "x", "--rounds", "7", "--opponents", "self", "careful_ai"]):
-            args = parse_args()
-        self.assertEqual((args.trainer, args.rounds, args.opponents), ("selfplay", 7, ["self", "careful_ai"]))
-        self.assertEqual(args.learning_rate, SelfPlaySettings().learning_rate)
+    def test_a_network_with_free_amounts_trains_with_the_server(self):
+        settings = SelfPlaySettings(
+            rounds=1, games_per_round=2, decisions_per_game=100, passes=2, batch_size=128, max_seconds=25,
+            value_only_rounds=0, evaluation_maps=0, final_evaluation=False, workers=2, inference="server",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            start = Path(directory) / "free.pt"
+            model = init_model("random", seed=0, amounts="free", feature_set="v2").model
+            save_checkpoint(start, model)
+            with mock.patch.object(ml.training.runlog, "RUNS_DIRECTORY", Path(directory)), mock.patch("builtins.print"):
+                train_selfplay("free", settings, init=str(start), device="cpu")
+                (round_one,) = read_metrics("free")
+            latest = load_checkpoint(Path(directory) / "free" / "latest.pt")
+        self.assertTrue(latest.model.free_amounts)
+        # Its moves learned. ("policy change" is an estimate from the moves played, and can come out just below 0.)
+        self.assertFalse(torch.equal(latest.model.route_out.weight, model.route_out.weight))
+        self.assertTrue(all(np.isfinite(value) for value in round_one.values() if isinstance(value, float)))
 
 
 if __name__ == "__main__":

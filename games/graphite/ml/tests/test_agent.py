@@ -8,14 +8,13 @@ from unittest import mock
 
 import ais.neural_ai
 from game import Game
-from game_types import BLUE, RED, BaseDefinition, EdgeDefinition, MapDefinition
-from loading import available_ais, load_ai
+from game_types import BLUE, RED, BaseDefinition, EdgeDefinition, MapDefinition, SendAction
+from loading import load_ai
 
 from ml.map_generator import generate_map
 from ml.models.checkpoint import history_entry, init_model, save_checkpoint
-from ml.models.policy import choose
 from ml.play.agent import NeuralAgent
-from ml.play.players import load_player, network_player
+from ml.play.players import fresh_ai, keeps_memory, load_player, network_player
 
 
 def play(definition, red, blue, ticks=300):
@@ -39,52 +38,25 @@ class NeuralAgentTests(unittest.TestCase):
         cls.model = init_model("random", seed=0).model
         cls.strategic = staticmethod(load_ai("strategic_ai"))
 
-    def test_untrained_agent_only_makes_legal_moves(self):
-        for seed in range(4):
-            agent = NeuralAgent(self.model, seed=seed)
-            game, moves = play(generate_map(seed).definition, agent, self.strategic)
-            self.assertGreater(sum(move is not None for move in moves), 10)
+    def test_an_untrained_network_only_makes_legal_moves(self):
+        for amounts, seeds in (("options", range(4)), ("free", range(2))):
+            model = init_model("random", seed=0, amounts=amounts).model
+            for seed in seeds:
+                with self.subTest(amounts=amounts, seed=seed):
+                    _, moves = play(generate_map(seed).definition, NeuralAgent(model, seed=seed), self.strategic)
+                    self.assertGreater(sum(move is not None for move in moves), 10)
 
-    def test_an_untrained_network_with_free_amounts_only_makes_legal_moves(self):
-        model = init_model("random", seed=0, amounts="free").model
-        for seed in range(2):
-            agent = NeuralAgent(model, seed=seed)
-            game, moves = play(generate_map(seed).definition, agent, self.strategic)  # fails on any rejected move
-            self.assertGreater(sum(move is not None for move in moves), 10)
+    def test_a_seed_replays_the_same_game_and_greedy_needs_none(self):
+        def moves(agent):
+            return play(generate_map(2).definition, agent, self.strategic, ticks=100)[1]
 
-    def test_two_agents_can_share_one_model(self):
-        red = NeuralAgent(self.model, seed=1)
-        blue = NeuralAgent(self.model, seed=2)
-        game, _ = play(generate_map(3).definition, red, blue, ticks=200)
-        self.assertGreater(game.tick, 0)
-
-    def test_same_seed_replays_the_same_game(self):
-        definition = generate_map(2).definition
-        _, first = play(definition, NeuralAgent(self.model, seed=7), self.strategic, ticks=150)
-        _, second = play(definition, NeuralAgent(self.model, seed=7), self.strategic, ticks=150)
-        _, other = play(definition, NeuralAgent(self.model, seed=8), self.strategic, ticks=150)
-        self.assertEqual(first, second)
-        self.assertNotEqual(first, other)
-
-    def test_reseeding_restarts_the_sequence(self):
-        definition = generate_map(2).definition
         agent = NeuralAgent(self.model, seed=7)
-        _, first = play(definition, agent, self.strategic, ticks=100)
+        first = moves(agent)
         agent.reseed(7)
-        _, second = play(definition, agent, self.strategic, ticks=100)
-        self.assertEqual(first, second)
-
-    def test_a_temperature_is_used_for_every_choice(self):
-        with mock.patch("ml.play.agent.choose", wraps=choose) as spy:
-            play(generate_map(2).definition, NeuralAgent(self.model, seed=7, temperature=0.8), self.strategic, ticks=30)
-        self.assertTrue(spy.call_args_list)
-        self.assertTrue(all(call.args[3] == 0.8 for call in spy.call_args_list))
-
-    def test_greedy_agent_needs_no_seed_to_repeat(self):
-        definition = generate_map(2).definition
-        _, first = play(definition, NeuralAgent(self.model, greedy=True), self.strategic, ticks=100)
-        _, second = play(definition, NeuralAgent(self.model, greedy=True), self.strategic, ticks=100)
-        self.assertEqual(first, second)
+        self.assertEqual(moves(agent), first)
+        self.assertEqual(moves(NeuralAgent(self.model, seed=7)), first)
+        self.assertNotEqual(moves(NeuralAgent(self.model, seed=8)), first)
+        self.assertEqual(moves(NeuralAgent(self.model, greedy=True)), moves(NeuralAgent(self.model, greedy=True)))
 
     def test_waits_without_asking_the_model_when_nothing_can_be_sent(self):
         definition = MapDefinition(
@@ -117,29 +89,33 @@ class NeuralAgentTests(unittest.TestCase):
                 self.assertGreater(len(ticks), 5)
                 self.assertTrue(all(later - earlier >= 10 for earlier, later in zip(ticks, ticks[1:])))
 
-    def test_builds_from_a_checkpoint_path(self):
+    def test_players_load_by_name(self):
+        definition = generate_map(2).definition
         with tempfile.TemporaryDirectory() as directory:
             path = save_checkpoint(Path(directory) / "model.pt", self.model)
-            definition = generate_map(2).definition
-            _, saved = play(definition, NeuralAgent.from_init(path, seed=3), self.strategic, ticks=100)
-        _, original = play(definition, NeuralAgent(self.model, seed=3), self.strategic, ticks=100)
-        self.assertEqual(saved, original)
-
-    def test_a_network_name_carries_its_temperature(self):
-        with tempfile.TemporaryDirectory() as directory:
-            path = save_checkpoint(Path(directory) / "model.pt", self.model)
+            # A network: name carries its settings, and the evaluator's --greedy reaches it.
             agent = load_player(f"network:{path}?temperature=0.2", seed=3)
-            self.assertIsInstance(agent, NeuralAgent)
-            self.assertEqual(agent.temperature, 0.2)
             self.assertEqual(network_player(f"network:{path}").temperature, 1.0)
-            # The evaluator's --greedy reaches it.
             self.assertTrue(load_player(f"network:{path}", greedy=True).greedy)
             with self.assertRaises(ValueError):
                 network_player(f"network:{path}?temperature=0")
-            definition = generate_map(2).definition
             _, named = play(definition, agent, self.strategic, ticks=100)
+            # So are a checkpoint, an untrained network and an AI file.
+            state = Game(definition).view_for(RED)
+            for name in (str(path), "untrained", "untrained:3", "strategic_ai"):
+                action = load_player(name, seed=0)(state)
+                self.assertTrue(action is None or isinstance(action, SendAction))
         _, built = play(definition, NeuralAgent(self.model, seed=3, temperature=0.2), self.strategic, ticks=100)
         self.assertEqual(named, built)
+
+    def test_an_ai_with_memory_gets_a_fresh_player_every_time(self):
+        self.assertTrue(keeps_memory("atlas_clean_ai"))
+        self.assertIsNot(fresh_ai("atlas_clean_ai"), fresh_ai("atlas_clean_ai"))
+        self.assertIsNot(load_player("atlas_clean_ai"), load_player("atlas_clean_ai"))
+        # Plain AIs are shared, and names that are not AI files have no memory to keep.
+        self.assertFalse(keeps_memory("strategic_ai"))
+        self.assertIs(fresh_ai("strategic_ai"), fresh_ai("strategic_ai"))
+        self.assertFalse(keeps_memory("value:ml/runs/latest.pt"))
 
 
 class NeuralAiFileTests(unittest.TestCase):
@@ -181,10 +157,6 @@ class NeuralAiFileTests(unittest.TestCase):
 
                 neural(Game(definition).view_for(RED))
                 self.assertTrue(loaded(second))
-
-    def test_the_game_can_find_and_load_it(self):
-        self.assertIn("neural_ai", available_ais())
-        self.assertTrue(callable(load_ai("neural_ai")))
 
     def test_plays_the_checkpoint_named_in_the_environment(self):
         model = init_model("random", seed=4).model

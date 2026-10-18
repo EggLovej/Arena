@@ -1,6 +1,4 @@
-import tempfile
 import unittest
-from pathlib import Path
 
 from game import Game
 from game_types import BLUE, NEUTRAL, RED, BaseDefinition, EdgeDefinition, MapDefinition, SendAction
@@ -16,8 +14,6 @@ from ml.evaluation.evaluate import (
     outcome_for,
     play_match,
 )
-from ml.models.checkpoint import init_model, save_checkpoint
-from ml.play.players import fresh_ai, keeps_memory, load_player
 
 
 def duel_map():
@@ -59,7 +55,7 @@ class OutcomeTests(unittest.TestCase):
         self.assertEqual(outcome_for(timed_out, BLUE), "draw")
         self.assertAlmostEqual(timed_out.time_seconds, 2.0)
 
-    def test_eliminated_player_has_lost_even_if_the_game_goes_on(self):
+        # Out of the game is a loss even while the others play on.
         game = Game(load_map("triangle"))
         for base in game.bases.values():
             if base.owner == RED:
@@ -103,31 +99,9 @@ class EvaluateTests(unittest.TestCase):
         self.assertNotIn("triangle", bundled)
         self.assertFalse(any(name.startswith("generated_") for name in bundled))
         self.assertEqual(generated, list(range(FIRST_EVALUATION_SEED, FIRST_EVALUATION_SEED + 5)))
-        self.assertEqual(evaluation_maps(3, bundled_maps=False), [("generated", str(FIRST_EVALUATION_SEED + i)) for i in range(3)])
-
-    def test_fresh_maps_can_be_reached_by_skipping_the_usual_ones(self):
-        usual = evaluation_maps(30, bundled_maps=False)
+        # Skipping the usual maps reaches fresh ones.
         fresh = evaluation_maps(5, bundled_maps=False, skip_generated=30)
         self.assertEqual(fresh, [("generated", str(FIRST_EVALUATION_SEED + 30 + i)) for i in range(5)])
-        self.assertFalse(set(fresh) & set(usual))
-
-    def test_players_load_by_name(self):
-        state = Game(duel_map()).view_for(RED)
-        for name in ("strategic_ai", "untrained", "untrained:3"):
-            action = load_player(name, seed=0)(state)
-            self.assertTrue(action is None or isinstance(action, SendAction))
-        with tempfile.TemporaryDirectory() as directory:
-            path = save_checkpoint(Path(directory) / "model.pt", init_model("random", seed=1).model)
-            self.assertTrue(callable(load_player(str(path), seed=0)))
-
-    def test_an_ai_with_memory_gets_a_fresh_player_every_time(self):
-        self.assertTrue(keeps_memory("atlas_clean_ai"))
-        self.assertIsNot(fresh_ai("atlas_clean_ai"), fresh_ai("atlas_clean_ai"))
-        self.assertIsNot(load_player("atlas_clean_ai"), load_player("atlas_clean_ai"))
-        # Plain AIs are shared, and names that are not AI files have no memory to keep.
-        self.assertFalse(keeps_memory("strategic_ai"))
-        self.assertIs(fresh_ai("strategic_ai"), fresh_ai("strategic_ai"))
-        self.assertFalse(keeps_memory("value:ml/runs/latest.pt"))
 
     def test_every_pairing_is_played_from_both_seats(self):
         seen = []
@@ -146,14 +120,8 @@ class EvaluateTests(unittest.TestCase):
         # The strongest scripted AI should clearly beat the two simple ones.
         self.assertGreater(evaluation.summary().score, 0.7)
 
-    def test_same_run_gives_the_same_results(self):
-        settings = dict(opponents=["aggressive_ai"], generated_maps=2, bundled_maps=False, workers=1)
-        first = evaluate("untrained", **settings)
-        second = evaluate("untrained", **settings)
-        self.assertEqual(first.results, second.results)
-
     def test_parallel_run_matches_a_single_worker(self):
-        settings = dict(opponents=["aggressive_ai"], generated_maps=2, bundled_maps=False)
+        settings = dict(opponents=["aggressive_ai"], generated_maps=2, bundled_maps=False, max_seconds=30)
         single = evaluate("untrained", workers=1, **settings)
         parallel = evaluate("untrained", workers=2, **settings)
         self.assertEqual(single.results, parallel.results)

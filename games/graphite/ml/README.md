@@ -128,5 +128,5 @@ runs/                       one folder per run (settings, metrics, every 50th ro
 ## Tests
 
 ```bash
-python -m pytest -q ml/tests   # about 10 minutes on four cores; CI runs the same
+python -m pytest -q ml/tests   # as CI runs them
 ```

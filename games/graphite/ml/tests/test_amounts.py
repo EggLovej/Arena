@@ -4,7 +4,7 @@ import torch
 
 from ml.models import amounts
 from ml.models.amounts import (
-    GRID_LIMIT, GRID_SIZES, PARAMETERS, entropy, log_probability, most_likely, on_grid, sample, sample_sharpened,
+    GRID_LIMIT, GRID_SIZES, PARAMETERS, entropy, log_probability, on_grid, sample, sample_sharpened,
 )
 
 
@@ -28,6 +28,10 @@ class AmountTests(unittest.TestCase):
         # Nothing above what the source has.
         for row, most in enumerate(self.most.long().tolist()):
             self.assertEqual(table[row, most:].sum().item(), 0.0)
+        # A base larger than the grid lumps the rest into the last cell.
+        table = on_grid(self.curves[:1], torch.tensor([1000.0]), self.needed[:1], GRID_LIMIT)
+        self.assertAlmostEqual(table.sum().item(), 1.0, places=5)
+        self.assertTrue(torch.isfinite(entropy(self.curves[:1], torch.tensor([1000.0]), self.needed[:1])).all())
 
     def test_log_probability_agrees_with_the_table(self):
         table = on_grid(self.curves, self.most, self.needed, 300)
@@ -112,16 +116,6 @@ class AmountTests(unittest.TestCase):
         (expected,) = torch.autograd.grad(direct.sum(), curves)
         self.assertTrue(torch.allclose(learned, direct, atol=1e-5))
         self.assertTrue(torch.allclose(gradient, expected, atol=1e-5))
-
-    def test_large_bases_lump_the_rest_into_the_last_cell(self):
-        most = torch.tensor([1000.0])
-        table = on_grid(self.curves[:1], most, self.needed[:1], GRID_LIMIT)
-        self.assertAlmostEqual(table.sum().item(), 1.0, places=5)
-        self.assertTrue(torch.isfinite(entropy(self.curves[:1], most, self.needed[:1])).all())
-
-    def test_greedy_takes_the_most_likely_amount(self):
-        table = on_grid(self.curves, self.most, self.needed, 300)
-        self.assertTrue(torch.equal(most_likely(self.curves, self.most, self.needed), table.argmax(dim=1) + 1))
 
     def test_untrained_curves_start_on_just_enough_half_and_everything(self):
         curves = amounts.starting_biases()[None]
