@@ -13,12 +13,14 @@ def graphite():
 
 
 @pytest.mark.parametrize("bot", ["neural_ai", "beast_ai"])
-def test_the_neural_bots_play_their_committed_networks(graphite, bot):
+def test_the_neural_bots_play_their_committed_networks_the_same_way_twice(graphite, bot):
+    # The networks draw their moves by chance, from the match's seed: a seeded match can be played again.
     torch = pytest.importorskip("torch")
     torch.set_num_threads(1)
-    record = play_match(graphite, "classic", {"red": bot, "blue": "strategic_ai"}, seed=2)
-    assert record.seats["red"].errors == 0
-    assert sum(seat == "red" for _, seat, _ in record.replay["actions"]) > 10
+    first, second = (play_match(graphite, "classic", {"red": bot, "blue": "strategic_ai"}, seed=2) for _ in range(2))
+    assert first.seats["red"].errors == 0
+    assert sum(seat == "red" for _, seat, _ in first.replay["actions"]) > 10
+    assert first.replay["actions"] == second.replay["actions"]
 
 
 def test_an_action_naming_bases_by_anything_but_their_id_is_refused(graphite):
