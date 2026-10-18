@@ -122,14 +122,10 @@ class _Match:
 
 
 class AtlasClean:
-    """One player with its own memory. Call it with each new view, as the game calls ``choose_action``.
+    """One player with its own memory. Call it with each new view, as the game calls ``choose_action``."""
 
-    ``work_per_tick=None`` plans all at once, as Atlas does (for comparisons).
-    """
-
-    def __init__(self, work_per_tick: int | None = WORK_PER_TICK):
+    def __init__(self):
         self._matches: OrderedDict = OrderedDict()
-        self.work_per_tick = work_per_tick
 
     def __call__(self, state: GameView) -> SendAction | None:
         # A view has no match number, so a match is recognised by seat, map, and an unbroken run of ticks.
@@ -181,8 +177,7 @@ class AtlasClean:
     def _work_on_plan(self, match: _Match) -> None:
         """Advance the plan in progress by this decision's share of simulation steps."""
 
-        budget = self.work_per_tick
-        while budget is None or budget > 0:
+        for _ in range(WORK_PER_TICK):
             try:
                 next(match.planner)
             except StopIteration as finished:
@@ -190,8 +185,6 @@ class AtlasClean:
                 match.planner = None
                 match.plans_done += 1
                 return
-            if budget is not None:
-                budget -= 1
 
     def _search(self, match: _Match, state: GameView):
         """The style whose simulated future looks best against the forecast opponents.
