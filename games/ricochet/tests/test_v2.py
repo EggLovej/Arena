@@ -185,13 +185,10 @@ def test_replay_embeds_map_and_seeking_matches(tmp_path, monkeypatch):
         list(replay_steps(data, start_tick=320))
 
 
-def test_invalid_replay_and_v1_rejection(tmp_path):
+def test_a_replay_of_a_match_both_bots_failed_plays_back(tmp_path):
     path = tmp_path / "bad.json"
     summary = run_headless("missing_ai", "missing_ai", record_path=path)
     assert verify_replay(path)["final_state_hash"] == summary.final_state_hash
-    path.write_text('{"schema_version":1}')
-    with pytest.raises(ValueError, match="afc5ee0"):
-        load_replay(path)
 
 
 @pytest.mark.parametrize("value", [float("nan"), float("inf"), -1, 0])

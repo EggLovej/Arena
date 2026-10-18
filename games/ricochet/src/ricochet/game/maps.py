@@ -1,3 +1,5 @@
+"""Maps: loading them from ``maps/`` (or generating them), saving, checking and spawn jitter."""
+
 from __future__ import annotations
 
 import json
@@ -97,6 +99,7 @@ def jitter_spawns(
 
 
 def validate_map(definition: MapDefinition, rules: RulesConfig) -> None:
+    """Raise ValueError unless the map is well formed and both tanks can start on it."""
     values = [definition.width, definition.height]
     for wall in definition.walls:
         values.extend((wall.x, wall.y, wall.width, wall.height))

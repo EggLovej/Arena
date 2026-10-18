@@ -1,3 +1,9 @@
+"""Matches in Ricochet's own runtime: the Pygame client, the training environment and the CLI.
+
+The Arena plays its matches with its own runner, through ``arena_game.py``, and treats
+faults differently: see docs/ai_api.md.
+"""
+
 from __future__ import annotations
 
 import time
@@ -96,6 +102,8 @@ class MatchSummary:
 
 
 class MatchSession:
+    """An engine and two controller seats, stepped until the match ends or a seat forfeits."""
+
     def __init__(
         self,
         engine: GameEngine,

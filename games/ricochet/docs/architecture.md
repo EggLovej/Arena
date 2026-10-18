@@ -1,4 +1,4 @@
-# Architecture and reuse
+# Architecture
 
 ## Boundaries
 
@@ -13,21 +13,10 @@ The core entry points are construction/reset via a new engine or `GameEngine.fro
 
 ## Replays
 
-V2 includes full initial state/map/rules, controller code or checkpoint digest, engine version, per-step actions/events/hashes and snapshots every 300 ticks. Verification and visual playback share `replay_steps(data, start_tick)`. Seeking restores the nearest earlier checkpoint and verifies subsequent transitions. A final snapshot handles forfeits, including both-controller failures. V1 requires the pre-v2 revision `afc5ee0`; changing the rules is not presented as backward-compatible playback.
+A replay (schema 2) includes the full initial state/map/rules, controller code or checkpoint digest, engine version, per-step actions/events/hashes and snapshots every 300 ticks. Verification and visual playback share `replay_steps(data, start_tick)`. Seeking restores the nearest earlier checkpoint and verifies subsequent transitions. A final snapshot handles forfeits, including both-controller failures. Replays of an older schema are refused rather than played back under changed rules.
 
 Hashing is optional for training. `capture_state` is independent of verification mode. Full state hashes include rules/map and next projectile ID; they establish same-runtime replay parity, not a guarantee of identical floating-point behavior on every platform.
 
-## Reuse in the next game
+## In the Arena
 
-Reuse the directory pattern now. Extract common code only when a second game needs it:
-
-| Shared candidate | Game-owned behavior |
-|---|---|
-| Controller factory/reset/act lifecycle | Observation and action types |
-| Match scheduling, budget/fault reporting | Simultaneous versus turn-based stepping |
-| Tournament outputs and standings machinery | Player/team structure and outcomes |
-| Replay envelope and artifact storage | State/action serialization and engine version |
-| Run manifests and checkpoint lineage | Rewards, model inputs and scenario generation |
-| Viewport/menu/replay widgets | Arena rendering and effects |
-
-The current implementation is explicitly a two-player duel. It does not pretend that every future game has health, a 30 Hz clock, circles, or six neural outputs. There is no new generic inheritance framework or browser/public-upload infrastructure.
+The Arena's platform (`platform/arena`) plays Ricochet through `arena_game.py`, which needs only `game`, `bot`, `runtime/loading.py`, `themes` and the bots: the same code runs in tournaments and, in Pyodide, on the website. The platform brings its own match runner, tournaments, ratings and replays, so `runtime/match.py` and `runtime/replay.py` serve only the standalone game: its window, its replay viewer and training.

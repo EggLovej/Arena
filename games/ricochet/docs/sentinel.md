@@ -14,4 +14,4 @@ This is approximate receding-horizon planning, not minimax or an optimal-policy 
 
 ## How strong it is
 
-The Arena's leaderboard rates it against every other bot: `python -m arena tournament ricochet`, from the repository root, plays every pairing on every map from both seats. While it was developed, it won all 36 of its games on the three drawn maps against the six other bots, and 70 of 72 on six generated maps, drawing the other two against Bank Shot. That makes it a strong scripted baseline against the current pool, not an optimal policy.
+The Arena's leaderboard rates it against every other bot: `python -m arena tournament ricochet`, from the repository root, plays every pairing on every map from both seats. While it was developed, it won all 36 of its games on the three hand-drawn maps against the six other bots, and 70 of 72 on six generated maps, drawing the other two against Bank Shot. That makes it a strong scripted baseline against the current pool, not an optimal policy.

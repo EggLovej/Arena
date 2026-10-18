@@ -1,3 +1,5 @@
+"""Finding bots in ``ais/`` and loading them, each load a fresh module and controller."""
+
 from __future__ import annotations
 
 import importlib.util

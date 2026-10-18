@@ -1,3 +1,10 @@
+"""The game engine: the whole match state, advanced one tick at a time.
+
+``GameEngine`` steps both players' actions together and hands each player a frozen
+observation. ``capture_state`` and ``restore_state`` turn the whole state into JSON and back,
+and ``state_hash`` fingerprints it, which is what replays check against.
+"""
+
 from __future__ import annotations
 
 import hashlib
@@ -139,6 +146,7 @@ class GameEngine:
         return self.observation_for(0), self.observation_for(1)
 
     def step(self, actions: dict[int, ControlAction]) -> StepResult:
+        """Advance one tick. A player missing from ``actions`` does nothing."""
         if self.terminated or self.timed_out:
             raise RuntimeError("cannot step a finished game")
         normalized = {

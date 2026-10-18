@@ -41,7 +41,11 @@ Modules using dataclasses and postponed annotations are supported. Put match sta
 
 Actions contain movement XY, aim XY, fire and shield. Vectors must be finite and are limited to length one; nonzero aim is normalized by the engine. A zero aim keeps the previous aim. Boolean fire/shield flags must be actual booleans. Shield takes priority over firing and remains active for its prepaid commitment. See [rules](rules.md).
 
-`act` faults emit a no-op and count toward three-fault forfeiture. Import/factory/reset failure is an immediate forfeit. If both controllers fail, the match is invalid; JSON summaries include failure messages. Local execution has no security sandbox or enforced time budget.
+## Faults and time limits
+
+In the Arena, a bot that raises an error, or returns anything that isn't an action, does nothing that tick and plays on. A bot may think for up to 120 seconds on one move (or on loading and `reset`) and 30 minutes over a match; one that runs out of time, or fails to load, does nothing for the rest of the match. The match report counts each bot's errors.
+
+The standalone game is stricter about errors and has no time limit. An `act` fault emits a no-op and counts toward three-fault forfeiture; an import, factory or `reset` failure is an immediate forfeit. If both controllers fail, the match is invalid; JSON summaries include failure messages. Either way, bots are trusted Python with no security sandbox.
 
 ## Encoding and neural controllers
 
