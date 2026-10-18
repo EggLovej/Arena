@@ -76,8 +76,8 @@ class SelfPlaySettings:
     decision_interval: int = 1  # the network decides every Nth tick
     # The networks of the run (the one learning, and the starting model it is checked against)
     # may send at most once every this many ticks, 10 being once a second, and wait in between;
-    # the scripted AIs play as always. 0: no limit. Added 2026-10-05 for an ablation, see
-    # history.md, "Acting once a second".
+    # the scripted AIs play as always. 0: no limit. The checkpoints record it, and are played
+    # under it wherever they go (``players.min_send_gap``).
     min_send_gap: int = 0
     max_seconds: float = 180.0
 
