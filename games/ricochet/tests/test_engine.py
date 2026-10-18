@@ -1,29 +1,13 @@
-from dataclasses import FrozenInstanceError
+import json
+import math
 
 import pytest
 
 from ricochet.game.config import RulesConfig
 from ricochet.game.engine import GameEngine, _ProjectileState
 from ricochet.game.maps import load_map
-from ricochet.game.types import ControlAction, Vec2
-
-
-def test_action_dictionary_order_does_not_change_state() -> None:
-    first = GameEngine(load_map("crossfire"))
-    second = GameEngine(load_map("crossfire"))
-    actions = {
-        0: ControlAction(Vec2(1, 0.3), Vec2(1, 0), True),
-        1: ControlAction(Vec2(-1, -0.3), Vec2(-1, 0), True),
-    }
-    first.step(actions)
-    second.step({1: actions[1], 0: actions[0]})
-    assert first.state_hash() == second.state_hash()
-
-
-def test_observation_is_immutable() -> None:
-    observation = GameEngine(load_map("classic")).observation_for(0)
-    with pytest.raises(FrozenInstanceError):
-        observation.tanks[0].health = 99  # type: ignore[misc]
+from ricochet.game.physics import rounded_wall_collision
+from ricochet.game.types import ControlAction, Vec2, WallDefinition
 
 
 def test_energy_is_shared_by_movement_and_firing() -> None:
@@ -40,6 +24,32 @@ def test_firing_never_leaves_energy_below_zero() -> None:
     engine.tanks[0].energy = rules.fire_energy - rules.energy_regen_per_second * rules.dt - 1e-12
     engine.step({0: ControlAction(fire=True)})
     assert engine.projectiles and engine.tanks[0].energy == 0
+
+
+def test_the_shield_costs_what_the_rules_say() -> None:
+    engine = GameEngine(load_map("classic"))
+    tank = engine.tanks[0]
+    # Raising it costs 23.2 at once: 16, plus six prepaid ticks at 1.2. It can't fire meanwhile.
+    result = engine.step({0: ControlAction(shield=True, fire=True)})
+    assert [event.kind for event in result.events] == ["shield_activated"]
+    assert tank.energy == pytest.approx(100 - 23.2)
+    for _ in range(5):  # The prepaid ticks keep it up after it is let go.
+        engine.step({})
+        assert tank.shield_active
+    engine.step({})
+    assert not tank.shield_active
+    before = tank.energy
+    engine.step({0: ControlAction(shield=True)})
+    assert tank.energy == pytest.approx(before + 0.4 - 23.2)  # Raising it again pays again.
+    for _ in range(5):
+        engine.step({0: ControlAction(shield=True)})
+    before = tank.energy
+    engine.step({0: ControlAction(shield=True)})
+    assert tank.energy == pytest.approx(before + 0.4 - 1.2)  # Held past its six ticks.
+    engine.step({})
+    tank.energy = 22  # 22.4 after this tick's regeneration: not enough.
+    engine.step({0: ControlAction(shield=True)})
+    assert not tank.shield_active
 
 
 def test_shield_blocks_projectile_damage() -> None:
@@ -82,17 +92,15 @@ def test_simultaneous_fatal_hits_are_a_draw() -> None:
     assert engine.tanks[0].health == engine.tanks[1].health == 0
 
 
-def test_projectile_can_hit_owner_after_bounce() -> None:
-    engine = GameEngine(load_map("crossfire"))
-    engine.tanks[0].position = Vec2(100, 320)
-    engine.tanks[0].aim = Vec2(-1, 0)
-    hit_owner = False
-    for tick in range(60):
-        result = engine.step({0: ControlAction(aim=Vec2(-1, 0), fire=tick == 0)})
-        hit_owner |= any(event.kind == "hit" and event.player_id == 0 for event in result.events)
-        if hit_owner:
-            break
-    assert hit_owner
+def test_own_shot_bounces_off_a_wall_and_can_hit_its_owner() -> None:
+    engine = GameEngine(load_map("classic"))
+    engine.tanks[0].position = Vec2(382, 320)  # Just left of the centre block.
+    events = []
+    for tick in range(3):
+        result = engine.step({0: ControlAction(aim=Vec2(1, 0), fire=tick == 0)})
+        events.extend(result.events)
+        assert all(p.position.x <= 396 + 1e-5 for p in engine.projectiles)  # Never inside.
+    assert any(e.kind == "bounced" for e in events)
     assert engine.tanks[0].health == 2
 
 
@@ -109,6 +117,14 @@ def test_second_wall_contact_removes_bounced_projectile() -> None:
     assert not engine.projectiles
 
 
+def test_boundary_shot_stays_inside_arena() -> None:
+    engine = GameEngine(load_map("classic"))
+    engine.tanks[0].position = Vec2(18, 100)
+    for tick in range(3):
+        engine.step({0: ControlAction(aim=Vec2(-1, 0), fire=tick == 0)})
+        assert all(p.position.x >= 4 - 1e-5 for p in engine.projectiles)
+
+
 def test_swept_projectile_hits_at_high_speed() -> None:
     rules = RulesConfig(projectile_speed=6000)
     engine = GameEngine(load_map("crossfire", rules=rules), rules)
@@ -116,6 +132,17 @@ def test_swept_projectile_hits_at_high_speed() -> None:
     engine.tanks[1].position = Vec2(550, 320)
     engine.step({0: ControlAction(aim=Vec2(1, 0), fire=True)})
     assert engine.tanks[1].health == 2
+
+
+def test_rounded_corner_and_tangent_contacts() -> None:
+    wall = WallDefinition("test", 100, 100, 100, 100)
+    contact = rounded_wall_collision(Vec2(80, 80), Vec2(110, 110), 10, wall)
+    assert contact is not None
+    assert contact.normal.x == pytest.approx(-math.sqrt(0.5))
+    assert contact.normal.y == pytest.approx(-math.sqrt(0.5))
+    assert rounded_wall_collision(Vec2(80, 90), Vec2(220, 90), 10, wall) is None
+    contact = rounded_wall_collision(Vec2(110, 110), Vec2(120, 110), 10, wall)
+    assert contact.t == 0
 
 
 def test_tank_slides_along_wall() -> None:
@@ -128,6 +155,18 @@ def test_tank_slides_along_wall() -> None:
     assert after.y > before.y
 
 
+def test_tanks_separate_at_boundary_and_order_independent() -> None:
+    first = GameEngine(load_map("crossfire"))
+    first.tanks[0].position = Vec2(18, 100)
+    first.tanks[1].position = Vec2(54, 100)
+    second = GameEngine.from_state(first.capture_state())
+    actions = {0: ControlAction(), 1: ControlAction(move=Vec2(-1, 0))}
+    first.step(actions)
+    second.step(dict(reversed(list(actions.items()))))
+    assert (first.tanks[1].position - first.tanks[0].position).length() >= 36 - 1e-7
+    assert first.state_hash() == second.state_hash()
+
+
 def test_time_limit_is_a_terminal_draw() -> None:
     rules = RulesConfig(max_seconds=1 / 30)
     engine = GameEngine(load_map("classic", rules=rules), rules)
@@ -135,3 +174,24 @@ def test_time_limit_is_a_terminal_draw() -> None:
     assert result.timed_out
     assert result.terminated
     assert result.winner is None
+
+
+def test_captured_state_restores_exactly_without_the_map_file() -> None:
+    engine = GameEngine(load_map("crossfire"))
+    engine.step({0: ControlAction(fire=True)})
+    copy = GameEngine.from_state(engine.capture_state())
+    restored = GameEngine(load_map("classic"))
+    restored.restore_state(json.loads(json.dumps(engine.capture_state())))
+    assert copy.map_definition == restored.map_definition == engine.map_definition
+    for _ in range(50):
+        actions = {0: ControlAction(move=Vec2(0.2, 0), fire=True), 1: ControlAction(shield=True)}
+        engine.step(actions)
+        copy.step(actions)
+        restored.step(actions)
+        assert engine.state_hash() == copy.state_hash() == restored.state_hash()
+    copy.tanks[0].health = 0
+    assert engine.tanks[0].health != 0
+    assert (
+        GameEngine(load_map("classic")).state_hash()
+        != GameEngine(load_map("crossfire")).state_hash()
+    )

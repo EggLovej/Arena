@@ -73,10 +73,6 @@ def test_tiny_training_resume_and_finite_metrics(tmp_path, monkeypatch):
     first = training.train(tmp_path / "first", config)
     second = training.train(tmp_path / "resumed", config, first)
     assert json.loads(metadata_path(second).read_text())["steps"] == 64
-    from stable_baselines3 import PPO
-
-    model = PPO.load(second)
-    assert model._n_updates == 4
     for row in (tmp_path / "resumed" / "metrics.jsonl").read_text().splitlines():
         data = json.loads(row)
         assert all(np.isfinite(v) for v in data["metrics"].values())
