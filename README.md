@@ -128,6 +128,15 @@ commits the one checkpoint it plays to `checkpoints/`, and lists it and any othe
 files it loads in `files.json`. Open a pull request; once merged, the Tournament
 workflow rates it.
 
+## Adding a board theme
+
+Each game's pages have a theme picker, which redraws every board of that game
+and is remembered on the device. Graphite's themes are the JSON files in
+`games/graphite/themes/` (colours, and optionally a `texture` image or a
+`grid`): add one beside `slate.json`. Ricochet's are the game's own, in
+`ricochet.themes` (see `games/ricochet/docs/themes.md`). Then run
+`python -m arena publish <game>` to list it in the game's `game.json`.
+
 ## Adding a game
 
 1. Put the game in `games/<id>/`, with its rules separate from any user interface.
@@ -146,5 +155,7 @@ workflow rates it.
    board (Graphite's clicks are in `web/src/games/graphite/GraphiteControls.tsx`,
    Ricochet's keyboard and mouse in `web/src/games/ricochet/RicochetControls.tsx`).
    They send commands that a `person(seat)` on `GAME` turns into actions.
+   The board draws each of the game's themes (`themes()` on `GAME`, the default
+   first), and people pick one on the game's pages.
 4. Run `python -m arena tournament <id>` and commit `web/public/data`, or let the
    Tournament workflow do it after merging.

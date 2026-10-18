@@ -153,7 +153,8 @@ window too big for the screen is shrunk to fit.
 - `avatars.py`: portraits for AIs, generated from their names
 - `bot_names.py`: the names AIs are shown by, here and on the website
 - `theme.py`: shared atlas colors, fonts, and image loading
-- `themes/`: the colors, which the website's board uses too
+- `themes/`: the window's colors (`paper_atlas.json`) and the website's other
+  board themes
 - `assets/`: paper texture and faction brush marks
 - `human_controller.py`: mouse input translated into ordinary game actions
 - `main.py`: command-line match runner

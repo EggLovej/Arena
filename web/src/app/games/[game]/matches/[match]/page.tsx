@@ -39,7 +39,7 @@ export default async function MatchPage({ params }: Params) {
       <p className="small">
         <Link href={`/games/${game}/watch`}>Replays</Link> / {map?.name ?? row?.map}: {players.join(" vs ")}
       </p>
-      <ReplayPlayer gameId={game} replayUrl={`/data/${game}/replays/${match}.json`} seats={data.seats} botNames={names} theme={data.theme} />
+      <ReplayPlayer gameId={game} replayUrl={`/data/${game}/replays/${match}.json`} seats={data.seats} botNames={names} themes={data.themes} />
     </>
   );
 }

@@ -1,7 +1,7 @@
 """Shared visual theme for the atlas-style game interface.
 
-The colours live in ``themes/paper_atlas.json``, which the website's renderer
-reads too, so the game window and the site always match.
+The colours live in ``themes/paper_atlas.json``, which is also the website's
+default board theme, so the game window and the site match.
 """
 
 import json
