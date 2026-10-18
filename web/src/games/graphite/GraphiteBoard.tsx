@@ -76,6 +76,14 @@ export function viewBox(board: GraphiteBoardData, compact: boolean): [number, nu
   return [left, top, right - left, bottom - top];
 }
 
+/**
+ * The map a quarter turn anticlockwise, so what was on the left (Red's side on two-player maps)
+ * is at the bottom. Only the bases move: names and numbers stay upright.
+ */
+export function turned(board: GraphiteBoardData): GraphiteBoardData {
+  return { ...board, width: board.height, height: board.width, bases: board.bases.map((base) => ({ ...base, x: base.y, y: board.width - base.x })) };
+}
+
 function textWidth(text: string, size: number): number {
   return text.length * size * 0.56;
 }

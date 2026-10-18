@@ -64,3 +64,11 @@ export function lineupFor(seats: string[], personSeat: string | null, bots: Reco
   const other = playable.includes(fallback) ? fallback : (playable[0] ?? fallback);
   return Object.fromEntries(seats.map((seat) => [seat, seat === personSeat ? PERSON : playable.includes(bots[seat]) ? bots[seat] : other]));
 }
+
+/**
+ * Whether a board drawn `width` × `height` shows larger in a space turned a quarter round, as a
+ * wide map does on a phone held upright. Boards that are nearly square stay as they are.
+ */
+export function largerTurned([width, height]: [number, number], [spaceWidth, spaceHeight]: [number, number]): boolean {
+  return Math.min(spaceWidth / height, spaceHeight / width) > 1.1 * Math.min(spaceWidth / width, spaceHeight / height);
+}

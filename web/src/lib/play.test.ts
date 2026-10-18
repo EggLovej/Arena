@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { PERSON, lineupFor, playsOn, result } from "./play.ts";
+import { PERSON, largerTurned, lineupFor, playsOn, result } from "./play.ts";
 
 test("a seat wins alone, draws when it shares first place, and otherwise loses", () => {
   assert.equal(result({ ranking: [["red"], ["blue"]], reason: "elimination", ticks: 9 }, "red"), "won");
@@ -23,4 +23,10 @@ test("the person in their seat, and in every other the chosen bot if it plays th
     [["red", "blue"], null, { red: "apex" }, ["apex", "strategic"], { red: "apex", blue: "strategic" }],
   ];
   for (const [seats, person, bots, playable, lineup] of cases) assert.deepEqual(lineupFor(seats, person, bots, playable, "strategic"), lineup);
+});
+
+test("a wide board turns on a tall screen, and stays as it is on a wide one or when it is nearly square", () => {
+  assert.equal(largerTurned([1000, 600], [380, 620]), true);
+  assert.equal(largerTurned([1000, 600], [800, 330]), false);
+  assert.equal(largerTurned([1000, 950], [380, 620]), false);
 });

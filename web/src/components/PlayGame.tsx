@@ -5,11 +5,11 @@
 // result. The game brings its board and the controls that lie over it (GameView.play);
 // Python runs the match in a worker (usePlayMatch).
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type ReactNode, type RefObject } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type ReactNode, type RefObject } from "react";
 
 import { gameView } from "@/games/index.ts";
 import { describeOutcome, formatClock, listNames } from "@/lib/format.ts";
-import { PERSON, drawnTick, lineupFor, playsOn, result } from "@/lib/play.ts";
+import { PERSON, drawnTick, largerTurned, lineupFor, playsOn, result } from "@/lib/play.ts";
 import type { GameData } from "@/lib/types.ts";
 
 import { BotAvatar } from "./BotAvatar.tsx";
@@ -215,6 +215,8 @@ function Match({
   const area = useRef<HTMLDivElement>(null);
   const [tools, setTools] = useState<HTMLElement | null>(null); // where the game's own buttons go
   const layer = useRef<SVGSVGElement>(null); // the game's controls, over the board
+  const [space, setSpace] = useState<HTMLElement | null>(null); // the board's share of the screen
+  const size = useSize(space);
   const [full, toggleFull] = useFullScreen(area);
   useEffect(() => {
     if (phase === "countdown" && !full) area.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -276,10 +278,20 @@ function Match({
   const refusal = live.refusal && performance.now() - live.refusal.at < 2500 ? live.refusal.reason : null;
 
   // The frame stays while the next match is set out ("Play again"), so full screen, or the cover over the page, holds.
+  // It fills the screen; how to play is below it.
   const frame = (content: ReactNode) => (
-    <div className={`play${full === "page" ? " is-full" : ""}`} ref={area} style={{ "--seat": person ? seatInfo[person]?.color : undefined } as CSSProperties}>
-      {content}
-    </div>
+    <>
+      <div className={`play${full === "page" ? " is-full" : ""}`} ref={area} style={{ "--seat": person ? seatInfo[person]?.color : undefined } as CSSProperties}>
+        {content}
+      </div>
+      <ul className="play-help">
+        {person &&
+          play.help.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        <li>{keyName(pauseKey)} pauses and carries on. F switches full screen on and off.</li>
+      </ul>
+    </>
   );
   if (!match) {
     return frame(
@@ -290,6 +302,12 @@ function Match({
   }
 
   const position = drawnTick(match.tick, match.playedAt, now, tickMs, phase === "playing");
+  // A wide map turns on its side on a tall screen, where that shows it larger; then the board is
+  // as large as its space allows, and its frame fits it.
+  const [, , width, height] = play.viewBox(match.board);
+  const board = play.turn && size && largerTurned([width, height], size) ? play.turn(match.board) : match.board;
+  const box = play.viewBox(board);
+  const scale = size ? Math.min(size[0] / box[2], size[1] / box[3]) : 0;
   const Board = view.Board;
   const Controls = play.Controls;
   const outcome = match.outcome;
@@ -309,51 +327,60 @@ function Match({
         note={`of ${formatClock((game.maps.find((entry) => entry.id === setup.map)?.max_ticks ?? game.max_ticks) * game.tick_seconds)}`}
       />
 
-      <div className="replay-board play-board">
-        <Board board={match.board} snapshot={match.snapshot} tick={position} tickSeconds={game.tick_seconds} theme={theme} seats={game.seats} />
-        {person && (
-          <Controls
-            board={match.board}
-            snapshot={match.snapshot}
-            theme={theme}
-            seat={person}
-            person={match.people[person]}
-            active={phase === "playing"}
-            send={(command) => live.command(person, command)}
-            tools={tools}
-            layer={{ ref: layer, viewBox: play.viewBox(match.board).join(" "), className: "play-controls-layer" }}
-            toBoard={(event) => {
-              const matrix = layer.current?.getScreenCTM();
-              return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
-            }}
-          />
-        )}
-        {phase === "countdown" && count > 0 && (
-          <div className="play-overlay play-countdown" aria-live="assertive">
-            {count}
-          </div>
-        )}
-        {phase === "paused" && (
-          <button type="button" className="play-overlay play-paused" onClick={live.resume}>
-            Paused. Click or press {keyName(pauseKey)} to carry on.
-          </button>
-        )}
-        {outcome && (
-          <div className="replay-result play-result">
-            <p>
-              {person && <strong>{{ won: "You won!", lost: "You lost.", drew: "A draw." }[result(outcome, person)]} </strong>}
-              {describeOutcome(outcome, setup.lineup, names, seatInfo, game.tick_seconds)}
-            </p>
-            <div className="play-result-actions">
-              <button type="button" onClick={again}>
-                {person ? "Play again" : "Watch again"}
-              </button>
-              <button type="button" onClick={live.leave}>
-                Change
-              </button>
+      <div className="play-space" ref={setSpace}>
+        <div className="replay-board play-board" style={size ? { width: box[2] * scale, height: box[3] * scale } : undefined}>
+          <Board board={board} snapshot={match.snapshot} tick={position} tickSeconds={game.tick_seconds} theme={theme} seats={game.seats} />
+          {person && (
+            <Controls
+              board={board}
+              snapshot={match.snapshot}
+              theme={theme}
+              seat={person}
+              person={match.people[person]}
+              active={phase === "playing"}
+              send={(command) => live.command(person, command)}
+              tools={tools}
+              layer={{ ref: layer, viewBox: box.join(" "), className: "play-controls-layer" }}
+              toBoard={(event) => {
+                const matrix = layer.current?.getScreenCTM();
+                return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
+              }}
+            />
+          )}
+          <p className="play-note" aria-live="polite">
+            {refusal ? (
+              <span className="play-refused">Not sent: {refusal}</span>
+            ) : phase === "playing" && match.pace < 0.85 ? (
+              `The bots are thinking hard, so the game runs at ${Math.round(match.pace * 100)}% speed.`
+            ) : null}
+          </p>
+          {phase === "countdown" && count > 0 && (
+            <div className="play-overlay play-countdown" aria-live="assertive">
+              {count}
             </div>
-          </div>
-        )}
+          )}
+          {phase === "paused" && (
+            <button type="button" className="play-overlay play-paused" onClick={live.resume}>
+              Paused. Click or press {keyName(pauseKey)} to carry on.
+            </button>
+          )}
+          {outcome && (
+            <div className="replay-result play-result">
+              <p>
+                {person && <strong>{{ won: "You won!", lost: "You lost.", drew: "A draw." }[result(outcome, person)]} </strong>}
+                {describeOutcome(outcome, setup.lineup, names, seatInfo, game.tick_seconds)}
+              </p>
+              <div className="play-result-actions">
+                <button type="button" onClick={again}>
+                  {person ? "Play again" : "Watch again"}
+                </button>
+                <button type="button" onClick={live.leave}>
+                  Change
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="replay-controls play-controls">
@@ -374,13 +401,6 @@ function Match({
         <button type="button" onClick={live.leave}>
           {outcome || phase === "failed" ? "New game" : person ? "Give up" : "Stop"}
         </button>
-        <span className="play-notes" aria-live="polite">
-          {refusal ? (
-            <span className="play-refused">Not sent: {refusal}</span>
-          ) : phase === "playing" && match.pace < 0.85 ? (
-            `The bots are thinking hard, so the game runs at ${Math.round(match.pace * 100)}% speed.`
-          ) : null}
-        </span>
       </div>
       {phase === "failed" && <p className="notice">The game stopped because of an error: {live.error}</p>}
       {brokenBots.map(([seat, error]) => (
@@ -388,13 +408,6 @@ function Match({
           {names[setup.lineup[seat]]} ({seatInfo[seat]?.name ?? seat}) stopped working and sits the rest out: {error}
         </p>
       ))}
-      <ul className="play-help">
-        {person &&
-          play.help.map((line) => (
-            <li key={line}>{line}</li>
-          ))}
-        <li>{keyName(pauseKey)} pauses and carries on. F switches full screen on and off.</li>
-      </ul>
     </>,
   );
 }
@@ -473,4 +486,19 @@ function useStoredChoice(game: GameData, preferredMap: string | undefined) {
     }
   };
   return [choice, update] as const;
+}
+
+/** An element's size on screen as [width, height], kept up to date; null until it is there. */
+function useSize(element: HTMLElement | null): [number, number] | null {
+  const [size, setSize] = useState<[number, number] | null>(null);
+  // Measured before the first paint, so a board that turns never shows unturned.
+  useLayoutEffect(() => {
+    if (!element) return;
+    const measure = () => setSize([element.clientWidth, element.clientHeight]);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [element]);
+  return size;
 }
