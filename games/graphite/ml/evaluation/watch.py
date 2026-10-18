@@ -17,8 +17,8 @@ import argparse
 from game import Game
 from game_types import BLUE, RED
 
-from ml.evaluation.evaluate import load_player
 from ml.evaluation.saved_games import SEAT_NAMES, SavedGame, find_game, list_games, load_game, short_name
+from ml.play.players import load_player
 
 
 def recorded_players(saved: SavedGame) -> dict:

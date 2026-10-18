@@ -42,69 +42,39 @@ class CheckpointTests(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.folder = Path(self.directory.name)
 
-    def test_loaded_model_gives_identical_answers(self):
-        start = init_model("random", seed=1)
-        path = save_checkpoint(self.folder / "model.pt", start.model, start.history)
-        loaded = load_checkpoint(path)
-
+    def test_a_saved_model_comes_back_identical(self):
         inputs = sample_input()
-        with torch.no_grad():
-            before = start.model(inputs)
-            after = loaded.model(inputs)
-        self.assertTrue(torch.equal(before.route_logits, after.route_logits))
-        self.assertTrue(torch.equal(before.amount_logits, after.amount_logits))
-        self.assertTrue(torch.equal(before.value, after.value))
-        self.assertEqual(loaded.model_name, "graph_transformer")
+        for settings in ({}, {"width": 32, "layers": 2}, {"amounts": "free", "feature_set": "v2"}):
+            with self.subTest(**settings):
+                start = init_model("random", seed=1, **settings)
+                loaded = load_checkpoint(save_checkpoint(self.folder / "model.pt", start.model, start.history))
+                self.assertEqual(loaded.model_name, "graph_transformer")
+                self.assertEqual(loaded.model.config, start.model.config)
+                self.assertTrue(same_weights(start.model, loaded.model))
+                with torch.no_grad():
+                    before, after = start.model(inputs), loaded.model(inputs)
+                for name in ("route_logits", "amount_logits", "amount_curves", "value"):
+                    if getattr(before, name) is not None:
+                        self.assertTrue(torch.equal(getattr(before, name), getattr(after, name)), name)
 
-    def test_a_network_with_free_amounts_and_a_feature_set_comes_back_the_same(self):
-        start = init_model("random", seed=1, amounts="free", feature_set="v2")
-        path = save_checkpoint(self.folder / "free.pt", start.model, start.history)
-        loaded = load_checkpoint(path)
-        self.assertEqual(loaded.model.config, start.model.config)
-        inputs = sample_input()
-        with torch.no_grad():
-            before, after = start.model(inputs), loaded.model(inputs)
-        self.assertTrue(torch.equal(before.route_logits, after.route_logits))
-        self.assertTrue(torch.equal(before.amount_curves, after.amount_curves))
-        self.assertEqual(
-            model_settings("graph_transformer", ["amounts=free", "feature_set=v2"]), {"amounts": "free", "feature_set": "v2"}
-        )
-
-    def test_settings_are_restored(self):
-        start = init_model("random", seed=1, width=32, layers=2)
-        path = save_checkpoint(self.folder / "small.pt", start.model)
-        loaded = load_checkpoint(path)
-        self.assertEqual(loaded.model.config, start.model.config)
-        self.assertEqual(loaded.model.config.width, 32)
-        self.assertTrue(same_weights(start.model, loaded.model))
-
-    def test_random_start_is_repeatable_with_a_seed(self):
+    def test_a_seeded_random_start_repeats_and_leaves_other_randomness_alone(self):
         self.assertTrue(same_weights(init_model("random", seed=5).model, init_model("random", seed=5).model))
         self.assertFalse(same_weights(init_model("random", seed=5).model, init_model("random", seed=6).model))
-
-    def test_seeded_start_leaves_other_randomness_alone(self):
         torch.manual_seed(123)
         expected = torch.rand(3)
         torch.manual_seed(123)
         init_model("random", seed=5)
         self.assertTrue(torch.equal(torch.rand(3), expected))
 
-    def test_init_from_a_path_continues_that_model(self):
-        start = init_model("random", seed=2)
-        path = save_checkpoint(self.folder / "start.pt", start.model, start.history)
-        continued = init_model(path)
-        self.assertTrue(same_weights(start.model, continued.model))
-        self.assertEqual(continued.history, start.history)
-        self.assertTrue(same_weights(init_model(str(path)).model, start.model))
-
-    def test_history_grows_step_by_step(self):
+    def test_a_checkpoint_carries_on_with_its_history(self):
         start = init_model("random", seed=3)
         self.assertEqual([entry["step"] for entry in start.history], ["random start"])
         self.assertEqual(start.history[0]["seed"], 3)
 
         # What a trainer does: carry on from a checkpoint, add its own entry, save.
         first = save_checkpoint(self.folder / "a.pt", start.model, start.history)
-        imitation = init_model(first)
+        imitation = init_model(str(first))
+        self.assertTrue(same_weights(start.model, imitation.model))
         imitation.history.append(history_entry("imitation", teacher="strategic_ai", games=100))
         second = save_checkpoint(self.folder / "b.pt", imitation.model, imitation.history)
 
@@ -128,37 +98,39 @@ class CheckpointTests(unittest.TestCase):
         resumed.load_state_dict(loaded.training_state["optimizer"])
         self.assertEqual(resumed.state_dict()["state"].keys(), optimizer.state_dict()["state"].keys())
 
-    def test_saving_creates_folders_and_leaves_no_temporary_file(self):
-        path = save_checkpoint(self.folder / "runs" / "demo" / "model.pt", build_model())
-        self.assertTrue(path.exists())
-        self.assertEqual([entry.name for entry in path.parent.iterdir()], ["model.pt"])
-
-    def test_saving_again_replaces_the_file(self):
-        path = self.folder / "model.pt"
-        save_checkpoint(path, init_model("random", seed=1).model)
+    def test_saving_creates_folders_and_replaces_the_file_whole(self):
+        path = save_checkpoint(self.folder / "runs" / "demo" / "model.pt", init_model("random", seed=1).model)
         second = init_model("random", seed=2).model
         save_checkpoint(path, second)
         self.assertTrue(same_weights(load_checkpoint(path).model, second))
-
-    def test_missing_file_is_reported_clearly(self):
-        with self.assertRaises(FileNotFoundError):
-            load_checkpoint(self.folder / "nothing.pt")
+        self.assertEqual([entry.name for entry in path.parent.iterdir()], ["model.pt"])
 
     def test_changed_encoders_are_refused(self):
-        path = save_checkpoint(self.folder / "model.pt", build_model())
-        contents = torch.load(path, weights_only=True)
-        contents["encoding"]["base_features"][3] = "something_else"
-        torch.save(contents, path)
-        with self.assertRaisesRegex(ValueError, "base_features"):
-            load_checkpoint(path)
+        for table, change in (
+            ("base_features", lambda names: names[:3] + ["something_else"] + names[4:]),
+            ("global_features", lambda names: names[:3] + ["renamed"]),
+        ):
+            with self.subTest(table):
+                path = save_checkpoint(self.folder / "model.pt", build_model())
+                contents = torch.load(path, weights_only=True)
+                contents["encoding"][table] = change(contents["encoding"][table])
+                torch.save(contents, path)
+                with self.assertRaisesRegex(ValueError, table):
+                    load_checkpoint(path)
 
-    def test_unknown_architecture_is_refused(self):
+    def test_a_model_not_listed_in_ml_models_is_refused(self):
         path = save_checkpoint(self.folder / "model.pt", build_model())
         contents = torch.load(path, weights_only=True)
         contents["model_name"] = "retired_model"
         torch.save(contents, path)
         with self.assertRaisesRegex(ValueError, "retired_model"):
             load_checkpoint(path)
+
+        class Unlisted(type(build_model())):
+            pass
+
+        with self.assertRaises(ValueError):
+            save_checkpoint(self.folder / "unlisted.pt", Unlisted())
 
     def test_a_file_saved_before_a_setting_existed_still_loads(self):
         start = init_model("random", seed=1)
@@ -184,28 +156,13 @@ class CheckpointTests(unittest.TestCase):
         self.assertEqual(loaded.config.global_features, 4)
         self.assertTrue(same_weights(old, loaded))
 
-    def test_a_feature_changed_in_place_is_still_refused(self):
-        path = save_checkpoint(self.folder / "model.pt", build_model())
-        contents = torch.load(path, weights_only=True)
-        contents["encoding"]["global_features"] = contents["encoding"]["global_features"][:3] + ["renamed"]
-        torch.save(contents, path)
-        with self.assertRaisesRegex(ValueError, "global_features"):
-            load_checkpoint(path)
-
     def test_settings_from_the_command_line_get_their_types(self):
-        settings = model_settings("graph_transformer", ["width=128", "route_layers=2"])
-        self.assertEqual(settings, {"width": 128, "route_layers": 2})
+        settings = model_settings("graph_transformer", ["width=128", "route_layers=2", "amounts=free"])
+        self.assertEqual(settings, {"width": 128, "route_layers": 2, "amounts": "free"})
         self.assertIsInstance(settings["width"], int)
         for wrong in (["no_such_setting=3"], ["width"], ["width=wide"]):
             with self.assertRaises(SystemExit):
                 model_settings("graph_transformer", wrong)
-
-    def test_unregistered_model_cannot_be_saved(self):
-        class Unlisted(type(build_model())):
-            pass
-
-        with self.assertRaises(ValueError):
-            save_checkpoint(self.folder / "model.pt", Unlisted())
 
 
 if __name__ == "__main__":

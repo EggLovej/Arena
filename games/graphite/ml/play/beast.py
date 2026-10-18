@@ -37,7 +37,7 @@ def current(path: Path | None = None) -> dict | None:
 def crown(player: str, why: str, path: Path | None = None) -> dict:
     """Make ``player`` the new Beast; the previous ones are kept in "before"."""
 
-    from ml.evaluation.evaluate import load_player
+    from ml.play.players import load_player
 
     path = path or BEAST_FILE
     load_player(player)  # refuse a name that cannot be played

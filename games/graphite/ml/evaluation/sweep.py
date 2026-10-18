@@ -33,11 +33,11 @@ from dataclasses import asdict, fields, replace
 from game_types import BLUE, RED
 
 import ml.training.runlog
+from ml.evaluation.compare import fit_ratings
 from ml.evaluation.evaluate import DEFAULT_OPPONENTS, evaluation_maps
 from ml.map_generator import generate_map
 from ml.models.checkpoint import init_model, load_checkpoint
 from ml.play.rollout import Matchup, RolloutPool, Seat
-from ml.training.league import fit_ratings
 from ml.training.runlog import read_metrics
 from ml.training.train import TRAINERS, yes_or_no
 

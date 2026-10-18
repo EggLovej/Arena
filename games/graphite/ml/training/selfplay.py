@@ -23,7 +23,7 @@ Started through ``ml/training/train.py``:
 
 import copy
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -34,15 +34,7 @@ from game_types import BLUE, RED
 
 from ml.device import default_device, release_cached_memory
 from ml.encoding.state_encoder import BASE_FEATURES, GLOBAL_FEATURES, PAIR_FEATURES, UNITS_REFERENCE
-from ml.evaluation.evaluate import (
-    DEFAULT_OPPONENTS,
-    FIRST_EVALUATION_SEED,
-    Evaluation,
-    MatchPlan,
-    MatchResult,
-    evaluate,
-    evaluation_maps,
-)
+from ml.evaluation.evaluate import DEFAULT_OPPONENTS, FIRST_EVALUATION_SEED, Evaluation, evaluate, evaluate_model
 from ml.map_generator import generate_map
 from ml.models import DEFAULT_MODEL, PolicyValueModel
 from ml.models.checkpoint import history_entry, init_model, load_checkpoint
@@ -65,26 +57,27 @@ _PATH_TIME = PAIR_FEATURES.index("shortest_path_time")
 _LOG_UNITS = math.log1p(UNITS_REFERENCE)  # the encoder's scale for unit counts
 # The monitor draws charts in the order the groups first appear: results first.
 _CHART_ORDER = (
-    "score", "elo", "promotion match", "training wins", "decided games",
+    "score", "training wins", "decided games",
     "game length", "behaviour", "sends", "entropy", "entropy bonus", "learning problems", "policy change", "value error", "capture error",
 )  # fmt: skip
 
 
 @dataclass(frozen=True)
-class TrainingSettings:
-    """Settings shared by every trainer that learns from its own games."""
-
+class SelfPlaySettings:
     # ---- Games -------------------------------------------------------------------
     rounds: int = 100
     games_per_round: int = 96
+    # One opponent per game, taken in turn. "self" puts the network in both
+    # seats; any other name is an AI file the network plays against.
+    opponents: tuple[str, ...] = (SELF,)
     # Each seat of each game contributes at most this many decisions to the
     # update, picked at random. Neighbouring ticks are nearly identical.
     decisions_per_game: int = 200
     decision_interval: int = 1  # the network decides every Nth tick
     # The networks of the run (the one learning, and the starting model it is checked against)
     # may send at most once every this many ticks, 10 being once a second, and wait in between;
-    # the scripted AIs play as always. 0: no limit. Added 2026-10-05 for an ablation, see
-    # history.md, "Acting once a second".
+    # the scripted AIs play as always. 0: no limit. The checkpoints record it, and are played
+    # under it wherever they go (``players.min_send_gap``).
     min_send_gap: int = 0
     max_seconds: float = 180.0
 
@@ -164,63 +157,6 @@ class TrainingSettings:
     inference: str = "workers"
 
 
-@dataclass(frozen=True)
-class SelfPlaySettings(TrainingSettings):
-    # One opponent per game, taken in turn. "self" puts the network in both
-    # seats; any other name is an AI file the network plays against.
-    opponents: tuple[str, ...] = (SELF,)
-
-
-@dataclass
-class RoundReport:
-    """What the opponent side has to say about a round."""
-
-    metrics: dict[str, float] = field(default_factory=dict)
-    summary: str = ""
-    # True or False when the opponent side decides whether this round's model
-    # becomes the run's best. None leaves that to the evaluation score.
-    promoted: bool | None = None
-
-
-class SelfPlayOpponents:
-    """Who the network meets in training: itself, and any AI files named in the settings.
-
-    The training loop asks this object for each round's games and tells it
-    how the round went. The league provides a different one.
-    """
-
-    def __init__(self, settings: SelfPlaySettings):
-        self.settings = settings
-
-    def begin(self, starting_model, evaluation, pool: RolloutPool, log: RunLog, rng) -> None:
-        """Called once, after the starting model has been evaluated."""
-
-    def models(self) -> dict[str, PolicyValueModel]:
-        """Other models that take part in the games, by player name."""
-
-        return {}
-
-    def matchups(self, rng: np.random.Generator) -> list[Matchup]:
-        return make_matchups(self.settings, rng)
-
-    def statistics(self, records: list[GameRecord]) -> dict[str, float]:
-        return {**game_statistics(records), **behaviour(records)}
-
-    def end_of_round(self, round_number, records, model, evaluation, pool: RolloutPool, rng) -> RoundReport:
-        return RoundReport()
-
-    def closing_report(self) -> str:
-        return ""
-
-    def state(self) -> dict:
-        """What this side must remember to carry on after a restart. Saved with every round's checkpoint."""
-
-        return {}
-
-    def restore(self, state: dict, log: RunLog) -> None:
-        """Called instead of ``begin`` when a run is resumed, with what ``state`` returned last time."""
-
-
 def train_selfplay(
     run_name: str,
     settings: SelfPlaySettings = SelfPlaySettings(),
@@ -231,31 +167,10 @@ def train_selfplay(
     resume: bool = False,
     stop_after: int | None = None,
 ) -> Path:
-    """Run the whole thing and return the path of the best checkpoint."""
-
-    return run_training(
-        run_name, settings, SelfPlayOpponents(settings), "self-play", init, model_name, overwrite, device,
-        resume, stop_after,
-    )
-
-
-def run_training(
-    run_name: str,
-    settings: TrainingSettings,
-    opponents: SelfPlayOpponents,
-    label: str,
-    init: str | Path = "random",
-    model_name: str = DEFAULT_MODEL,
-    overwrite: bool = False,
-    device: torch.device | str | None = None,
-    resume: bool = False,
-    stop_after: int | None = None,
-) -> Path:
-    """The training loop shared by self-play and the league.
+    """Run the whole thing and return the path of the best checkpoint.
 
     ``resume`` carries on an existing run from its ``latest.pt``: weights,
-    optimizer, step size, round number, and whatever the opponents remember
-    (for the league: its champions, results, and ratings). ``stop_after`` ends this process
+    optimizer, step size and round number. ``stop_after`` ends this process
     after that many rounds, so a long run can be split over fresh processes
     (see ``ml/training/train.py --stop-after``).
     """
@@ -263,6 +178,14 @@ def run_training(
     device = torch.device(device) if device else default_device()
     log = RunLog(run_name, settings, overwrite, resume=resume)
     torch.manual_seed(settings.seed)
+
+    def history(rounds: int) -> list[dict]:
+        """The model's history after this many rounds of this run. The run's entry carries
+        its send limit from round 0 on, so every checkpoint plays under it (``players.min_send_gap``)."""
+
+        gap = {"min_send_gap": settings.min_send_gap} if settings.min_send_gap else {}
+        entry = history_entry("self-play", rounds=rounds, games=rounds * settings.games_per_round, run=run_name, **gap)
+        return checkpoint.history + [entry]
 
     if resume:
         checkpoint = load_checkpoint(log.folder / "latest.pt")
@@ -279,10 +202,9 @@ def run_training(
         for group in optimizer.param_groups:
             group["lr"] = learning_rate
         best_score = state.get("best_score", -1.0)
-        opponents.restore(state.get("opponents", {}), log)
         # A different random stream from the first session's, so no maps are repeated.
         rng = np.random.default_rng([settings.seed, first_round])
-        log.say(f"Run '{run_name}': resuming {label} at round {first_round}, learning on {device}")
+        log.say(f"Run '{run_name}': resuming self-play at round {first_round}, learning on {device}")
     else:
         first_round = 1
         rng = np.random.default_rng(settings.seed)
@@ -292,28 +214,24 @@ def run_training(
         optimizer = torch.optim.Adam(model.parameters(), lr=settings.learning_rate)
         learning_rate = settings.learning_rate
         best_score = -1.0
-        log.say(f"Run '{run_name}': {label} starting from {init}, learning on {device}")
-        best = log.save(0, model, checkpoint.history)
+        log.say(f"Run '{run_name}': self-play starting from {init}, learning on {device}")
+        best = log.save(0, model, history(0))
         log.mark_best(best)
 
     if settings.inference not in ("workers", "server"):
         raise ValueError(f"inference must be 'workers' or 'server', not '{settings.inference}'")
     stopped_early = False
     with RolloutPool(settings.workers, inference_device=device if settings.inference == "server" else None) as pool:
-        if not resume:
-            evaluation = None
-            if settings.evaluation_maps > 0:
-                # Round 0: how the starting model does, before it has learned anything here.
-                evaluation = play_evaluation(pool, model, starting_model, settings)
-                scores, best_score = evaluation_scores(evaluation)
-                log.log(0, scores, "before training  |  " + describe_scores(scores))
-            opponents.begin(starting_model, evaluation, pool, log, rng)
+        if not resume and settings.evaluation_maps > 0:
+            # Round 0: how the starting model does, before it has learned anything here.
+            scores, best_score = evaluation_scores(play_evaluation(pool, model, starting_model, settings))
+            log.log(0, scores, "before training  |  " + describe_scores(scores))
 
         for round_number in range(first_round, settings.rounds + 1):
             # 1. Play.
             records = pool.play(
-                opponents.matchups(rng),
-                {SELF: model, **opponents.models()},
+                make_matchups(settings, rng),
+                {SELF: model},
                 seed=int(rng.integers(2**31)),
                 decision_interval=settings.decision_interval,
                 max_seconds=settings.max_seconds,
@@ -338,7 +256,7 @@ def run_training(
             release_cached_memory(device)
 
             metrics = {
-                **opponents.statistics(records), **learned, **value_errors,
+                **game_statistics(records), **behaviour(records), **learned, **value_errors,
                 "learning rate": learning_rate, "entropy bonus/weight": bonus,
             }
             if round_number > settings.value_only_rounds:
@@ -354,35 +272,18 @@ def run_training(
                 f"(always saying 0: {value_errors['value error/always saying 0']:.3f})"
             )
 
-            history = checkpoint.history + [
-                history_entry(
-                    label,
-                    rounds=round_number,
-                    games=round_number * settings.games_per_round,
-                    run=run_name,
-                    **({"min_send_gap": settings.min_send_gap} if settings.min_send_gap else {}),
-                )
-            ]
-
-            evaluation = overall = None
+            overall = None
             if settings.evaluation_maps > 0 and (
                 round_number % settings.evaluate_every == 0 or round_number == settings.rounds
             ):
-                evaluation = play_evaluation(pool, model, starting_model, settings)
-                scores, overall = evaluation_scores(evaluation)
+                scores, overall = evaluation_scores(play_evaluation(pool, model, starting_model, settings))
                 metrics.update(scores)
                 summary += "  |  " + describe_scores(scores)
 
-            report = opponents.end_of_round(round_number, records, model, evaluation, pool, rng)
-            metrics.update(report.metrics)
-            summary += report.summary
-            if report.promoted is None:
-                # Without a league, the best model is the one with the best evaluation score.
-                is_best = (overall is not None and overall > best_score) or settings.evaluation_maps == 0
-                if overall is not None and overall > best_score:
-                    best_score = overall
-            else:
-                is_best = report.promoted
+            # The best model is the one with the best evaluation score; without evaluations, the newest.
+            is_best = (overall is not None and overall > best_score) or settings.evaluation_maps == 0
+            if overall is not None and overall > best_score:
+                best_score = overall
 
             # Everything needed to carry on from here, should this process stop.
             state = {
@@ -390,9 +291,8 @@ def run_training(
                 "round": round_number,
                 "learning_rate": learning_rate,
                 "best_score": best_score,
-                "opponents": opponents.state(),
             }
-            path = log.save(round_number, model, history, state)
+            path = log.save(round_number, model, history(round_number), state)
             if is_best:
                 log.mark_best(path)
             log.log(round_number, in_chart_order(metrics), summary)
@@ -400,10 +300,6 @@ def run_training(
             if stop_after and round_number - first_round + 1 >= stop_after and round_number < settings.rounds:
                 stopped_early = True
                 break
-
-        closing = opponents.closing_report()
-        if closing:
-            print(closing, flush=True)
 
     best = log.folder / "best.pt"
     if stopped_early:
@@ -481,7 +377,7 @@ def behaviour(records: list[GameRecord]) -> dict[str, float]:
     }
 
 
-def entropy_bonus(settings: TrainingSettings, round_number: int) -> float:
+def entropy_bonus(settings: SelfPlaySettings, round_number: int) -> float:
     """This round's reward for staying undecided: halving every ``entropy_half_life`` rounds
     from ``entropy_weight`` towards ``entropy_floor`` (constant without a half-life)."""
 
@@ -492,7 +388,7 @@ def entropy_bonus(settings: TrainingSettings, round_number: int) -> float:
     return floor + (settings.entropy_weight - floor) * 0.5**halvings
 
 
-def hint_weight(settings: TrainingSettings, round_number: int) -> float:
+def hint_weight(settings: SelfPlaySettings, round_number: int) -> float:
     """The rule of thumb's weight in this round: full at round 1, fading to zero."""
 
     if settings.material_hint_rounds <= 0:
@@ -500,7 +396,7 @@ def hint_weight(settings: TrainingSettings, round_number: int) -> float:
     return settings.material_hint * max(0.0, 1 - (round_number - 1) / settings.material_hint_rounds)
 
 
-def adapted_learning_rate(current: float, policy_change: float, settings: TrainingSettings) -> float:
+def adapted_learning_rate(current: float, policy_change: float, settings: SelfPlaySettings) -> float:
     """Smaller steps after a round that moved the policy too far, larger after one that barely moved it."""
 
     if policy_change > settings.target_policy_change * 1.5:
@@ -513,7 +409,7 @@ def adapted_learning_rate(current: float, policy_change: float, settings: Traini
 def judge_moves(
     trajectory: Trajectory,
     final_tick: int,
-    settings: TrainingSettings,
+    settings: SelfPlaySettings,
     hint: float = 0.0,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Score every decision of one seat in one game.
@@ -557,7 +453,7 @@ def judge_moves(
 
 def judged_decisions(
     records: list[GameRecord],
-    settings: TrainingSettings,
+    settings: SelfPlaySettings,
     hint: float,
     rng: np.random.Generator,
     free_amounts: bool = False,
@@ -629,7 +525,7 @@ def update(
     model: PolicyValueModel,
     optimizer: torch.optim.Optimizer,
     decisions: DecisionSet,
-    settings: TrainingSettings,
+    settings: SelfPlaySettings,
     rng: np.random.Generator,
     device: torch.device | str,
     learn_moves: bool = True,
@@ -735,31 +631,14 @@ def play_evaluation(
     pool: RolloutPool,
     model: PolicyValueModel,
     starting_model: PolicyValueModel,
-    settings: TrainingSettings,
+    settings: SelfPlaySettings,
 ) -> Evaluation:
     """Both seats on the evaluation maps against each scripted AI and the starting model."""
 
-    plans = [
-        MatchPlan(map_set, map_key, seat, opponent, 0)
-        for opponent in (*DEFAULT_OPPONENTS, START)
-        for map_set, map_key in evaluation_maps(settings.evaluation_maps, bundled_maps=False)
-        for seat in (RED, BLUE)
-    ]
-    matchups = []
-    for plan in plans:
-        definition = generate_map(int(plan.map_key)).definition
-        gap = settings.min_send_gap
-        opponent = Seat(plan.opponent, min_send_gap=gap if plan.opponent == START else 0)
-        seats = {plan.candidate_seat: Seat(SELF, min_send_gap=gap), -plan.candidate_seat: opponent}
-        matchups.append(Matchup(definition, seats[RED], seats[BLUE]))
-
-    # The same seed every time, so rounds are compared on equal luck.
-    records = pool.play(matchups, {SELF: model, START: starting_model}, seed=settings.seed)
-    results = []
-    for plan, record in zip(plans, records):
-        outcome = "draw" if record.winner is None else "win" if record.winner == plan.candidate_seat else "loss"
-        results.append(MatchResult(plan, outcome, record.ticks * 0.1))
-    return Evaluation("current network", results)
+    return evaluate_model(
+        pool, model, settings.evaluation_maps, (*DEFAULT_OPPONENTS, START), {START: starting_model},
+        settings.min_send_gap, settings.seed,
+    )
 
 
 def evaluation_scores(results: Evaluation) -> tuple[dict[str, float], float]:

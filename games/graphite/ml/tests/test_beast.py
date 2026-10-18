@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -17,7 +18,8 @@ class BeastTests(unittest.TestCase):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         self.file = Path(directory.name) / "beast.json"
-        patcher = mock.patch.object(beast, "BEAST_FILE", self.file)
+        # Beast is whoever the file BEAST_AI_FILE names is about; the Arena adapter sets it when imported.
+        patcher = mock.patch.dict(os.environ, {"BEAST_AI_FILE": str(self.file)})
         patcher.start()
         self.addCleanup(patcher.stop)
 

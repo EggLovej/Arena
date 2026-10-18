@@ -20,12 +20,10 @@ class EntryPointTests(unittest.TestCase):
             with self.subTest(command=name):
                 self.assertTrue(callable(importlib.import_module(module).main))
 
-    def test_without_a_command_it_lists_them_all(self):
+    def test_without_a_known_command_it_lists_them_all(self):
         listing = self.run_main()
         for name in COMMANDS:
             self.assertIn(name, listing)
-
-    def test_an_unknown_command_fails(self):
         with self.assertRaises(SystemExit) as stopped:
             self.run_main("no-such-command")
         self.assertEqual(stopped.exception.code, 2)

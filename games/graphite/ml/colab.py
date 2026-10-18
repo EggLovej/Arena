@@ -13,10 +13,10 @@ unpacks the files into this folder.
     (open ml/colab/benchmark.ipynb in VS Code, pick the Colab runtime, Run All, save)
     .venv/bin/python -m ml colab read --name benchmark
 
-For long runs, ``run`` writes a notebook that starts a script detached on the
-runtime and keeps the run on Google Drive (see ``build_run``):
+For long runs, ``run`` writes a notebook that starts a shell script of your
+commands detached on the runtime and keeps the run on Google Drive (see ``build_run``):
 
-    .venv/bin/python -m ml colab run --name scratch_256 --script ml/scripts/colab_scratch_256.sh \\
+    .venv/bin/python -m ml colab run --name scratch_256 --script scratch_256.sh \\
         --bring-back ml/runs/compare_scratch_256 ml/runs/scratch_256/metrics.jsonl
 
 Notebooks are written to ``ml/colab/``.
@@ -37,12 +37,11 @@ SKIPPED_PARTS = {"__pycache__", "runs", "tests", "colab"}
 BRING_BACK_START, BRING_BACK_END = "=== FILES BACK START ===", "=== FILES BACK END ==="
 
 
-def bundle(include: list[str], with_atlas: bool = False) -> bytes:
+def bundle(include: list[str]) -> bytes:
     """The code and the named extra files, as one zip."""
 
     paths = [path for path in GAME_ROOT.glob("*.py")]
-    folders = ["ais", "maps", "ml"] + (["atlas_model"] if with_atlas else [])
-    for folder in folders:
+    for folder in ("ais", "maps", "ml"):
         for path in (GAME_ROOT / folder).rglob("*"):
             folders_on_the_way = set(path.relative_to(GAME_ROOT).parts[:-1])
             if path.is_file() and path.suffix in (".py", ".json", ".sh") and not SKIPPED_PARTS & folders_on_the_way:
@@ -67,8 +66,8 @@ def _markdown(source: str) -> dict:
     return {"cell_type": "markdown", "metadata": {}, "source": source.splitlines(keepends=True)}
 
 
-def build(name: str, commands: list[str], include: list[str], bring_back: list[str], with_atlas: bool = False) -> Path:
-    packed = base64.encodebytes(bundle(include, with_atlas)).decode()
+def build(name: str, commands: list[str], include: list[str], bring_back: list[str]) -> Path:
+    packed = base64.encodebytes(bundle(include)).decode()
     unpack = (
         '"""Unpack the game and ml/ onto this runtime (packed by ml colab build)."""\n'
         "import base64, io, os, zipfile\n"
@@ -145,14 +144,14 @@ def build(name: str, commands: list[str], include: list[str], bring_back: list[s
 DRIVE = "/content/drive/MyDrive/agent_game"  # where long runs keep their files on the user's Google Drive
 
 
-def build_run(name: str, script: str, include: list[str], bring_back: list[str], with_atlas: bool = False) -> Path:
+def build_run(name: str, script: str, include: list[str], bring_back: list[str]) -> Path:
     """A notebook for a long run: it starts ``script`` detached on the runtime, keeps the run on
     Google Drive (the script copies its files there), shows progress on demand, and sends the
     results back at the end. Running it again on a new runtime carries on where it stopped."""
 
     if not (GAME_ROOT / script).exists():
         raise SystemExit(f"{script} does not exist")
-    packed = base64.encodebytes(bundle(include + [script], with_atlas)).decode()
+    packed = base64.encodebytes(bundle(include + [script])).decode()
     log = f"{DRIVE}/{name}_log.txt"
     cells = [
         _markdown(
@@ -305,22 +304,20 @@ def main() -> None:
     make.add_argument("--command", action="append", required=True, help="A shell command to run there, in the game folder; repeat for more")
     make.add_argument("--include", nargs="*", default=[], help="Files or folders to take along, e.g. a starting checkpoint")
     make.add_argument("--bring-back", nargs="*", default=[], help="Files or folders to send back in the notebook, e.g. ml/runs/NAME")
-    make.add_argument("--with-atlas", action="store_true", help="Also take Atlas's model code (only for games against Atlas)")
     long = actions.add_parser("run", help="Write ml/colab/NAME.ipynb for a long run kept on Google Drive")
     long.add_argument("--name", required=True)
-    long.add_argument("--script", required=True, help="The run's shell script, e.g. ml/scripts/colab_scratch_256.sh")
+    long.add_argument("--script", required=True, help="The run's shell script, a file in the game folder")
     long.add_argument("--include", nargs="*", default=[])
     long.add_argument("--bring-back", nargs="*", default=[])
-    long.add_argument("--with-atlas", action="store_true")
     take = actions.add_parser("read", help="Print a run notebook's output and unpack the files it sent back")
     take.add_argument("--name", required=True)
     take.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
     if args.action in ("build", "run"):
         if args.action == "build":
-            path = build(args.name, args.command, args.include, args.bring_back, args.with_atlas)
+            path = build(args.name, args.command, args.include, args.bring_back)
         else:
-            path = build_run(args.name, args.script, args.include, args.bring_back, args.with_atlas)
+            path = build_run(args.name, args.script, args.include, args.bring_back)
         print(f"Wrote {path} ({path.stat().st_size / 1e6:.1f} MB). Open it in VS Code, pick the Colab runtime, Run All, then save.")
     else:
         text, unpacked = read(args.name, args.overwrite)

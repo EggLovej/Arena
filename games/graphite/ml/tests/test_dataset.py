@@ -29,22 +29,27 @@ class DecisionSetTests(unittest.TestCase):
             decisions.add(trajectory, {"game": np.full(len(trajectory), number), "tick": trajectory.tick})
         return decisions
 
-    def test_counts_every_decision(self):
-        self.assertEqual(len(self.full_set()), sum(len(trajectory) for trajectory in self.trajectories))
+    def test_one_pass_visits_every_decision_exactly_once_shuffled_or_not(self):
+        decisions = self.full_set()
+        self.assertEqual(len(decisions), sum(len(trajectory) for trajectory in self.trajectories))
         self.assertEqual(len(DecisionSet()), 0)
 
-    def test_one_pass_visits_every_decision_exactly_once(self):
-        decisions = self.full_set()
-        seen = []
-        for batch in decisions.batches(64, np.random.default_rng(0)):
-            self.assertLessEqual(len(batch), 64)
-            seen += list(zip(batch.targets["game"].tolist(), batch.targets["tick"].tolist()))
-        expected = [
+        def visited(rng):
+            seen = []
+            for batch in decisions.batches(64, rng):
+                self.assertLessEqual(len(batch), 64)
+                seen += list(zip(batch.targets["game"].tolist(), batch.targets["tick"].tolist()))
+            return seen
+
+        everything = [
             (float(number), float(tick))
             for number, trajectory in enumerate(self.trajectories)
             for tick in trajectory.tick
         ]
-        self.assertEqual(sorted(seen), sorted(expected))
+        in_order, shuffled = visited(None), visited(np.random.default_rng(0))
+        self.assertEqual(sorted(in_order), sorted(everything))
+        self.assertEqual(sorted(shuffled), sorted(everything))
+        self.assertNotEqual(in_order, shuffled)
 
     def test_route_features_survive_maps_with_different_route_counts(self):
         # Maps with the same number of bases share a group even when their
@@ -107,13 +112,6 @@ class DecisionSetTests(unittest.TestCase):
         short = DecisionSet()
         self.assertEqual(short.add(trajectory, max_decisions=10_000), len(trajectory))
 
-    def test_shuffling_changes_the_order_but_not_the_content(self):
-        decisions = self.full_set()
-        in_order = [tick for batch in decisions.batches(32) for tick in batch.targets["tick"].tolist()]
-        shuffled = [tick for batch in decisions.batches(32, np.random.default_rng(3)) for tick in batch.targets["tick"].tolist()]
-        self.assertNotEqual(in_order, shuffled)
-        self.assertEqual(sorted(in_order), sorted(shuffled))
-
     def test_equal_size_batches_all_have_the_full_size_and_miss_nothing(self):
         decisions = self.full_set()
         seen = set()
@@ -127,12 +125,11 @@ class DecisionSetTests(unittest.TestCase):
         }
         self.assertEqual(seen, everything)
 
-    def test_equal_size_works_for_a_group_smaller_than_one_batch(self):
-        decisions = DecisionSet()
+        # A group smaller than one batch still fills one.
+        small = DecisionSet()
         trajectory = self.trajectories[0]
-        decisions.add(trajectory, {"tick": trajectory.tick}, max_decisions=5, rng=np.random.default_rng(0))
-        batches = list(decisions.batches(32, np.random.default_rng(0), equal_size=True))
-        self.assertEqual([len(batch) for batch in batches], [32])
+        small.add(trajectory, {"tick": trajectory.tick}, max_decisions=5, rng=np.random.default_rng(0))
+        self.assertEqual([len(batch) for batch in small.batches(32, np.random.default_rng(0), equal_size=True)], [32])
 
     def test_targets_must_be_the_same_for_every_trajectory(self):
         decisions = DecisionSet()

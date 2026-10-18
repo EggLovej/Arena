@@ -5,9 +5,8 @@ Run from the game directory:
     .venv/bin/python -m ml train imitation --run copy_the_teacher
     .venv/bin/python -m ml train selfplay --run from_scratch
     .venv/bin/python -m ml train selfplay --run from_teacher --init ml/runs/copy_the_teacher/best.pt
-    .venv/bin/python -m ml train league --run my_league --init ml/runs/copy_the_teacher/best.pt
     .venv/bin/python -m ml train kickstart --run bigger --init ml/runs/bigger_start.pt --teacher ml/runs/x/best.pt
-    .venv/bin/python -m ml train league --help
+    .venv/bin/python -m ml train selfplay --help
 
 Every setting of a trainer is available as an option; ``--help`` lists them
 with their defaults. ``--init`` takes "random" or the path of a checkpoint to
@@ -23,7 +22,6 @@ from dataclasses import fields
 from ml.models import DEFAULT_MODEL, MODELS
 from ml.training.imitation import ImitationSettings, train_imitation
 from ml.training.kickstart import KickstartSettings, train_kickstart
-from ml.training.league import LeagueSettings, train_league
 from ml.training.runlog import RUNS_DIRECTORY
 from ml.training.selfplay import SelfPlaySettings, train_selfplay
 
@@ -32,7 +30,6 @@ from ml.training.selfplay import SelfPlaySettings, train_selfplay
 TRAINERS = {
     "imitation": (ImitationSettings, train_imitation),
     "selfplay": (SelfPlaySettings, train_selfplay),
-    "league": (LeagueSettings, train_league),
     "kickstart": (KickstartSettings, train_kickstart),
 }
 
@@ -47,7 +44,7 @@ def parse_args():
         command.add_argument("--model", default=DEFAULT_MODEL, choices=sorted(MODELS), help="Used with --init random")
         command.add_argument("--overwrite", action="store_true", help="Replace an existing run of the same name")
         command.add_argument("--monitor", action="store_true", help="Open the live charts for this run")
-        if name not in ("imitation", "kickstart"):
+        if name == "selfplay":
             command.add_argument(
                 "--resume",
                 action="store_true",

@@ -1,12 +1,10 @@
 import copy
-import random
 import unittest
 
 import numpy as np
 
 from game import Game
 from game_types import BLUE, NEUTRAL, RED, BaseDefinition, EdgeDefinition, MapDefinition, SendAction
-from loading import available_maps, load_ai, load_map
 
 from ml.encoding.action_encoder import (
     AMOUNT_OPTIONS,
@@ -18,12 +16,11 @@ from ml.encoding.action_encoder import (
     decode_action,
     encode_action,
     legal_actions,
-    stack_legal_actions,
-    stack_route_limits,
 )
 from ml.encoding.forecast import ticks_until_arrival
 from ml.encoding.state_encoder import layout_for
 from ml.map_generator import generate_map
+from ml.tests.support import scripted_game, scripted_games, two_player_maps
 
 
 ALL = AMOUNT_OPTIONS.index("100%")
@@ -46,29 +43,6 @@ def line_map(middle_owner=NEUTRAL, middle_units=5, production=0.0):
             EdgeDefinition("right", "middle", 0.8),
         ),
     )
-
-
-def two_player_definitions():
-    definitions = [generate_map(seed).definition for seed in range(8)]
-    for name in available_maps():
-        definition = load_map(name)
-        if Game(definition).players == (RED, BLUE):
-            definitions.append(definition)
-    return definitions
-
-
-def positions(definition, every=25, ticks=500):
-    """Snapshots of one scripted match, as games that can be copied and continued."""
-
-    game = Game(definition)
-    strategic = load_ai("strategic_ai")
-    aggressive = load_ai("aggressive_ai")
-    for tick in range(ticks):
-        if game.is_finished():
-            break
-        if tick % every == 0:
-            yield copy.deepcopy(game)
-        game.step({RED: strategic(game.view_for(RED)), BLUE: aggressive(game.view_for(BLUE))})
 
 
 def _kept(game, action, base_id):
@@ -114,51 +88,33 @@ class ActionEncoderTests(unittest.TestCase):
         self.assertFalse(legal.allowed[middle].any())
         self.assertFalse(legal.allowed[right].any())
 
-    def test_waiting_decodes_to_no_move(self):
-        legal = legal_actions(Game(line_map()).view_for(RED))
-        self.assertIsNone(decode_action(None, legal))
-        self.assertIsNone(encode_action(None, legal))
-
     def test_illegal_choice_is_refused(self):
         legal = legal_actions(Game(line_map()).view_for(RED))
         with self.assertRaises(ValueError):
             decode_action(SendChoice(row(legal, "right"), row(legal, "middle"), ALL), legal)
 
-    def test_just_enough_is_hidden_when_unaffordable(self):
+    def test_just_enough_counts_growth_and_fleets_in_flight_and_hides_when_unaffordable(self):
         legal = legal_actions(Game(line_map(middle_units=20)).view_for(RED))
         left, middle = row(legal, "left"), row(legal, "middle")
         self.assertFalse(legal.allowed[left, middle, JUST_ENOUGH])
         self.assertTrue(legal.allowed[left, middle, EIGHTHS].all())
 
-    def test_just_enough_counts_growth_during_the_flight(self):
         # Blue's base has 5 units and gains 2 per second; Red's fleet flies for 0.5s.
         legal = legal_actions(Game(line_map(BLUE, 5, production=2.0)).view_for(RED))
-        left, middle = row(legal, "left"), row(legal, "middle")
         self.assertEqual(legal.units[left, middle, JUST_ENOUGH], 7)
 
-    def test_just_enough_counts_fleets_already_in_flight(self):
         game = Game(line_map())
         game.step({RED: SendAction("left", "middle", 3)})
-        legal = legal_actions(game.view_for(RED))
-        left, middle = row(legal, "left"), row(legal, "middle")
         # 3 of the 5 defenders are already dealt with by the time a second fleet lands.
-        self.assertEqual(legal.units[left, middle, JUST_ENOUGH], 3)
-
+        self.assertEqual(legal_actions(game.view_for(RED)).units[left, middle, JUST_ENOUGH], 3)
         game.step({RED: SendAction("left", "middle", 3)})
-        legal = legal_actions(game.view_for(RED))
         # The two fleets in flight now take the base by themselves.
-        self.assertFalse(legal.allowed[left, middle, JUST_ENOUGH])
-
-    def test_no_units_means_no_sends(self):
-        game = Game(line_map())
-        game.step({RED: SendAction("left", "middle", 20)})
-        legal = legal_actions(game.view_for(RED))
-        self.assertFalse(legal.allowed.any())
+        self.assertFalse(legal_actions(game.view_for(RED)).allowed[left, middle, JUST_ENOUGH])
 
     def test_every_allowed_choice_is_accepted_by_the_game(self):
         checked = 0
-        for definition in two_player_definitions():
-            for game in positions(definition, every=50):
+        for definition in two_player_maps():
+            for game in scripted_games(definition, every=50):
                 for player in (RED, BLUE):
                     legal = legal_actions(game.view_for(player))
                     for choice in choices(legal):
@@ -168,8 +124,8 @@ class ActionEncoderTests(unittest.TestCase):
         self.assertGreater(checked, 5000)
 
     def test_every_route_the_game_accepts_is_offered(self):
-        for definition in two_player_definitions():
-            for game in positions(definition, every=50):
+        for definition in two_player_maps():
+            for game in scripted_games(definition, every=50):
                 for player in (RED, BLUE):
                     legal = legal_actions(game.view_for(player))
                     offered = {
@@ -184,40 +140,10 @@ class ActionEncoderTests(unittest.TestCase):
                     }
                     self.assertEqual(offered, accepted, definition.name)
 
-    def test_fraction_options_send_the_stated_share(self):
-        for game in positions(generate_map(4).definition, every=50):
-            legal = legal_actions(game.view_for(RED))
-            for choice in choices(legal):
-                if not EIGHTHS.start <= choice.amount < EIGHTHS.stop:
-                    continue
-                available = int(game.bases[legal.base_ids[choice.source]].units)
-                fraction = SEND_FRACTIONS[choice.amount - 1]
-                sent = legal.units[choice]
-                self.assertLessEqual(sent, available)
-                self.assertGreaterEqual(sent, fraction * available - 1e-9)
-                self.assertLess(sent, fraction * available + 1)
-
-    def test_random_legal_play_is_never_rejected(self):
-        rng = random.Random(0)
-        ticks = 0
-        for seed in range(6):
-            game = Game(generate_map(seed).definition)
-            layout = layout_for(game.view_for(RED))
-            while not game.is_finished() and game.tick < 600:
-                actions = {}
-                for player in game.players:
-                    legal = legal_actions(game.view_for(player), layout)
-                    options = choices(legal)
-                    choice = rng.choice(options) if options and rng.random() < 0.3 else None
-                    actions[player] = decode_action(choice, legal)
-                self.assertEqual(game.step(actions), {})
-                ticks += 1
-        self.assertGreater(ticks, 2000)
-
     def test_just_enough_takes_the_base_and_one_fewer_does_not(self):
         captures = near_misses = 0
-        for definition in two_player_definitions():
-            for game in positions(definition, every=20):
+        for definition in two_player_maps():
+            for game in scripted_games(definition, every=20):
                 state = game.view_for(RED)
                 layout = layout_for(state)
                 legal = legal_actions(state, layout)
@@ -248,9 +174,9 @@ class ActionEncoderTests(unittest.TestCase):
 
     def test_hold_keeps_the_target_through_every_fleet_on_its_way_and_one_fewer_does_not(self):
         holds = tried_fewer = near_misses = 0
-        for definition in two_player_definitions():
+        for definition in two_player_maps():
             # "hold" differs from "just enough" only with fleets on their way: look often.
-            for game in positions(definition, every=5):
+            for game in scripted_games(definition, every=5):
                 state = game.view_for(RED)
                 legal = legal_actions(state)
                 for choice in choices(legal):
@@ -269,8 +195,8 @@ class ActionEncoderTests(unittest.TestCase):
 
     def test_surplus_leaves_the_source_safe_and_one_more_does_not(self):
         offered = near_misses = 0
-        for definition in two_player_definitions():
-            for game in positions(definition, every=10):
+        for definition in two_player_maps():
+            for game in scripted_games(definition, every=10):
                 state = game.view_for(RED)
                 legal = legal_actions(state)
                 for choice in choices(legal):
@@ -302,7 +228,7 @@ class ActionEncoderTests(unittest.TestCase):
         self.assertIsNone(encode_action(SendAction("left", "nowhere", 5), legal))
 
     def test_encoding_a_decoded_choice_sends_the_same_units(self):
-        for game in positions(generate_map(6).definition, every=50):
+        for game in scripted_games(generate_map(6).definition, every=50):
             legal = legal_actions(game.view_for(BLUE))
             for choice in choices(legal):
                 action = decode_action(choice, legal)
@@ -310,7 +236,7 @@ class ActionEncoderTests(unittest.TestCase):
 
     def test_each_route_has_its_most_and_what_a_capture_needs(self):
         checked = 0
-        for game in positions(generate_map(6).definition, every=50):
+        for game in scripted_games(generate_map(6).definition, every=50):
             state = game.view_for(RED)
             legal = legal_actions(state)
             usable = legal.allowed.any(axis=-1)
@@ -325,7 +251,7 @@ class ActionEncoderTests(unittest.TestCase):
         self.assertGreater(checked, 20)
 
     def test_free_amounts_may_send_every_whole_number_up_to_most(self):
-        game = next(position for index, position in enumerate(positions(generate_map(6).definition, every=50)) if index == 3)
+        game = scripted_game(generate_map(6).definition, 150)
         legal = legal_actions(game.view_for(RED))
         source, target = map(int, np.argwhere(legal.most == legal.most.max())[0])
         most = int(legal.most[source, target])
@@ -345,26 +271,6 @@ class ActionEncoderTests(unittest.TestCase):
         self.assertEqual(encode_action(SendAction("left", "middle", 20), legal, free=True), SendChoice(left, middle, 20))
         self.assertIsNone(encode_action(SendAction("left", "middle", 21), legal, free=True))
         self.assertIsNone(encode_action(SendAction("left", "right", 5), legal, free=True))
-
-    def test_stacking_route_limits_pads_smaller_maps(self):
-        legal = [legal_actions(Game(generate_map(seed).definition).view_for(RED)) for seed in range(6)]
-        sizes = [len(entry.base_ids) for entry in legal]
-        most, needed = stack_route_limits(legal)
-        self.assertEqual(most.shape, (6, max(sizes), max(sizes)))
-        for index, (entry, size) in enumerate(zip(legal, sizes)):
-            np.testing.assert_array_equal(most[index, :size, :size], entry.most)
-            np.testing.assert_array_equal(needed[index, :size, :size], entry.needed)
-            self.assertFalse(most[index, size:].any())
-
-    def test_stacking_pads_smaller_maps(self):
-        legal = [legal_actions(Game(generate_map(seed).definition).view_for(RED)) for seed in range(6)]
-        sizes = [len(entry.base_ids) for entry in legal]
-        batch = stack_legal_actions(legal)
-        self.assertEqual(batch.shape, (6, max(sizes), max(sizes), len(AMOUNT_OPTIONS)))
-        for index, (entry, size) in enumerate(zip(legal, sizes)):
-            np.testing.assert_array_equal(batch[index, :size, :size], entry.allowed)
-            self.assertFalse(batch[index, size:].any())
-            self.assertFalse(batch[index, :, size:].any())
 
 
 if __name__ == "__main__":

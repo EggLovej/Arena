@@ -54,10 +54,11 @@ from ml.encoding.state_encoder import (
     build_layout,
     encode_state,
 )
-from ml.evaluation.evaluate import MATCH_SECONDS, fresh_ai, keeps_memory, outcome_for
+from ml.evaluation.evaluate import MATCH_SECONDS, outcome_for
 from ml.map_generator import generate_map
 from ml.models import PolicyValueModel, build_model, name_of
 from ml.play.inference import BufferShape, InferenceServer, LocalInference, RemoteInference, Request
+from ml.play.players import keeps_memory, load_player
 
 
 WAIT = -1  # stored in place of a source, target, and amount when the choice was to wait
@@ -292,9 +293,9 @@ def _positions_to_decide(
                 if seat not in run.players:
                     # An AI that remembers things during a match gets its own player in every game.
                     if spec.player not in scripted:
-                        scripted[spec.player] = (_load_scripted(spec.player), keeps_memory(spec.player))
+                        scripted[spec.player] = (load_player(spec.player), keeps_memory(spec.player))
                     player, per_game = scripted[spec.player]
-                    run.players[seat] = _load_scripted(spec.player) if per_game else player
+                    run.players[seat] = load_player(spec.player) if per_game else player
                 player = run.players[seat]
                 run.moves[seat] = player(state)
                 if not run.may_send(seat):
@@ -346,7 +347,6 @@ class RolloutPool:
         # worker's positions in batches there (see ml/play/inference.py). Without one, each
         # worker runs its own copy of the models on its CPU core.
         self.inference_device = inference_device
-        self.last_batching = None  # with a server: (batches, positions) of the last play
         self._pool = multiprocessing.get_context("spawn").Pool(self.workers, initializer=_prepare_worker)
         self._manager = None  # started on first use, for reporting finished games (see ``play``)
 
@@ -425,7 +425,6 @@ class RolloutPool:
                 results = pending.get()
         finally:
             if server is not None:
-                self.last_batching = (server.batches, server.positions)
                 server.close()
         records: list[GameRecord | None] = [None] * len(matchups)
         for hand, played in zip(hands, results):
@@ -444,40 +443,6 @@ class RolloutPool:
 
     def __exit__(self, *exception) -> None:
         self.close()
-
-
-def replay(record: GameRecord) -> Game:
-    """Play a recorded game again from its list of moves, and return the finished game."""
-
-    game = Game(record.matchup.map)
-    moves: dict[int, dict[int, SendAction]] = {}
-    for tick, seat, source_id, target_id, units in record.actions:
-        moves.setdefault(tick, {})[seat] = SendAction(source_id, target_id, units)
-    while game.tick < record.ticks:
-        game.step(moves.get(game.tick, {}))
-    return game
-
-
-def match_score(
-    pool: "RolloutPool",
-    first: str,
-    second: str,
-    maps: list[MapDefinition],
-    models: dict[str, PolicyValueModel] | None = None,
-    seed: int = 0,
-    max_seconds: float = MATCH_SECONDS,
-) -> float:
-    """``first``'s score against ``second``: every map from both seats, wins 1 and draws 1/2."""
-
-    matchups = []
-    for definition in maps:
-        matchups += [Matchup(definition, Seat(first), Seat(second)), Matchup(definition, Seat(second), Seat(first))]
-    records = pool.play(matchups, models, seed=seed, max_seconds=max_seconds)
-    points = 0.0
-    for number, record in enumerate(records):
-        seat = RED if number % 2 == 0 else BLUE
-        points += 0.5 if record.winner is None else float(record.winner == seat)
-    return points / len(records)
 
 
 def count_decisions(records: list[GameRecord]) -> int:
@@ -627,14 +592,6 @@ class _RunningGame:
             for seat, recorder in self.recorders.items()
         ]
         return GameRecord(self.matchup, self.game.winner(), self.game.tick, self.actions, trajectories)
-
-
-def _load_scripted(name: str):
-    """An AI file from ais/, or a network that thinks first (``value:PATH``, ``lookahead:PATH``)."""
-
-    from ml.play.players import is_network_player, network_player
-
-    return network_player(name) if is_network_player(name) else fresh_ai(name)
 
 
 def _prepare_worker() -> None:

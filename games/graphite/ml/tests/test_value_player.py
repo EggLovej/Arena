@@ -10,11 +10,10 @@ from loading import load_ai, load_map
 
 from ml.encoding.action_encoder import AMOUNT_OPTIONS, JUST_ENOUGH, SendChoice, decode_action, legal_actions
 from ml.encoding.state_encoder import BASE_FEATURES, encode_state
-from ml.evaluation.evaluate import load_player
 from ml.map_generator import generate_map
 from ml.models.checkpoint import init_model, save_checkpoint
 from ml.models.interface import ModelInput, PolicyValueModel, Scores
-from ml.play.players import network_player
+from ml.play.players import load_player, network_player
 from ml.play.rollout import Matchup, Seat, play_games
 from ml.play.value_player import ValuePlayer, ValueSettings, after_send
 

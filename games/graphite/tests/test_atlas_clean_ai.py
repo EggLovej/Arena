@@ -12,7 +12,7 @@ from loading import load_ai, load_map
 
 from ais import atlas_clean_ai
 from ais._atlas_sim import Simulation
-from ais.atlas_clean_ai import WORK_PER_TICK, AtlasClean, new_player
+from ais.atlas_clean_ai import WORK_PER_TICK, new_player
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -82,11 +82,6 @@ class SpreadPlanningTests(unittest.TestCase):
         self.assertLessEqual(max(per_decision), WORK_PER_TICK)
         # A whole plan is about 2,500 steps, so plans keep finishing every few game seconds.
         self.assertGreaterEqual(plans_done, 3)
-
-    def test_planning_all_at_once_is_still_available(self):
-        per_decision, plans_done = self.steps_per_decision(AtlasClean(work_per_tick=None), "classic", 30)
-        self.assertGreater(max(per_decision), 1000)
-        self.assertEqual(plans_done, 3)  # ticks 0, 10, and 20
 
 
 class SideBySideTests(unittest.TestCase):

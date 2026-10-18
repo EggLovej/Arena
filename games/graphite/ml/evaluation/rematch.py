@@ -20,8 +20,9 @@ from multiprocessing import Pool
 
 from game_types import BLUE, RED
 
-from ml.evaluation.evaluate import _prepare_worker, load_player, outcome_for, play_match
+from ml.evaluation.evaluate import _prepare_worker, outcome_for, play_match
 from ml.evaluation.saved_games import SEAT_NAMES, SavedGame, find_game, list_games, load_game
+from ml.play.players import load_player
 
 
 def rematch(saved: SavedGame, games: int = 50, candidate: str | None = None, workers: int | None = None) -> dict:
