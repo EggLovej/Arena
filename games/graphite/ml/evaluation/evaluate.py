@@ -199,7 +199,8 @@ def evaluate_model(
     rounds on equal luck.
     """
 
-    from ml.play.rollout import Matchup, Seat  # here, as the rollouts import this module
+    # Imported here, as the rollouts import this module.
+    from ml.play.rollout import Matchup, Seat
 
     networks = {TRAINING: model, **(models or {})}
     plans = [
