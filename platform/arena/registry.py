@@ -1,8 +1,9 @@
 """Find and load the games in ``games/``, and the files each one's matches depend on.
 
 A game is a folder ``games/<id>/`` with an ``arena_game.py`` that defines
-``GAME`` (see ``arena.contract``). Loading a game may change ``sys.path`` and the
-working directory (Graphite's does), so load one game per process.
+``GAME`` (see ``arena.contract``). Loading a game puts its own folders on
+``sys.path``, where Graphite's modules have plain names such as ``game``, so load
+one game per process.
 """
 
 from __future__ import annotations
@@ -22,15 +23,8 @@ def repo_root() -> Path:
     """The Arena checkout: ``ARENA_ROOT`` if set, else the folder above ``platform/``."""
 
     if os.environ.get("ARENA_ROOT"):
-        return _resolve(os.environ["ARENA_ROOT"])
+        return Path(os.environ["ARENA_ROOT"]).resolve()
     return Path(__file__).resolve().parents[2]
-
-
-@cache
-def _resolve(path: str) -> Path:
-    # Once only: a relative ARENA_ROOT means relative to where we started, and loading a
-    # game can change the working directory.
-    return Path(path).resolve()
 
 
 def games_directory() -> Path:
