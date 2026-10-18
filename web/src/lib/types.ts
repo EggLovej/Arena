@@ -26,6 +26,9 @@ export type BotEntry = {
   sits_out?: string[]; // map groups the bot leaves out of tournaments
 };
 
+/** One of the looks a game's board can be drawn in; the rest of it is the game's board's own. */
+export type Theme = { id: string; name: string; description: string };
+
 export type GameData = {
   id: string;
   name: string;
@@ -35,7 +38,7 @@ export type GameData = {
   max_ticks: number;
   rating_anchor: [string, number] | null;
   rules: string;
-  theme: unknown;
+  themes: Theme[]; // the default first
   maps: MapEntry[];
   bots: BotEntry[];
 };

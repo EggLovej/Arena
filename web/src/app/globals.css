@@ -424,15 +424,15 @@ select:hover {
 }
 
 .game-header {
-  margin-bottom: 1.4rem;
-}
-
-.preview-header {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
   gap: 1rem 2rem;
+  margin-bottom: 1.4rem;
+}
+
+.preview-header {
   margin-bottom: 2rem;
 }
 
@@ -528,6 +528,76 @@ select:hover {
   border-bottom-color: var(--accent);
 }
 
+/* The themes beside a game's name, each a small board in that theme */
+.theme-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.theme-picker legend {
+  padding: 0;
+  margin-bottom: 0.45rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.theme-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.theme-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.theme-option-art {
+  width: 78px;
+  aspect-ratio: 3 / 2;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.theme-option:hover {
+  color: var(--text);
+}
+
+.theme-option:has(:checked) {
+  color: var(--accent-text);
+}
+
+.theme-option:has(:checked) .theme-option-art {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.theme-option:has(:focus-visible) .theme-option-art {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
+/* A board in its game's chosen theme (ThemedBoard): the wrapper is only a marker,
+   and the board lays out as if it were not there. */
+.board {
+  display: contents;
+}
+
 /* A game's overview */
 
 .overview {
@@ -602,7 +672,7 @@ select:hover {
     linear-gradient(var(--c), var(--c)) bottom right / 2px 20px no-repeat;
 }
 
-.stage > svg {
+.stage > .board > svg {
   display: block;
   border-radius: 3px;
 }

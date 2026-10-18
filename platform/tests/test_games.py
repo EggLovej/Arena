@@ -19,7 +19,7 @@ def game(request):
     return load_game(request.param)
 
 
-def test_maps_bots_and_seats(game):
+def test_maps_bots_seats_and_themes(game):
     seats = {seat.id for seat in game.info.seats}
     maps = game.maps()
     assert maps and all(map_info.seats and set(map_info.seats) <= seats for map_info in maps)
@@ -27,6 +27,9 @@ def test_maps_bots_and_seats(game):
     assert len(bots) == len(game.bots()) and all(bot.name and bot.description for bot in bots.values())
     anchor = game.info.rating_anchor
     assert anchor is None or bots[anchor[0]].leaderboard
+    themes = game.themes()
+    assert themes and len({theme["id"] for theme in themes}) == len(themes)
+    assert all(theme["name"] and theme["description"] for theme in themes)
 
 
 def test_a_match_replays_exactly(game):
