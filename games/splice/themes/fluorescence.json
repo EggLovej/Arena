@@ -1,0 +1,19 @@
+{
+  "id": "fluorescence",
+  "name": "Fluorescence",
+  "description": "Glowing cells in the dark, as a fluorescence microscope shows them.",
+  "glow": true,
+  "colors": {
+    "background": "#05080f",
+    "rim": "#16202e",
+    "cell": "#0b1220",
+    "line": "#1e2c40",
+    "ink": "#e6f1ff",
+    "highlight": "#ffffff"
+  },
+  "players": {
+    "magenta": { "fill": "#ff3fa4", "light": "#ffc2e2", "dark": "#7a1250" },
+    "cyan": { "fill": "#2fe3ec", "light": "#c4fbff", "dark": "#0c5d66" },
+    "amber": { "fill": "#ffbf2e", "light": "#fff0c2", "dark": "#7a5200" }
+  }
+}

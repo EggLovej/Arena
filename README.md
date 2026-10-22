@@ -5,8 +5,9 @@ strategies, search, and neural networks trained by self-play. Watch the bots
 play each other, see who leads the ratings, and play against them yourself.
 
 The games are **Graphite**, real-time strategy on a graph, **Ricochet**, a
-tank duel where every shot may bounce once, and **Epoch**, two bases on one
-lane racing each other through the ages.
+tank duel where every shot may bounce once, **Epoch**, two bases on one
+lane racing each other through the ages, and **Splice**, turn-based territory
+on hexagons where a piece wins over every neighbour where it lands.
 
 ## What's where
 
@@ -50,12 +51,14 @@ game's rules, maps or adapter may no longer match, which is only noted, since
 the next tournament replaces it. A full Graphite tournament is about 700
 matches; most take under a second, but the search bots take up to a few
 minutes a match, so it runs for an hour or two on four cores. Ricochet's 240
-matches take a few minutes, and Epoch's 60 under a minute.
+matches take a few minutes, Epoch's 60 under a minute and Splice's 120 about
+a minute.
 
 Graphite and Ricochet still run on their own, with their Pygame clients and
 training code: see [games/graphite/README.md](games/graphite/README.md) and
-[games/ricochet/README.md](games/ricochet/README.md). Epoch is played on the
-site only: see [games/epoch/README.md](games/epoch/README.md).
+[games/ricochet/README.md](games/ricochet/README.md). Epoch and Splice are
+played on the site only: see [games/epoch/README.md](games/epoch/README.md) and
+[games/splice/README.md](games/splice/README.md).
 
 ## Ratings
 
@@ -63,8 +66,8 @@ Every match is a ranking of its players. The ratings are the Plackett-Luce
 model fitted to all of a tournament's results at once: with two players this
 is the Elo model, and it extends to any number of players per match. They are
 shown on the Elo scale, where 100 points more wins about 64% of games, with
-one bot pinned (Graphite pins Strategic at 1000, Ricochet pins Direct and
-Epoch pins Balanced). Each match size gets its
+one bot pinned (Graphite pins Strategic at 1000, Ricochet pins Direct, Epoch
+pins Balanced and Splice pins Greedy). Each match size gets its
 own table, since being good in a duel and in a three-way fight are different
 skills. The ± is a 95% interval for a bot's rating relative to the others.
 See `platform/arena/ratings.py`.
@@ -137,7 +140,8 @@ workflow rates it.
 Each game's pages have a theme picker, which redraws every board of that game
 and is remembered on the device. Graphite's themes are the JSON files in
 `games/graphite/themes/` (colours, and optionally a `texture` image or a
-`grid`): add one beside `slate.json`. Ricochet's are the game's own, in
+`grid`): add one beside `slate.json`. Splice's are JSON files too, in
+`games/splice/themes/`. Ricochet's are the game's own, in
 `ricochet.themes` (see `games/ricochet/docs/themes.md`). Epoch has one so
 far, in `themes()` in `games/epoch/arena_game.py`. Then run
 `python -m arena publish <game>` to list it in the game's `game.json`.

@@ -8,11 +8,13 @@ import type { GameView } from "./types.ts";
 import { epoch } from "./epoch/index.ts";
 import { graphite } from "./graphite/index.ts";
 import { ricochet } from "./ricochet/index.ts";
+import { splice } from "./splice/index.ts";
 
 export const GAME_VIEWS: Record<string, GameView> = {
   graphite,
   ricochet,
   epoch,
+  splice,
 };
 
 export function gameView(id: string): GameView {

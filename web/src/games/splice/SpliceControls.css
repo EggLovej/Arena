@@ -1,0 +1,21 @@
+/* Splice's marks over the board while a person plays (SpliceControls.tsx). */
+
+/* The cells the selected piece can jump to. */
+.splice-target {
+  fill: none;
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+  opacity: 0.8;
+}
+
+/* Invisible until a cell has the keyboard's focus. */
+.splice-key {
+  fill: transparent;
+  stroke-width: 0;
+  outline: none;
+}
+
+.splice-key:focus-visible {
+  stroke-width: 2.5;
+  stroke-dasharray: 5 3;
+}
