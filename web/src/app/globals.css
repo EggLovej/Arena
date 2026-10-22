@@ -686,6 +686,7 @@ select:hover {
 }
 
 .hud-seat {
+  container: hud-seat / inline-size;
   flex: 1 1 0;
   min-width: 0;
   display: grid;
@@ -775,23 +776,15 @@ select:hover {
   font-variant-numeric: tabular-nums;
 }
 
-/* A narrow board: each seat's name above its numbers. */
-@container stage (max-width: 620px) {
-  .hud {
-    gap: 6px;
-  }
-
-  .hud-seat {
-    grid-template-columns: minmax(0, 1fr);
-    padding: 6px 8px 8px;
+/* A narrow seat, on a narrow board or beside three others: its name above its numbers. */
+@container hud-seat (max-width: 220px) {
+  .hud-name,
+  .hud-stats {
+    grid-column: 1 / -1;
   }
 
   .hud-seat.is-right .hud-name {
     order: 0;
-  }
-
-  .hud-seat.is-right .hud-stats {
-    text-align: right;
   }
 
   .hud-stats {
@@ -811,6 +804,24 @@ select:hover {
 
   .hud-stats span + span::before {
     content: none;
+  }
+}
+
+/* Too narrow for numbers at all, beside three others on a phone: the bar under the name shows how the seat is doing. */
+@container hud-seat (max-width: 120px) {
+  .hud-stats {
+    display: none;
+  }
+}
+
+/* A narrow board. */
+@container stage (max-width: 620px) {
+  .hud {
+    gap: 6px;
+  }
+
+  .hud-seat {
+    padding: 6px 8px 8px;
   }
 
   .overview-stage .stage-legend {
