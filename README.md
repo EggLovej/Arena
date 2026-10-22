@@ -6,8 +6,8 @@ play each other, see who leads the ratings, and play against them yourself.
 
 The games are **Graphite**, real-time strategy on a graph, **Ricochet**, a
 tank duel where every shot may bounce once, and **Epoch**, two bases on one
-lane racing each other through the ages. Epoch is hidden from the site for
-now (see `web/src/games/index.ts`); its tournament still runs.
+lane racing each other through Age of War's five ages. Epoch is hidden from
+the site for now (see `web/src/games/index.ts`); its tournament still runs.
 
 ## What's where
 
@@ -94,7 +94,9 @@ playing worse.
 The same page can seat a bot in every place, to watch any bots play each
 other live. The match fills the screen, a phone's too: a game can turn a wide
 board a quarter round to fill an upright phone (`PlayView.turn`; Graphite
-does), and full screen (the F key) hides the rest of the page. A bot that sits out a
+does), and full screen (the F key) hides the rest of the page. A game may bring
+music that loops while a match plays (`PlayView.music`; Epoch does), with a
+button to mute it. A bot that sits out a
 group of maps in the tournaments (`BotInfo.sits_out`, such as Graphite's large
 maps) isn't offered for them there either, and each map keeps its own time
 limit (`MapInfo.max_ticks`).
