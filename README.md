@@ -8,7 +8,8 @@ The games are **Graphite**, real-time strategy on a graph, **Ricochet**, a
 tank duel where every shot may bounce once, **Epoch**, two bases on one lane
 racing each other through the ages, **Blast**, bombs on a grid for two to four
 players, and **Splice**, turn-based territory on hexagons where a piece wins
-over every neighbour where it lands.
+over every neighbour where it lands. Epoch is hidden from the site for now (see
+`web/src/games/index.ts`); its tournament still runs.
 
 ## What's where
 
