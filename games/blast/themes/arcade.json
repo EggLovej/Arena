@@ -1,0 +1,40 @@
+{
+  "id": "arcade",
+  "name": "Arcade",
+  "description": "Neon tiles on a dark cabinet screen.",
+  "colors": {
+    "floor": "#17142b",
+    "floor_alt": "#1c1934",
+    "wall": "#3a2f6b",
+    "wall_light": "#7b64e6",
+    "wall_dark": "#221b45",
+    "crate": "#2f6d78",
+    "crate_dark": "#58e1ef",
+    "ink": "#0b0a16",
+    "bomb": "#f2f0ff",
+    "flame": "#ff3d8b",
+    "flame_core": "#ffe0f0",
+    "shadow": "rgb(0 0 0 / 0.35)",
+    "power": "#211d3d",
+    "power_edge": "#58e1ef",
+    "speed": "#ffd23f"
+  },
+  "players": {
+    "red": {
+      "fill": "#ff5470",
+      "dark": "#a32a40"
+    },
+    "blue": {
+      "fill": "#4fa3ff",
+      "dark": "#245c9e"
+    },
+    "green": {
+      "fill": "#3ef0a1",
+      "dark": "#1c8f5b"
+    },
+    "yellow": {
+      "fill": "#ffd23f",
+      "dark": "#a6841a"
+    }
+  }
+}
