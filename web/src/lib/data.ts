@@ -25,11 +25,12 @@ function read<T>(...parts: string[]): T | null {
   return value;
 }
 
-/** Every published game, in the order src/games/index.ts lists them. */
+/** Every published game that src/games/index.ts lists, in its order. */
 export function listGames(): GameSummary[] {
   const order = Object.keys(GAME_VIEWS);
-  const place = (id: string) => (order.includes(id) ? order.indexOf(id) : order.length);
-  return [...(read<GameSummary[]>("games.json") ?? [])].sort((a, b) => place(a.id) - place(b.id));
+  return (read<GameSummary[]>("games.json") ?? [])
+    .filter((game) => order.includes(game.id))
+    .sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
 }
 
 export function getGame(id: string): GameData {
