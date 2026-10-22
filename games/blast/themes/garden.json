@@ -1,0 +1,40 @@
+{
+  "id": "garden",
+  "name": "Garden",
+  "description": "A sunny lawn between stone pillars, with wooden crates.",
+  "colors": {
+    "floor": "#8cc65f",
+    "floor_alt": "#80bc54",
+    "wall": "#9a9da6",
+    "wall_light": "#c4c7cf",
+    "wall_dark": "#6c7079",
+    "crate": "#cf9150",
+    "crate_dark": "#8f5a2a",
+    "ink": "#2b2420",
+    "bomb": "#2c2c35",
+    "flame": "#ff8a1c",
+    "flame_core": "#fff1a6",
+    "shadow": "rgb(30 40 20 / 0.22)",
+    "power": "#fff7e6",
+    "power_edge": "#c9772f",
+    "speed": "#2f8fe0"
+  },
+  "players": {
+    "red": {
+      "fill": "#e2483c",
+      "dark": "#9b2b23"
+    },
+    "blue": {
+      "fill": "#3b74d9",
+      "dark": "#24488c"
+    },
+    "green": {
+      "fill": "#2fa86a",
+      "dark": "#1c6b42"
+    },
+    "yellow": {
+      "fill": "#f0bf2a",
+      "dark": "#a37c0e"
+    }
+  }
+}
