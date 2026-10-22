@@ -35,11 +35,12 @@ export const epoch: GameView = {
     Controls: EpochControls,
     viewBox: (board) => [0, 0, (board as EpochBoardData).length, HEIGHT],
     help: [
-      "Train units with the buttons over the sky or the keys 1, 2 and 3: melee, ranged and heavy. Melee beats ranged, ranged beats heavy and heavy beats melee.",
-      "T builds a turret on your base, the second and third opening a new place first. S sells the oldest for half its price.",
-      "Kills earn gold, and kills your units help with earn XP. A advances to the next age once you have the XP and the gold: new units, a new turret and a stronger base.",
-      "Destroy the enemy base to win. After eight minutes the base with more hit points left wins.",
+      "Train units with the buttons over the sky or the keys 1 to 4: melee, ranged, heavy and, in the Future, the super soldier. They march in single file, and ranged units shoot past the one in front.",
+      "Q, W and E build one of the age's three turrets in a free place, and R opens another place. S sells the cheapest turret for half its price.",
+      "Kills earn gold, and both sides earn XP from them. A advances to the next age once you have the XP: new units and turrets, a new special and a stronger base.",
+      "X calls your age's special, free but slow to recharge. Destroy the enemy base to win; when time runs out, the stronger base wins.",
     ],
     map: "meadow",
+    music: { file: "/games/epoch/music.ogg", seconds: 30 },
   },
 };

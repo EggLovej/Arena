@@ -1,22 +1,33 @@
-"""Fills every turret place first, then trains ranged units behind a few melee ones. After each
-new age it sells its old turrets, one at a time, to put up new ones, and once its turrets are
-the newest it saves for the next age or adds heavy units.
+"""Lets its turrets do the fighting, as Age of War players do: it opens every turret place it can
+pay for, fills them with the dearest turret it can afford and, after each new age, sells the
+oldest for better ones. Behind them it trains ranged units with a few melee ones in front, and
+super soldiers once it can pay for them. It calls its special when the enemy reaches its base.
 """
 
-from epoch import AGE_OF, AGES
+from epoch import AGES
+
+TURRETS = ("turret3", "turret2", "turret1")  # dearest first
+CLOSE = 200  # an enemy this near the base is a danger
 
 
 def choose_action(observation):
     me = observation.me
-    if observation.can("turret"):
-        return "turret"
+    age = AGES[me.age]
     if observation.can("age"):
         return "age"
-    old = [turret for turret in me.turrets if turret and AGE_OF[turret.kind.id] < me.age]
-    if old:
-        return "sell" if me.gold >= AGES[me.age].turret.price else None
-    spare = observation.spare
-    if len(me.turrets) == 3 and spare >= 2 * observation.price("heavy") and observation.can("heavy"):
-        return "heavy"
-    role = "melee" if 2 * me.count("melee") < me.count("ranged") else "ranged"
-    return role if observation.can(role) and observation.price(role) <= spare else None
+    if observation.can("special") and observation.threat < CLOSE and (age.special.damage or me.units):
+        return "special"
+    if None in me.turrets:
+        best = next((turret for turret in TURRETS if observation.can(turret)), None)
+        if best and (best != "turret1" or observation.threat < CLOSE):
+            return best
+    elif observation.can("place"):
+        return "place"
+    elif any(t.kind.price < age.turrets[1].price for t in me.turrets) and me.gold >= age.turrets[2].price:
+        return "sell"
+    if len(me.queue) >= 2 or (None in me.turrets and observation.threat >= CLOSE):
+        return None  # saving for a turret while it can
+    if observation.can("super"):
+        return "super"
+    role = "melee" if 3 * me.count("melee") < me.count("ranged") + 1 else "ranged"
+    return role if observation.can(role) else None

@@ -5,6 +5,7 @@
 import type { GameData, MapEntry } from "@/lib/types.ts";
 
 import type { GameView } from "./types.ts";
+import { blast } from "./blast/index.ts";
 import { epoch } from "./epoch/index.ts";
 import { graphite } from "./graphite/index.ts";
 import { ricochet } from "./ricochet/index.ts";
@@ -14,6 +15,7 @@ export const GAME_VIEWS: Record<string, GameView> = {
   graphite,
   ricochet,
   epoch,
+  blast,
   splice,
 };
 

@@ -5,6 +5,6 @@
 """
 
 from epoch.battle import ACTIONS, Battle, Observation
-from epoch.rules import AGE_OF, AGES, BASE_LENGTH, COUNTERS, PLACES, ROLES
+from epoch.rules import AGES, BASE_LENGTH, PLACES, ROLES
 
-__all__ = ["ACTIONS", "AGE_OF", "AGES", "BASE_LENGTH", "COUNTERS", "PLACES", "ROLES", "Battle", "Observation"]
+__all__ = ["ACTIONS", "AGES", "BASE_LENGTH", "PLACES", "ROLES", "Battle", "Observation"]
