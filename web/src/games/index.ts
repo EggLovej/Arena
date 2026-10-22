@@ -10,11 +10,13 @@ import type { GameView } from "./types.ts";
 import { blast } from "./blast/index.ts";
 import { graphite } from "./graphite/index.ts";
 import { ricochet } from "./ricochet/index.ts";
+import { splice } from "./splice/index.ts";
 
 export const GAME_VIEWS: Record<string, GameView> = {
   graphite,
   ricochet,
   blast,
+  splice,
 };
 
 export function gameView(id: string): GameView {

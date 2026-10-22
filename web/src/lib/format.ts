@@ -37,20 +37,26 @@ export function describeOutcome(
   const who = (seat: string) => `${botNames[lineup[seat]] ?? lineup[seat]} (${seats[seat]?.name ?? seat})`;
   const when = formatDuration(outcome.ticks * tickSeconds);
   const [first = [], ...rest] = outcome.ranking;
+  // The places after the first, counted as in a race: two sharing first place make the next one third.
+  let ahead = first.length;
+  const places = rest.map((group) => {
+    const place = ordinal(ahead + 1);
+    ahead += group.length;
+    return `${place}: ${listNames(group.map(who))}`;
+  });
   if (first.length === 1) {
     const how = { elimination: " by elimination", time: " on time" }[outcome.reason] ?? "";
-    const others = rest.length > 1 ? ` ${rest.map((group, index) => `${ordinal(index + 2)}: ${listNames(group.map(who))}`).join("; ")}.` : "";
+    const others = places.length > 1 ? ` ${places.join("; ")}.` : "";
     return `${who(first[0])} won${how} after ${when}.${others}`;
   }
-  const out = rest.flat();
-  const tail = out.length ? ` ${listNames(out.map(who))} ${out.length === 1 ? "was" : "were"} knocked out.` : "";
+  const others = places.length ? ` ${places.join("; ")}.` : "";
   const ending =
     outcome.reason === "time"
       ? `time ran out after ${when}`
       : outcome.reason === "elimination"
         ? `they fell at the same moment, after ${when}`
         : `they finished level after ${when}`;
-  return `Draw between ${listNames(first.map(who))}: ${ending}.${tail}`;
+  return `Draw between ${listNames(first.map(who))}: ${ending}.${others}`;
 }
 
 function ordinal(place: number): string {

@@ -6,8 +6,9 @@ play each other, see who leads the ratings, and play against them yourself.
 
 The games are **Graphite**, real-time strategy on a graph, **Ricochet**, a
 tank duel where every shot may bounce once, **Epoch**, two bases on one lane
-racing each other through Age of War's five ages, and **Blast**, bombs on a
-grid for two to four players. Epoch is hidden from the site for now (see
+racing each other through the ages, **Blast**, bombs on a grid for two to four
+players, and **Splice**, turn-based territory on hexagons where a piece wins
+over every neighbour where it lands. Epoch is hidden from the site for now (see
 `web/src/games/index.ts`); its tournament still runs.
 
 ## What's where
@@ -52,14 +53,15 @@ game's rules, maps or adapter may no longer match, which is only noted, since
 the next tournament replaces it. A full Graphite tournament is about 700
 matches; most take under a second, but the search bots take up to a few
 minutes a match, so it runs for an hour or two on four cores. Ricochet's 240
-matches take a few minutes, Epoch's 60 under a minute, and Blast's 320 about
-three minutes.
+matches take a few minutes, Epoch's 60 under a minute, Blast's 320 about
+three minutes and Splice's 120 about a minute.
 
 Graphite and Ricochet still run on their own, with their Pygame clients and
 training code: see [games/graphite/README.md](games/graphite/README.md) and
-[games/ricochet/README.md](games/ricochet/README.md). Epoch and Blast are
-played on the site only: see [games/epoch/README.md](games/epoch/README.md) and
-[games/blast/README.md](games/blast/README.md).
+[games/ricochet/README.md](games/ricochet/README.md). Epoch, Blast and Splice
+are played on the site only: see [games/epoch/README.md](games/epoch/README.md),
+[games/blast/README.md](games/blast/README.md) and
+[games/splice/README.md](games/splice/README.md).
 
 ## Ratings
 
@@ -68,7 +70,7 @@ model fitted to all of a tournament's results at once: with two players this
 is the Elo model, and it extends to any number of players per match. They are
 shown on the Elo scale, where 100 points more wins about 64% of games, with
 one bot pinned (Graphite pins Strategic at 1000, Ricochet pins Direct, Epoch
-pins Balanced and Blast pins Digger). Each match size gets its
+pins Balanced, Blast pins Digger and Splice pins Greedy). Each match size gets its
 own table, since being good in a duel and in a three-way fight are different
 skills. The ± is a 95% interval for a bot's rating relative to the others.
 See `platform/arena/ratings.py`.
@@ -145,8 +147,9 @@ and is remembered on the device. Graphite's themes are the JSON files in
 `games/graphite/themes/` (colours, and optionally a `texture` image or a
 `grid`): add one beside `slate.json`. Ricochet's are the game's own, in
 `ricochet.themes` (see `games/ricochet/docs/themes.md`). Epoch has one so
-far, in `themes()` in `games/epoch/arena_game.py`. Blast's are the JSON files
-in `games/blast/themes/`, as Graphite's are. Then run
+far, in `themes()` in `games/epoch/arena_game.py`. Blast's and Splice's are
+JSON files in `games/blast/themes/` and `games/splice/themes/`, as Graphite's
+are. Then run
 `python -m arena publish <game>` to list it in the game's `game.json`.
 
 ## Adding a game

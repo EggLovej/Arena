@@ -1,0 +1,19 @@
+{
+  "id": "petri_dish",
+  "name": "Petri Dish",
+  "description": "Stained cells growing on pale agar, under the lab's lamp.",
+  "glow": false,
+  "colors": {
+    "background": "#e3eadb",
+    "rim": "#c7d3bd",
+    "cell": "#f3f6ec",
+    "line": "#bccab2",
+    "ink": "#1d2b28",
+    "highlight": "#1d2b28"
+  },
+  "players": {
+    "magenta": { "fill": "#c2307a", "light": "#ee8fc0", "dark": "#76183f" },
+    "cyan": { "fill": "#11808c", "light": "#7fd3d6", "dark": "#0a4b52" },
+    "amber": { "fill": "#d08712", "light": "#f6cd7c", "dark": "#7c4d05" }
+  }
+}

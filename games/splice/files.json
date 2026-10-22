@@ -1,0 +1,1 @@
+{"rules": ["splice/__init__.py", "splice/maps.py", "splice/rules.py"], "bots": ["ais", "splice/search.py", "themes/petri_dish.json"]}

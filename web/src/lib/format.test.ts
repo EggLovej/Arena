@@ -27,7 +27,7 @@ test("one sentence for how a match ended", () => {
     ],
     [
       { ranking: [["red", "blue"], ["green"]], reason: "time", ticks: 1800 },
-      "Draw between Strategic AI (Red) and Careful AI (Blue): time ran out after 3 min 00 s. Aggressive AI (Green) was knocked out.",
+      "Draw between Strategic AI (Red) and Careful AI (Blue): time ran out after 3 min 00 s. Third: Aggressive AI (Green).",
     ],
     // A game's own way of ending gets plain words.
     [{ ranking: [["blue"], ["red"]], reason: "finish", ticks: 90 }, "Careful AI (Blue) won after 9 s."],

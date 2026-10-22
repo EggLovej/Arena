@@ -1,0 +1,59 @@
+/* How the last move plays out on Splice's board (SpliceBoard.tsx), in under half a
+ * second, a tick: the piece arrives, then the pieces it won turn, then any cells the end
+ * of the game filled grow. --dx and --dy are where the piece came from. */
+
+.splice-grow {
+  animation: splice-grow 0.25s ease-out;
+}
+
+@keyframes splice-grow {
+  from {
+    transform: translate(var(--dx), var(--dy)) scale(0.45);
+  }
+}
+
+.splice-jump {
+  animation: splice-jump 0.3s ease-in-out;
+}
+
+@keyframes splice-jump {
+  from {
+    transform: translate(var(--dx), var(--dy));
+  }
+  50% {
+    transform: translate(calc(var(--dx) / 2), calc(var(--dy) / 2 - 18px)) scale(1.25);
+  }
+}
+
+/* The piece's old colour, over its new one, swells and fades away. */
+.splice-won {
+  animation: splice-won 0.22s ease-in 0.18s both;
+}
+
+@keyframes splice-won {
+  to {
+    opacity: 0;
+    transform: scale(1.2);
+  }
+}
+
+.splice-fill {
+  animation: splice-fill 0.2s ease-out 0.25s backwards;
+}
+
+@keyframes splice-fill {
+  from {
+    transform: scale(0);
+  }
+}
+
+/* The move is shown done at once. */
+@media (prefers-reduced-motion: reduce) {
+  .splice-grow,
+  .splice-jump,
+  .splice-won,
+  .splice-fill {
+    animation-duration: 0s;
+    animation-delay: 0s;
+  }
+}
