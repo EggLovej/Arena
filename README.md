@@ -96,7 +96,9 @@ playing worse.
 The same page can seat a bot in every place, to watch any bots play each
 other live. The match fills the screen, a phone's too: a game can turn a wide
 board a quarter round to fill an upright phone (`PlayView.turn`; Graphite
-does), and full screen (the F key) hides the rest of the page. A bot that sits out a
+does), and full screen (the F key) hides the rest of the page. A game may bring
+music that loops while a match plays (`PlayView.music`; Epoch does), with a
+button to mute it. A bot that sits out a
 group of maps in the tournaments (`BotInfo.sits_out`, such as Graphite's large
 maps) isn't offered for them there either, and each map keeps its own time
 limit (`MapInfo.max_ticks`).

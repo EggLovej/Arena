@@ -18,7 +18,18 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from epoch.battle import ACTIONS, Battle  # noqa: E402
-from epoch.rules import AGES, BASE_LENGTH, LANES, MAX_TICKS, PLACES, QUEUE, TICKS_PER_SECOND, TURRETS, UNITS  # noqa: E402
+from epoch.rules import (  # noqa: E402
+    AGES,
+    BASE_LENGTH,
+    LANES,
+    MAX_TICKS,
+    PLACES,
+    QUEUE,
+    SPECIAL_COOLDOWN,
+    TICKS_PER_SECOND,
+    TURRETS,
+    UNITS,
+)
 
 from arena.contract import BotInfo, GameInfo, MapInfo, Outcome, SeatInfo, bot_from_module, summary  # noqa: E402
 
@@ -59,17 +70,18 @@ class EpochMatch:
 
     def outcome(self) -> Outcome:
         """A destroyed base loses, and two destroyed at once draw. When time runs out, the base
-        with more hit points left wins."""
+        with more hit points left wins, and of two as strong, the side with more experience."""
 
-        red, blue = (self.battle.side(seat).hp for seat in SEATS)
-        reason = "elimination" if self.finished() else "time"
-        if red == blue or (red <= 0 and blue <= 0):
+        finished = self.finished()
+        red, blue = ((side.hp > 0,) if finished else (side.hp, side.xp) for side in self.battle.sides)
+        reason = "elimination" if finished else "time"
+        if red == blue:
             return Outcome((SEATS,), reason, self.tick)
         ranking = SEATS if red > blue else SEATS[::-1]
         return Outcome(tuple((seat,) for seat in ranking), reason, self.tick)
 
     def board(self) -> dict:
-        """The lane, and every age, unit and turret with the numbers the website draws and prices."""
+        """The lane, and every age, unit, turret and special with the numbers the website draws and prices."""
 
         return {
             "name": self.lane.name,
@@ -77,15 +89,16 @@ class EpochMatch:
             "base_length": BASE_LENGTH,
             "queue": QUEUE,
             "places": list(PLACES),
+            "special_cooldown": SPECIAL_COOLDOWN,
             "ages": [
                 {
                     "id": age.id,
                     "name": age.name,
                     "xp": age.xp,
-                    "price": age.price,
                     "base_hp": age.base_hp,
                     "units": [unit.id for unit in age.units],
-                    "turret": age.turret.id,
+                    "turrets": [turret.id for turret in age.turrets],
+                    "special": {"id": age.special.id, "name": age.special.name, "heals": not age.special.damage},
                 }
                 for age in AGES
             ],
