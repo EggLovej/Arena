@@ -1,19 +1,19 @@
-// The games the website can draw. Adding a game means adding its folder here
+// The games the website shows. Adding a game means adding its folder here
 // with a board and its scoreboard numbers; every page around them is shared.
 // The game list shows them in this order, and the first is the home page's.
+// A game left out has no pages. Epoch (./epoch/) is left out for now, while
+// its owner decides whether to keep it; adding it back brings its pages back.
 
 import type { GameData, MapEntry } from "@/lib/types.ts";
 
 import type { GameView } from "./types.ts";
 import { blast } from "./blast/index.ts";
-import { epoch } from "./epoch/index.ts";
 import { graphite } from "./graphite/index.ts";
 import { ricochet } from "./ricochet/index.ts";
 
 export const GAME_VIEWS: Record<string, GameView> = {
   graphite,
   ricochet,
-  epoch,
   blast,
 };
 
